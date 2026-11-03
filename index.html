@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ARDIE - Suivi FAP</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#064e3b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    input, select, textarea { font-size: 16px !important; }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col pb-8">
+
+  <!-- Header -->
+  <header class="bg-emerald-900 text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="bg-white text-emerald-900 font-black px-2 py-0.5 rounded text-xs tracking-wider">ARDIE</span>
+        <div>
+          <h1 class="text-sm md:text-base font-bold leading-none">Vitroplants Fruit à Pain</h1>
+          <p class="text-[11px] text-emerald-300 mt-0.5" id="date-label"></p>
+        </div>
+      </div>
+      <button onclick="loadConfig()" title="Synchroniser la configuration" class="p-2 hover:bg-emerald-800 rounded-lg transition active:scale-95">
+        <i data-lucide="refresh-cw" id="sync-icon" class="w-4 h-4 text-emerald-200"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Sélecteurs Rapides Serre & Agent -->
+  <div class="max-w-4xl w-full mx-auto px-4 pt-3">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Emplacement / Serre</label>
+        <select id="global-serre" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-500">
+          <option value="">Chargement...</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Agent Actif (SharePoint)</label>
+        <select id="global-intervenant" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-500">
+          <option value="">Chargement...</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barre d'onglets principale -->
+  <div class="max-w-4xl w-full mx-auto px-4 mt-3">
+    <div class="flex bg-slate-200 p-1 rounded-xl gap-1">
+      <button onclick="tab('clim')" id="btn-clim" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-white text-emerald-900 shadow-sm flex items-center justify-center gap-1.5 transition">
+        <i data-lucide="thermometer" class="w-4 h-4"></i><span>Climat</span>
+      </button>
+      <button onclick="tab('plants')" id="btn-plants" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1.5 transition">
+        <i data-lucide="sprout" class="w-4 h-4"></i><span>Plants</span>
+      </button>
+      <button onclick="tab('reports')" id="btn-reports" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1.5 transition">
+        <i data-lucide="bar-chart-3" class="w-4 h-4"></i><span>Rapports</span>
+      </button>
+      <button onclick="tab('admin')" id="btn-admin" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1.5 transition">
+        <i data-lucide="settings" class="w-4 h-4"></i><span>Admin</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenu Principal -->
+  <main class="max-w-4xl w-full mx-auto px-4 py-3 flex-grow">
+
+    <!-- 1. CLIMAT -->
+    <div id="tab-clim" class="space-y-4">
+      <form id="form-clim" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
+        <div class="flex items-center justify-between border-b pb-2">
+          <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i data-lucide="gauge" class="w-4 h-4 text-emerald-600"></i>Relevé Climatique Serre
+          </h2>
+          <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Objectif HR ≥ 75%</span>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Heure</label>
+            <input type="time" id="c-heure" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Température (°C)</label>
+            <input type="number" step="0.1" id="c-temp" required placeholder="ex: 28.5" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Humidité Air (%)</label>
+            <input type="number" step="0.1" id="c-hygro" required placeholder="ex: 78" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Éclairage Artificiel</label>
+            <select id="c-eclairage" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+              <option value="Non">Non</option>
+              <option value="Oui">Oui</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
+          <div>
+            <label class="block text-xs font-bold text-emerald-950 mb-1">Luminosité (Lux)</label>
+            <input type="number" id="c-lumens" placeholder="ex: 12000" class="w-full bg-white border border-emerald-200 rounded-lg p-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-emerald-950 mb-1">Humidité Terreau (%)</label>
+            <input type="number" step="0.1" id="c-hum-terreau" placeholder="ex: 80" class="w-full bg-white border border-emerald-200 rounded-lg p-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-emerald-950 mb-1">pH Terreau</label>
+            <input type="number" step="0.1" id="c-ph" placeholder="ex: 6.2" class="w-full bg-white border border-emerald-200 rounded-lg p-2 text-sm">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Arrosage / Pulvérisation</label>
+            <input type="text" id="c-arrosage" placeholder="ex: Tuyau 7h30 (2 min) / Pulvérisateur 2min" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Remarques / Anomalies</label>
+            <input type="text" id="c-remarque" placeholder="Ventilation, panne brumisateur..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+          </div>
+        </div>
+
+        <button type="submit" id="btn-submit-clim" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow transition active:scale-[0.99]">
+          <i data-lucide="check" class="w-5 h-5"></i><span>Valider le Relevé</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- 2. PLANTS -->
+    <div id="tab-plants" class="space-y-4 hidden">
+      <form id="form-plants" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
+        <div class="flex items-center justify-between border-b pb-2">
+          <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-600"></i>Suivi Journalier du Lot
+          </h2>
+          <span class="text-xs bg-slate-100 font-mono text-slate-600 px-2 py-0.5 rounded">FAP</span>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Effectif Initial</label>
+            <input type="number" id="p-initial" value="605" min="0" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-base">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-amber-700 mb-1">Isolés ce jour</label>
+            <input type="number" id="p-isoles" value="0" min="0" required class="w-full bg-amber-50 border border-amber-300 rounded-lg p-2 font-bold text-base text-amber-900">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-red-700 mb-1">Morts ce jour</label>
+            <input type="number" id="p-morts" value="0" min="0" required class="w-full bg-red-50 border border-red-300 rounded-lg p-2 font-bold text-base text-red-900">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-blue-700 mb-1">Sous surveillance</label>
+            <input type="number" id="p-surveillance" value="0" min="0" required class="w-full bg-blue-50 border border-blue-300 rounded-lg p-2 font-bold text-base text-blue-900">
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-emerald-800 to-teal-800 text-white p-4 rounded-xl flex items-center justify-between shadow-inner">
+          <div>
+            <p class="text-xs uppercase font-bold tracking-wider text-emerald-200">Restant en culture saine</p>
+            <p class="text-[11px] text-emerald-300">Calcul : Initial - (Isolés + Morts)</p>
+          </div>
+          <span class="text-3xl md:text-4xl font-mono font-black" id="p-sains-display">605</span>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Observations générales de la journée</label>
+          <textarea id="p-observations" rows="2" placeholder="État du feuillage, enracinement..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"></textarea>
+        </div>
+
+        <button type="submit" id="btn-submit-plants" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow transition active:scale-[0.99]">
+          <i data-lucide="check-circle-2" class="w-5 h-5"></i><span>Valider le Bilan Journalier</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- 3. RAPPORTS -->
+    <div id="tab-reports" class="space-y-4 hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+          <i data-lucide="filter" class="w-4 h-4 text-emerald-600"></i>Filtres & Export
+        </h3>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-2">
+          <select id="rep-type" class="bg-slate-50 border rounded-lg p-2 text-xs font-semibold">
+            <option value="CLIMAT">Relevés Climatiques</option>
+            <option value="PLANTS">Suivi des Plants</option>
+          </select>
+          <select id="rep-serre" class="bg-slate-50 border rounded-lg p-2 text-xs font-semibold">
+            <option value="ALL">Toutes les serres</option>
+          </select>
+          <input type="date" id="rep-start" class="bg-slate-50 border rounded-lg p-2 text-xs">
+          <input type="date" id="rep-end" class="bg-slate-50 border rounded-lg p-2 text-xs">
+        </div>
+
+        <div class="flex gap-2">
+          <button onclick="queryReports()" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow">
+            <i data-lucide="search" class="w-4 h-4"></i><span>Afficher</span>
+          </button>
+          <button onclick="exportTableToCSV()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow">
+            <i data-lucide="download" class="w-4 h-4"></i><span>Export CSV</span>
+          </button>
+        </div>
+
+        <!-- Tableau résultat -->
+        <div class="overflow-x-auto max-h-80 border rounded-lg mt-3">
+          <table class="w-full text-left text-xs" id="table-reports">
+            <thead class="bg-slate-50 text-slate-600 font-bold sticky top-0 border-b" id="thead-reports">
+              <tr><th class="p-2">Cliquez sur Afficher pour charger...</th></tr>
+            </thead>
+            <tbody id="tbody-reports" class="divide-y divide-slate-100"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. ADMIN -->
+    <div id="tab-admin" class="space-y-4 hidden">
+      <!-- Serres -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <h3 class="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
+          <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600"></i>Emplacements / Serres
+        </h3>
+        <div class="flex gap-2 mb-3">
+          <input type="text" id="new-loc" placeholder="Nom nouvelle serre (ex: Tunnel 4)" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+          <button onclick="addLocation()" class="bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-bold">Ajouter</button>
+        </div>
+        <ul id="list-loc" class="divide-y divide-slate-100 text-xs"></ul>
+      </div>
+
+      <!-- Agents -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <h3 class="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
+          <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>Gestion Agents (Sync SharePoint)
+        </h3>
+        <div class="flex gap-2 mb-3">
+          <input type="text" id="new-agent" placeholder="Prénom Nom" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+          <button onclick="addAgent()" class="bg-emerald-700 text-white px-3 py-2 rounded-lg text-xs font-bold">Ajouter</button>
+        </div>
+        <ul id="list-agents" class="divide-y divide-slate-100 text-xs"></ul>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    // ⚠️ METTEZ CI-DESSOUS VOTRE URL DÉPLOYÉE GOOGLE APPS SCRIPT ⚠️
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
+
+    let state = {
+      emplacements: [],
+      agentsActifs: [],
+      tousLesAgents: [],
+      cachedReports: []
+    };
+
+    // Initialisation
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('date-label').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      document.getElementById('c-heure').value = new Date().toTimeString().slice(0, 5);
+      
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('rep-start').value = today;
+      document.getElementById('rep-end').value = today;
+
+      loadConfig();
+      lucide.createIcons();
+    });
+
+    // Gestion du calcul de plants
+    function calcPlants() {
+      const init = parseInt(document.getElementById('p-initial').value) || 0;
+      const isoles = parseInt(document.getElementById('p-isoles').value) || 0;
+      const morts = parseInt(document.getElementById('p-morts').value) || 0;
+      const sains = Math.max(0, init - (isoles + morts));
+      document.getElementById('p-sains-display').textContent = sains;
+      return sains;
+    }
+    ['p-initial', 'p-isoles', 'p-morts'].forEach(id => {
+      document.getElementById(id).addEventListener('input', calcPlants);
+    });
+
+    // Chargement de la configuration
+    async function loadConfig() {
+      const icon = document.getElementById('sync-icon');
+      if (icon) icon.classList.add('animate-spin');
+
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=getConfig`);
+        state = await res.json();
+        renderDropdowns();
+        renderAdmin();
+      } catch (err) {
+        console.warn('Mode hors ligne ou URL non configurée');
+        state.emplacements = ['Serre principale', 'Serre 1', 'Serre 2'];
+        state.agentsActifs = ['Technicien Serre'];
+        state.tousLesAgents = [{ name: 'Technicien Serre', status: 'Actif' }];
+        renderDropdowns();
+        renderAdmin();
+      } finally {
+        if (icon) icon.classList.remove('animate-spin');
+      }
+    }
+
+    function renderDropdowns() {
+      const sSerre = document.getElementById('global-serre');
+      const sAgent = document.getElementById('global-intervenant');
+      const rSerre = document.getElementById('rep-serre');
+
+      sSerre.innerHTML = state.emplacements.map(e => `<option value="${e}">🌱 ${e}</option>`).join('');
+      sAgent.innerHTML = state.agentsActifs.map(a => `<option value="${a}">👤 ${a}</option>`).join('');
+      rSerre.innerHTML = '<option value="ALL">Toutes les serres</option>' + state.emplacements.map(e => `<option value="${e}">${e}</option>`).join('');
+    }
+
+    function renderAdmin() {
+      document.getElementById('list-loc').innerHTML = state.emplacements.map(e => `
+        <li class="py-2 flex justify-between items-center">
+          <span class="font-medium">${e}</span>
+          <button onclick="delLocation('${e}')" class="text-red-600 border border-red-200 px-2 py-0.5 rounded text-[10px]">Supprimer</button>
+        </li>
+      `).join('');
+
+      document.getElementById('list-agents').innerHTML = state.tousLesAgents.map(a => `
+        <li class="py-2 flex justify-between items-center">
+          <span class="font-medium">${a.name}</span>
+          <button onclick="toggleAgent('${a.name}')" class="px-2 py-0.5 rounded-full text-[10px] font-bold ${a.status === 'Actif' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-500'}">
+            ${a.status}
+          </button>
+        </li>
+      `).join('');
+      lucide.createIcons();
+    }
+
+    // Requête POST
+    async function post(payload) {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    // Envoi Climat
+    document.getElementById('form-clim').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-clim');
+      btn.disabled = true;
+      btn.innerText = "Envoi...";
+
+      await post({
+        type: 'CLIMAT',
+        date: new Date().toLocaleDateString('fr-FR'),
+        heure: document.getElementById('c-heure').value,
+        serre: document.getElementById('global-serre').value,
+        intervenant: document.getElementById('global-intervenant').value,
+        temperature: document.getElementById('c-temp').value,
+        humidite_air: document.getElementById('c-hygro').value,
+        lumens: document.getElementById('c-lumens').value || '-',
+        humidite_terreau: document.getElementById('c-hum-terreau').value || '-',
+        ph: document.getElementById('c-ph').value || '-',
+        eclairage: document.getElementById('c-eclairage').value,
+        arrosage: document.getElementById('c-arrosage').value || '-',
+        remarque: document.getElementById('c-remarque').value || '-'
+      });
+
+      alert("Relevé météo enregistré avec succès !");
+      document.getElementById('c-remarque').value = '';
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="check" class="w-5 h-5"></i><span>Valider le Relevé</span>`;
+      lucide.createIcons();
+    });
+
+    // Envoi Plants
+    document.getElementById('form-plants').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-submit-plants');
+      btn.disabled = true;
+      btn.innerText = "Envoi...";
+
+      await post({
+        type: 'SUIVI_PLANTS',
+        date: new Date().toLocaleDateString('fr-FR'),
+        heure: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        serre: document.getElementById('global-serre').value,
+        intervenant: document.getElementById('global-intervenant').value,
+        initial: document.getElementById('p-initial').value,
+        isoles: document.getElementById('p-isoles').value,
+        morts: document.getElementById('p-morts').value,
+        surveillance: document.getElementById('p-surveillance').value,
+        sains: calcPlants(),
+        observations: document.getElementById('p-observations').value || '-'
+      });
+
+      alert("Bilan vitroplants enregistré avec succès !");
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="check-circle-2" class="w-5 h-5"></i><span>Valider le Bilan Journalier</span>`;
+      lucide.createIcons();
+    });
+
+    // Actions Admin
+    async function addLocation() {
+      const v = document.getElementById('new-loc').value.trim();
+      if (!v) return;
+      await post({ type: 'MANAGE_LOCATION', subAction: 'ADD', name: v });
+      document.getElementById('new-loc').value = '';
+      loadConfig();
+    }
+    async function delLocation(name) {
+      if (!confirm(`Supprimer ${name} ?`)) return;
+      await post({ type: 'MANAGE_LOCATION', subAction: 'DELETE', name });
+      loadConfig();
+    }
+    async function addAgent() {
+      const v = document.getElementById('new-agent').value.trim();
+      if (!v) return;
+      await post({ type: 'MANAGE_AGENT', subAction: 'ADD', name: v });
+      document.getElementById('new-agent').value = '';
+      loadConfig();
+    }
+    async function toggleAgent(name) {
+      await post({ type: 'MANAGE_AGENT', subAction: 'TOGGLE_STATUS', name });
+      loadConfig();
+    }
+
+    // Rapports
+    async function queryReports() {
+      const t = document.getElementById('rep-type').value;
+      const s = document.getElementById('rep-serre').value;
+      const start = document.getElementById('rep-start').value;
+      const end = document.getElementById('rep-end').value;
+
+      const url = `${SCRIPT_URL}?action=getReports&type=${t}&serre=${s}&startDate=${start}&endDate=${end}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      state.cachedReports = data;
+
+      const thead = document.getElementById('thead-reports');
+      const tbody = document.getElementById('tbody-reports');
+
+      if (!data.length) {
+        thead.innerHTML = `<tr><th class="p-2">Aucun résultat trouvé</th></tr>`;
+        tbody.innerHTML = '';
+        return;
+      }
+
+      const cols = Object.keys(data[0]);
+      thead.innerHTML = `<tr>${cols.map(c => `<th class="p-2 whitespace-nowrap">${c}</th>`).join('')}</tr>`;
+      tbody.innerHTML = data.map(row => `
+        <tr class="hover:bg-slate-50">
+          ${cols.map(c => `<td class="p-2 whitespace-nowrap">${row[c]}</td>`).join('')}
+        </tr>
+      `).join('');
+    }
+
+    function exportTableToCSV() {
+      if (!state.cachedReports.length) return alert("Chargez d'abord les données");
+      const cols = Object.keys(state.cachedReports[0]);
+      let csv = cols.join(';') + '\n';
+      state.cachedReports.forEach(r => {
+        csv += cols.map(c => `"${(r[c] || '').toString().replace(/"/g, '""')}"`).join(';') + '\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ardie_rapport_${Date.now()}.csv`;
+      a.click();
+    }
+
+    // Navigation
+    function tab(id) {
+      ['clim', 'plants', 'reports', 'admin'].forEach(k => {
+        document.getElementById(`tab-${k}`).classList.add('hidden');
+        document.getElementById(`btn-${k}`).classList.remove('bg-white', 'text-emerald-900', 'shadow-sm');
+        document.getElementById(`btn-${k}`).classList.add('text-slate-600');
+      });
+      document.getElementById(`tab-${id}`).classList.remove('hidden');
+      document.getElementById(`btn-${id}`).classList.add('bg-white', 'text-emerald-900', 'shadow-sm');
+      document.getElementById(`btn-${id}`).classList.remove('text-slate-600');
+      lucide.createIcons();
+    }
+
+    // Enregistrement PWA Service Worker
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
