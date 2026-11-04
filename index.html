@@ -5,20 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>ARDIE - Suivi Serres Vitroplants FAP</title>
   
-  <!-- PWA & Métadonnées mobiles -->
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#064e3b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <!-- Tailwind CSS & Icônes Lucide -->
+  <!-- Bibliothèques CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
-  <!-- Graphiques Gratuits Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
-    /* Empêche le zoom automatique sur mobile lors de la saisie */
     input, select, textarea { font-size: 16px !important; }
   </style>
 </head>
@@ -31,10 +28,10 @@
         <span class="bg-white text-emerald-900 font-black px-2 py-0.5 rounded text-xs tracking-wider shadow-sm">ARDIE</span>
         <div>
           <h1 class="text-sm md:text-base font-bold leading-none">Vitroplants Fruit à Pain</h1>
-          <p class="text-[11px] text-emerald-300 mt-0.5" id="date-label"></p>
+          <p class="text-[11px] text-emerald-300 mt-0.5" id="date-label">Chargement...</p>
         </div>
       </div>
-      <button onclick="loadConfig()" title="Actualiser les données" class="p-2 hover:bg-emerald-800 rounded-lg transition active:scale-95">
+      <button onclick="loadConfig()" title="Actualiser" class="p-2 hover:bg-emerald-800 rounded-lg transition active:scale-95">
         <i data-lucide="refresh-cw" id="sync-icon" class="w-4 h-4 text-emerald-200"></i>
       </button>
     </div>
@@ -46,22 +43,22 @@
       <div>
         <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Emplacement / Serre</label>
         <select id="global-serre" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-500">
-          <option value="">Chargement...</option>
+          <option value="" disabled selected>⏳ Chargement des serres...</option>
         </select>
       </div>
       <div>
         <div class="flex justify-between items-center mb-1">
           <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Agent Actif (SharePoint)</label>
-          <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded font-medium">Actifs seuls</span>
+          <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded font-medium">Actifs</span>
         </div>
         <select id="global-intervenant" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-500">
-          <option value="">Chargement...</option>
+          <option value="" disabled selected>⏳ Chargement des agents...</option>
         </select>
       </div>
     </div>
   </div>
 
-  <!-- Barre de Navigation par Onglets -->
+  <!-- Barre d'onglets -->
   <div class="max-w-4xl w-full mx-auto px-4 mt-3">
     <div class="flex bg-slate-200 p-1 rounded-xl gap-1">
       <button onclick="switchTab('clim')" id="btn-clim" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-white text-emerald-900 shadow-sm flex items-center justify-center gap-1.5 transition">
@@ -82,7 +79,7 @@
   <!-- Contenu Principal -->
   <main class="max-w-4xl w-full mx-auto px-4 py-3 flex-grow">
 
-    <!-- ONGLET 1 : RELEVÉS CLIMATIQUES -->
+    <!-- 1. CLIMAT -->
     <div id="tab-clim" class="space-y-4">
       <form id="form-clim" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="flex items-center justify-between border-b pb-2">
@@ -114,7 +111,6 @@
           </div>
         </div>
 
-        <!-- Capteurs Substrat -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
           <div>
             <label class="block text-xs font-bold text-emerald-950 mb-1">Luminosité (Lux)</label>
@@ -147,7 +143,7 @@
       </form>
     </div>
 
-    <!-- ONGLET 2 : SUIVI JOURNALIER DES VITROPLANTS -->
+    <!-- 2. PLANTS -->
     <div id="tab-plants" class="space-y-4 hidden">
       <form id="form-plants" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="flex items-center justify-between border-b pb-2">
@@ -176,7 +172,6 @@
           </div>
         </div>
 
-        <!-- Calcul Automatique en Temps Réel -->
         <div class="bg-gradient-to-r from-emerald-800 to-teal-800 text-white p-4 rounded-xl flex items-center justify-between shadow-inner">
           <div>
             <p class="text-xs uppercase font-bold tracking-wider text-emerald-200">Restant en culture saine</p>
@@ -187,7 +182,7 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Observations générales de la journée</label>
-          <textarea id="p-observations" rows="2" placeholder="État phytosanitaire, vigueur, reprise racinaire..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"></textarea>
+          <textarea id="p-observations" rows="2" placeholder="État phytosanitaire, reprise racinaire..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"></textarea>
         </div>
 
         <button type="submit" id="btn-submit-plants" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow transition active:scale-[0.99]">
@@ -196,7 +191,7 @@
       </form>
     </div>
 
-    <!-- ONGLET 3 : RAPPORTS & GRAPHIQUES GRATUITS -->
+    <!-- 3. RAPPORTS -->
     <div id="tab-reports" class="space-y-4 hidden">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
         <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -217,24 +212,22 @@
 
         <div class="flex gap-2">
           <button onclick="queryReports()" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow">
-            <i data-lucide="search" class="w-4 h-4"></i><span>Afficher les données</span>
+            <i data-lucide="search" class="w-4 h-4"></i><span>Afficher</span>
           </button>
           <button onclick="exportTableToCSV()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow">
             <i data-lucide="download" class="w-4 h-4"></i><span>Export CSV</span>
           </button>
         </div>
 
-        <!-- Zone du Graphique Chart.js -->
         <div id="chart-container" class="border rounded-xl p-3 bg-slate-50 hidden">
-          <h4 id="chart-title" class="text-xs font-bold text-slate-700 uppercase mb-2">Graphique d'évolution</h4>
+          <h4 id="chart-title" class="text-xs font-bold text-slate-700 uppercase mb-2">Graphique</h4>
           <canvas id="mainChart" height="180"></canvas>
         </div>
 
-        <!-- Tableau des relevés -->
         <div class="overflow-x-auto max-h-72 border rounded-lg mt-3">
           <table class="w-full text-left text-xs" id="table-reports">
             <thead class="bg-slate-50 text-slate-600 font-bold sticky top-0 border-b" id="thead-reports">
-              <tr><th class="p-2">Cliquez sur « Afficher » pour charger l'historique...</th></tr>
+              <tr><th class="p-2">Cliquez sur « Afficher » pour charger...</th></tr>
             </thead>
             <tbody id="tbody-reports" class="divide-y divide-slate-100"></tbody>
           </table>
@@ -242,9 +235,8 @@
       </div>
     </div>
 
-    <!-- ONGLET 4 : ADMINISTRATION (SERRES & AGENTS) -->
+    <!-- 4. ADMIN -->
     <div id="tab-admin" class="space-y-4 hidden">
-      <!-- Emplacements -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <h3 class="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
           <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600"></i>Emplacements / Serres
@@ -258,13 +250,12 @@
         <ul id="list-loc" class="divide-y divide-slate-100 text-xs"></ul>
       </div>
 
-      <!-- Agents SharePoint -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div class="flex items-center justify-between mb-2">
           <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>Agents ARDIE (Synchronisés SharePoint)
+            <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>Agents ARDIE (SharePoint)
           </h3>
-          <span class="text-[10px] text-slate-400">Cliquez pour activer/désactiver</span>
+          <span class="text-[10px] text-slate-400">Bascule Actif / Inactif</span>
         </div>
         <ul id="list-agents" class="divide-y divide-slate-100 text-xs"></ul>
       </div>
@@ -272,7 +263,345 @@
 
   </main>
 
-  <!-- Script Métier -->
-  <script src="app.js"></script>
+  <!-- Script Métier 100% Dynamique (Sans liste en dur) -->
+  <script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
+
+    let state = {
+      emplacements: [],
+      agentsActifs: [],
+      tousLesAgents: [],
+      cachedReports: []
+    };
+
+    let chartInstance = null;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('date-label').textContent = new Date().toLocaleDateString('fr-FR', {
+        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+      });
+      document.getElementById('c-heure').value = new Date().toTimeString().slice(0, 5);
+
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('rep-start').value = today;
+      document.getElementById('rep-end').value = today;
+
+      loadConfig();
+      lucide.createIcons();
+    });
+
+    function calcPlants() {
+      const init = parseInt(document.getElementById('p-initial').value) || 0;
+      const isoles = parseInt(document.getElementById('p-isoles').value) || 0;
+      const morts = parseInt(document.getElementById('p-morts').value) || 0;
+      const sains = Math.max(0, init - (isoles + morts));
+      document.getElementById('p-sains-display').textContent = sains;
+      return sains;
+    }
+
+    ['p-initial', 'p-isoles', 'p-morts'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', calcPlants);
+    });
+
+    async function loadConfig() {
+      const icon = document.getElementById('sync-icon');
+      const sSerre = document.getElementById('global-serre');
+      const sAgent = document.getElementById('global-intervenant');
+
+      if (icon) icon.classList.add('animate-spin');
+      sSerre.innerHTML = '<option value="" disabled selected>⏳ Chargement des serres...</option>';
+      sAgent.innerHTML = '<option value="" disabled selected>⏳ Chargement des agents...</option>';
+
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=getConfig`);
+        if (!res.ok) throw new Error("Réponse serveur : " + res.status);
+        
+        state = await res.json();
+        renderDropdowns();
+        renderAdmin();
+      } catch (err) {
+        console.error("Erreur de communication :", err);
+        sSerre.innerHTML = '<option value="" disabled selected>❌ Erreur de chargement des serres</option>';
+        sAgent.innerHTML = '<option value="" disabled selected>❌ Erreur de chargement des agents</option>';
+      } finally {
+        if (icon) icon.classList.remove('animate-spin');
+      }
+    }
+
+    function renderDropdowns() {
+      const sSerre = document.getElementById('global-serre');
+      const sAgent = document.getElementById('global-intervenant');
+      const rSerre = document.getElementById('rep-serre');
+
+      if (state.emplacements && state.emplacements.length > 0) {
+        sSerre.innerHTML = state.emplacements.map(e => `<option value="${e}">🌱 ${e}</option>`).join('');
+        if (rSerre) {
+          rSerre.innerHTML = '<option value="ALL">Toutes les serres</option>' + state.emplacements.map(e => `<option value="${e}">${e}</option>`).join('');
+        }
+      } else {
+        sSerre.innerHTML = '<option value="" disabled selected>⚠️ Aucun emplacement dans Google Sheets</option>';
+      }
+
+      if (state.agentsActifs && state.agentsActifs.length > 0) {
+        sAgent.innerHTML = state.agentsActifs.map(a => `<option value="${a.nom}">👤 ${a.label}</option>`).join('');
+      } else {
+        sAgent.innerHTML = '<option value="" disabled selected>⚠️ Aucun agent actif trouvé</option>';
+      }
+    }
+
+    function renderAdmin() {
+      const listLoc = document.getElementById('list-loc');
+      const listAg = document.getElementById('list-agents');
+
+      if (listLoc) {
+        if (state.emplacements && state.emplacements.length > 0) {
+          listLoc.innerHTML = state.emplacements.map(e => `
+            <li class="py-2 flex justify-between items-center">
+              <span class="font-medium text-slate-700">🌱 ${e}</span>
+              <button onclick="delLocation('${e}')" class="text-red-600 border border-red-200 px-2 py-0.5 rounded text-[10px] hover:bg-red-50">Supprimer</button>
+            </li>
+          `).join('');
+        } else {
+          listLoc.innerHTML = '<li class="py-2 text-slate-400 text-xs">Aucun emplacement enregistré.</li>';
+        }
+      }
+
+      if (listAg) {
+        if (state.tousLesAgents && state.tousLesAgents.length > 0) {
+          listAg.innerHTML = state.tousLesAgents.map(ag => `
+            <li class="py-2.5 flex justify-between items-center border-b border-slate-100">
+              <div>
+                <div class="font-semibold text-slate-800 text-xs">${ag.displayName || ag.name}</div>
+                <div class="text-[10px] text-slate-400">${ag.contrat || ''} • ${ag.atelier || ''}</div>
+              </div>
+              <button onclick="toggleAgent('${ag.name}')" 
+                      class="px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wide transition ${ag.status === 'Actif' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-200 text-slate-500'}">
+                ${ag.status}
+              </button>
+            </li>
+          `).join('');
+        } else {
+          listAg.innerHTML = '<li class="py-2 text-slate-400 text-xs">Aucun agent dans la liste.</li>';
+        }
+      }
+      lucide.createIcons();
+    }
+
+    async function postData(payload) {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    document.getElementById('form-clim').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const sVal = document.getElementById('global-serre').value;
+      const aVal = document.getElementById('global-intervenant').value;
+      if (!sVal || !aVal) {
+        alert("Veuillez d'abord sélectionner une serre et un agent.");
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit-clim');
+      btn.disabled = true;
+      btn.innerText = "Envoi...";
+
+      await postData({
+        type: 'CLIMAT',
+        date: new Date().toLocaleDateString('fr-FR'),
+        heure: document.getElementById('c-heure').value,
+        serre: sVal,
+        intervenant: aVal,
+        temperature: document.getElementById('c-temp').value,
+        humidite_air: document.getElementById('c-hygro').value,
+        lumens: document.getElementById('c-lumens').value || '-',
+        humidite_terreau: document.getElementById('c-hum-terreau').value || '-',
+        ph: document.getElementById('c-ph').value || '-',
+        eclairage: document.getElementById('c-eclairage').value,
+        arrosage: document.getElementById('c-arrosage').value || '-',
+        remarque: document.getElementById('c-remarque').value || '-'
+      });
+
+      alert("Relevé climatique enregistré !");
+      document.getElementById('c-remarque').value = '';
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="check" class="w-5 h-5"></i><span>Valider le Relevé</span>`;
+      lucide.createIcons();
+    });
+
+    document.getElementById('form-plants').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const sVal = document.getElementById('global-serre').value;
+      const aVal = document.getElementById('global-intervenant').value;
+      if (!sVal || !aVal) {
+        alert("Veuillez d'abord sélectionner une serre et un agent.");
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit-plants');
+      btn.disabled = true;
+      btn.innerText = "Envoi...";
+
+      await postData({
+        type: 'SUIVI_PLANTS',
+        date: new Date().toLocaleDateString('fr-FR'),
+        heure: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
+        serre: sVal,
+        intervenant: aVal,
+        initial: document.getElementById('p-initial').value,
+        isoles: document.getElementById('p-isoles').value,
+        morts: document.getElementById('p-morts').value,
+        surveillance: document.getElementById('p-surveillance').value,
+        sains: calcPlants(),
+        observations: document.getElementById('p-observations').value || '-'
+      });
+
+      alert("Bilan vitroplants enregistré !");
+      btn.disabled = false;
+      btn.innerHTML = `<i data-lucide="check-circle-2" class="w-5 h-5"></i><span>Valider le Bilan Journalier</span>`;
+      lucide.createIcons();
+    });
+
+    async function addLocation() {
+      const v = document.getElementById('new-loc').value.trim();
+      if (!v) return;
+      await postData({ type: 'MANAGE_LOCATION', subAction: 'ADD', name: v });
+      document.getElementById('new-loc').value = '';
+      loadConfig();
+    }
+
+    async function delLocation(name) {
+      if (!confirm(`Supprimer l'emplacement "${name}" ?`)) return;
+      await postData({ type: 'MANAGE_LOCATION', subAction: 'DELETE', name });
+      loadConfig();
+    }
+
+    async function toggleAgent(name) {
+      await postData({ type: 'MANAGE_AGENT', subAction: 'TOGGLE_STATUS', name });
+      loadConfig();
+    }
+
+    async function queryReports() {
+      const type = document.getElementById('rep-type').value;
+      const serre = document.getElementById('rep-serre').value;
+      const start = document.getElementById('rep-start').value;
+      const end = document.getElementById('rep-end').value;
+
+      const url = `${SCRIPT_URL}?action=getReports&type=${type}&serre=${serre}&startDate=${start}&endDate=${end}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      state.cachedReports = data;
+
+      const thead = document.getElementById('thead-reports');
+      const tbody = document.getElementById('tbody-reports');
+      const chartBox = document.getElementById('chart-container');
+
+      if (!data || data.length === 0) {
+        thead.innerHTML = `<tr><th class="p-2">Aucun résultat trouvé</th></tr>`;
+        tbody.innerHTML = '';
+        chartBox.classList.add('hidden');
+        return;
+      }
+
+      const cols = Object.keys(data[0]);
+      thead.innerHTML = `<tr>${cols.map(c => `<th class="p-2 whitespace-nowrap">${c}</th>`).join('')}</tr>`;
+      tbody.innerHTML = data.map(row => `
+        <tr class="hover:bg-slate-50">
+          ${cols.map(c => `<td class="p-2 whitespace-nowrap">${row[c]}</td>`).join('')}
+        </tr>
+      `).join('');
+
+      chartBox.classList.remove('hidden');
+      renderChart(type, data);
+    }
+
+    function renderChart(type, data) {
+      const ctx = document.getElementById('mainChart').getContext('2d');
+      const chartTitle = document.getElementById('chart-title');
+
+      if (chartInstance) chartInstance.destroy();
+
+      if (type === 'CLIMAT') {
+        chartTitle.textContent = "Évolution Température (°C) et Humidité Air (%)";
+        const labels = data.map(r => r.Heure || r.heure);
+        const temps = data.map(r => Number(r.Temperature || r.temperature || 0));
+        const hygros = data.map(r => Number(r.Humidite_Air || r.humidite_air || 0));
+
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [
+              { label: 'Température (°C)', data: temps, borderColor: '#ea580c', backgroundColor: '#ea580c', yAxisID: 'y' },
+              { label: 'Humidité Air (%)', data: hygros, borderColor: '#0284c7', backgroundColor: '#0284c7', yAxisID: 'y1' }
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: { type: 'linear', position: 'left', min: 20, max: 40 },
+              y1: { type: 'linear', position: 'right', min: 50, max: 100, grid: { drawOnChartArea: false } }
+            }
+          }
+        });
+      } else {
+        chartTitle.textContent = "Cohorte Vitroplants : Sains vs Pertes";
+        const labels = data.map(r => r.Date || r.date);
+        const sains = data.map(r => Number(r.Nb_Sains || r.sains || 0));
+        const morts = data.map(r => Number(r.Nb_Morts || r.morts || 0));
+        const isoles = data.map(r => Number(r.Nb_Isoles || r.isoles || 0));
+
+        chartInstance = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [
+              { label: 'Sains', data: sains, backgroundColor: '#059669' },
+              { label: 'Isolés', data: isoles, backgroundColor: '#d97706' },
+              { label: 'Morts', data: morts, backgroundColor: '#dc2626' }
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: { x: { stacked: true }, y: { stacked: true } }
+          }
+        });
+      }
+    }
+
+    function exportTableToCSV() {
+      if (!state.cachedReports.length) return alert("Veuillez d'abord afficher les données");
+      const cols = Object.keys(state.cachedReports[0]);
+      let csv = cols.join(';') + '\n';
+      state.cachedReports.forEach(r => {
+        csv += cols.map(c => `"${(r[c] || '').toString().replace(/"/g, '""')}"`).join(';') + '\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `ardie_export_${Date.now()}.csv`;
+      a.click();
+    }
+
+    function switchTab(id) {
+      ['clim', 'plants', 'reports', 'admin'].forEach(k => {
+        document.getElementById(`tab-${k}`).classList.add('hidden');
+        document.getElementById(`btn-${k}`).classList.remove('bg-white', 'text-emerald-900', 'shadow-sm');
+        document.getElementById(`btn-${k}`).classList.add('text-slate-600');
+      });
+      document.getElementById(`tab-${id}`).classList.remove('hidden');
+      document.getElementById(`btn-${id}`).classList.add('bg-white', 'text-emerald-900', 'shadow-sm');
+      document.getElementById(`btn-${id}`).classList.remove('text-slate-600');
+      lucide.createIcons();
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
 </body>
 </html>
