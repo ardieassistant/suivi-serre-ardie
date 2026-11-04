@@ -6,6 +6,8 @@
   <title>ARDIE - Suivi Vitroplants Fruits à Pain</title>
 
   <link rel="manifest" href="manifest.json">
+  <link rel="icon" id="favicon" href="logo.png">
+  <link rel="apple-touch-icon" id="touch-icon" href="logo.png">
   <meta name="theme-color" content="#064e3b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
@@ -13,21 +15,34 @@
 
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <!-- PDF vectoriel (texte sélectionnable) : jsPDF + AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
   <style>
     input, select, textarea { font-size: 16px !important; }
     .sheet { background: #fff; color: #000; }
     .sheet-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    @media print {
+      .no-print, #toast { display: none !important; }
+      body { background: #fff !important; padding: 0 !important; min-height: 0 !important; }
+      main { padding: 0 !important; max-width: none !important; }
+      .sheet-scroll { overflow: visible !important; }
+      .sheet { min-width: 0 !important; width: 100% !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
+      body.print-plants #view-sheet-clim, body.print-clim #view-sheet-plants { display: none !important; }
+      body.print-plants #view-sheet-plants, body.print-clim #view-sheet-clim { display: block !important; }
+      * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col pb-12">
 
   <!-- En-tête -->
-  <header class="bg-emerald-900 text-white shadow-md sticky top-0 z-50">
+  <header class="no-print bg-emerald-900 text-white shadow-md sticky top-0 z-50">
     <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-3">
-        <span class="bg-white text-emerald-900 font-black px-2 py-0.5 rounded text-xs tracking-wider shadow-sm">ARDIE</span>
+        <img class="logo-img hidden w-9 h-9 rounded bg-white object-contain" alt="ARDIE">
+        <span id="logo-badge" class="bg-white text-emerald-900 font-black px-2 py-0.5 rounded text-xs tracking-wider shadow-sm">ARDIE</span>
         <div>
           <h1 class="text-sm md:text-base font-bold leading-none">Vitroplants Fruit à Pain</h1>
           <p class="text-[11px] text-emerald-300 mt-0.5" id="date-label">Chargement...</p>
@@ -40,12 +55,12 @@
   </header>
 
   <!-- Bandeau d'alerte (déploiement obsolète / hors ligne) -->
-  <div id="banner" class="hidden max-w-4xl w-full mx-auto px-4 pt-3">
+  <div id="banner" class="no-print hidden max-w-4xl w-full mx-auto px-4 pt-3">
     <div id="banner-text" class="bg-amber-100 border border-amber-300 text-amber-900 text-xs font-semibold rounded-lg p-3"></div>
   </div>
 
   <!-- Sélecteurs globaux -->
-  <div class="max-w-4xl w-full mx-auto px-4 pt-3">
+  <div class="no-print max-w-4xl w-full mx-auto px-4 pt-3">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div>
         <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Emplacement / Serre</label>
@@ -66,7 +81,7 @@
   </div>
 
   <!-- Onglets -->
-  <div class="max-w-4xl w-full mx-auto px-4 mt-3">
+  <div class="no-print max-w-4xl w-full mx-auto px-4 mt-3">
     <div class="flex bg-slate-200 p-1 rounded-xl gap-1">
       <button onclick="switchTab('clim')" id="btn-clim" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-white text-emerald-900 shadow-sm flex items-center justify-center gap-1.5 transition">
         <i data-lucide="thermometer" class="w-4 h-4"></i><span>Climat</span>
@@ -151,6 +166,7 @@
 
     <!-- 2. PLANTS -->
     <div id="tab-plants" class="space-y-4 hidden">
+      <div id="plants-existing" class="hidden bg-amber-100 border border-amber-300 text-amber-900 text-xs font-semibold rounded-xl p-3"></div>
       <form id="form-plants" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="flex items-center justify-between border-b pb-2">
           <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -178,6 +194,18 @@
           </div>
         </div>
 
+        <div class="grid grid-cols-2 gap-3 bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+          <div class="col-span-2 text-xs font-bold text-indigo-900">Éclairage artificiel ambiant (nuit) : programmé</div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">De (heure)</label>
+            <input type="time" id="p-ecl-debut" class="w-full bg-white border border-indigo-200 rounded-lg p-2 text-sm font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">À (heure)</label>
+            <input type="time" id="p-ecl-fin" class="w-full bg-white border border-indigo-200 rounded-lg p-2 text-sm font-semibold">
+          </div>
+        </div>
+
         <div class="bg-gradient-to-r from-emerald-800 to-teal-800 text-white p-4 rounded-xl flex items-center justify-between shadow-inner">
           <div>
             <p class="text-xs uppercase font-bold tracking-wider text-emerald-200">Total restant en culture saine</p>
@@ -199,7 +227,7 @@
 
     <!-- 3. FICHES ARDIE -->
     <div id="tab-reports" class="space-y-4 hidden">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+      <div class="no-print bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Date</label>
@@ -232,6 +260,9 @@
           <button onclick="exportPDF('clim')" class="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-3 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow disabled:opacity-60">
             <i data-lucide="download" class="w-4 h-4"></i><span>PDF Fiche 2</span>
           </button>
+          <button onclick="printFiche()" class="col-span-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow">
+            <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimer la fiche affichée</span>
+          </button>
         </div>
       </div>
 
@@ -240,7 +271,7 @@
         <div id="view-sheet-plants" class="sheet p-6 md:p-8 rounded-xl border border-slate-300 shadow-sm space-y-6 min-w-[560px]">
           <div class="flex justify-between items-start border-b-2 border-slate-900 pb-3">
             <div>
-              <span class="text-2xl font-black text-slate-900 tracking-wider">ARDIE</span>
+              <div class="flex items-center gap-3"><img class="logo-img hidden h-14 w-14 object-contain" alt=""><span class="text-2xl font-black text-slate-900 tracking-wider">ARDIE</span></div>
               <h2 class="text-xl font-black text-slate-900 uppercase mt-2">Fiche suivi journalier</h2>
               <h3 class="text-sm font-bold text-slate-700">VITROPLANTS FRUITS A PAIN</h3>
             </div>
@@ -254,7 +285,7 @@
           <div class="border border-slate-300 rounded p-3 text-xs space-y-1">
             <p class="font-bold text-slate-900">Conditions climatiques intérieures :</p>
             <p class="text-slate-700 pt-1">BRUMISATEUR AMBIANT : Durée : <strong>h24</strong> / Fréquence : <strong>7/7</strong></p>
-            <p class="text-slate-700">ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Fréquence : <strong>7/7</strong></p>
+            <p class="text-slate-700">ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Programmé de <strong id="f1-ecl-debut">.......</strong> à <strong id="f1-ecl-fin">.......</strong> / Fréquence : <strong>7/7</strong></p>
           </div>
 
           <div>
@@ -305,7 +336,7 @@
         <div id="view-sheet-clim" class="sheet p-5 rounded-xl border border-slate-300 shadow-sm space-y-4 hidden min-w-[900px]">
           <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
             <div>
-              <span class="text-xl font-black text-slate-900 tracking-wider">ARDIE</span>
+              <div class="flex items-center gap-3"><img class="logo-img hidden h-12 w-12 object-contain" alt=""><span class="text-xl font-black text-slate-900 tracking-wider">ARDIE</span></div>
               <h2 class="text-base font-black text-slate-900 uppercase mt-1">Relevés climatiques serre et irrigation</h2>
             </div>
             <div class="text-right">
@@ -395,7 +426,15 @@
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
-    const EXPECTED_VERSION = "V9";
+    const EXPECTED_VERSION = "V10";
+
+    // Logo : 1) logo.png hébergé dans le dépôt (recommandé), 2) lien Facebook en secours.
+    const LOGO_FB = "https://scontent.frun1-1.fna.fbcdn.net/v/t39.30808-1/294737113_533509551750014_77347280882068389_n.png?stp=dst-png&cstp=mx1535x1535&ctp=s200x200&_nc_cat=102&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=GshwLzCRSKkQ7kNvwEGqleF&_nc_oc=AdoJ-dITzrKn9nnKCBmbmjyRdspNPGeI_C9TuqF-WcLYe2PnDowJiU4YsAPoWT3fHUQ&_nc_zt=24&_nc_ht=scontent.frun1-1.fna&_nc_gid=i3rs_GE-zo3m4cVjH4DBrQ&_nc_ss=7b2a8&oh=00_AQQKAmyMziEgAgyhZI9zWdTbB2MauPL4dfEQnVP-rmNASA&oe=6AF0F81C";
+    const LOGO_CANDIDATES = ['logo.png', LOGO_FB];
+    let LOGO = { src: null, data: null };
+    let lastReport = null;
+    let currentView = 'plants';
+    let existingToday = null;
 
     let state = { emplacements: [], agentsActifs: [], tousLesAgents: [] };
 
@@ -442,12 +481,57 @@
       $('date-label').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
       $('c-heure').value = localHHmm();
       $('rep-date').value = localISODate();
-      $('global-serre').addEventListener('change', e => store.set('ardie_serre', e.target.value));
+      $('global-serre').addEventListener('change', e => { store.set('ardie_serre', e.target.value); checkTodayPlant(); });
       $('global-intervenant').addEventListener('change', e => store.set('ardie_agent', e.target.value));
       ['p-initial', 'p-isoles', 'p-morts'].forEach(id => $(id).addEventListener('input', calcPlants));
+      $('p-ecl-debut').value = store.get('ardie_ecl_debut') || '';
+      $('p-ecl-fin').value = store.get('ardie_ecl_fin') || '';
+      initLogo();
       loadConfig();
       icons();
     });
+
+    /* ---------- Logo (favicon + en-têtes + PDF) ---------- */
+    async function initLogo() {
+      for (const u of LOGO_CANDIDATES) {
+        try {
+          const r = await fetch(u);
+          if (!r.ok) continue;
+          const b = await r.blob();
+          if (!/^image\//.test(b.type)) continue;
+          const data = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); });
+          LOGO = { src: u, data };
+          break;
+        } catch (e) { /* source suivante */ }
+      }
+      // Si le téléchargement est bloqué (CORS), on affiche au moins l'image (sans l'inclure dans les PDF)
+      const display = LOGO.data || LOGO_FB;
+      document.querySelectorAll('.logo-img').forEach(img => { img.src = display; img.classList.remove('hidden'); });
+      const badge = $('logo-badge'); if (badge && LOGO.data) badge.classList.add('hidden');
+      $('favicon').href = display;
+      $('touch-icon').href = display;
+    }
+
+    /* ---------- Alerte : bilan déjà enregistré aujourd'hui ---------- */
+    async function checkTodayPlant() {
+      const serre = $('global-serre').value;
+      const box = $('plants-existing');
+      if (!serre) { existingToday = null; box.classList.add('hidden'); return; }
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=getReports&date=${localISODate()}&serre=${encodeURIComponent(serre)}`);
+        const d = await res.json();
+        existingToday = (d && d.plant) ? d.plant : null;
+      } catch (e) { existingToday = null; }
+      if (existingToday) {
+        const who = (existingToday.intervenant && existingToday.intervenant !== '(non renseigné)') ? ` par ${existingToday.intervenant}` : '';
+        box.innerHTML = `⚠️ Une fiche journalière existe déjà aujourd'hui pour <b>${esc(serre)}</b> (enregistrée à ${esc(existingToday.heure)}${esc(who)} : ` +
+          `${esc(existingToday.sains)} plants sains sur ${esc(existingToday.initial)}). ` +
+          `Si vous validez à nouveau, une nouvelle ligne sera ajoutée et la fiche affichera la plus récente.`;
+        box.classList.remove('hidden');
+      } else {
+        box.classList.add('hidden');
+      }
+    }
 
     function calcPlants() {
       const init = parseInt($('p-initial').value) || 0;
@@ -495,6 +579,7 @@
 
         renderSelects();
         renderAdmin();
+        checkTodayPlant();
       } catch (err) {
         console.error('Erreur chargement :', err);
         banner("Impossible de joindre le serveur Google. Vérifiez la connexion puis touchez ↻.");
@@ -613,6 +698,8 @@
     $('form-plants').addEventListener('submit', async (e) => {
       e.preventDefault();
       const ctx = requireSerreAgent(); if (!ctx) return;
+      await checkTodayPlant();
+      if (existingToday && !confirm(`Une fiche journalière existe déjà aujourd'hui pour ${ctx.serre} (à ${existingToday.heure}).\n\nEnregistrer quand même une nouvelle ligne ?`)) return;
       const btn = $('btn-submit-plants');
       setBtn(btn, true);
       try {
@@ -627,9 +714,14 @@
           morts: $('p-morts').value,
           surveillance: $('p-surveillance').value,
           sains: calcPlants(),
-          observations: $('p-observations').value || '-'
+          observations: $('p-observations').value || '-',
+          eclairage_debut: $('p-ecl-debut').value,
+          eclairage_fin: $('p-ecl-fin').value
         });
         toast('Bilan vitroplants enregistré ✔');
+        store.set('ardie_ecl_debut', $('p-ecl-debut').value);
+        store.set('ardie_ecl_fin', $('p-ecl-fin').value);
+        setTimeout(checkTodayPlant, 800);
         ['p-isoles', 'p-morts', 'p-surveillance'].forEach(id => $(id).value = 0);
         $('p-observations').value = '';
         calcPlants();
@@ -685,6 +777,7 @@
       const on = ['bg-emerald-800', 'text-white', 'shadow-sm'];
       const off = ['bg-slate-200', 'text-slate-700'];
       const isP = view === 'plants';
+      currentView = view;
       $('view-sheet-plants').classList.toggle('hidden', !isP);
       $('view-sheet-clim').classList.toggle('hidden', isP);
       const bp = $('btn-view-plants'), bc = $('btn-view-clim');
@@ -692,6 +785,7 @@
       bc.classList.remove(...(isP ? on : off)); bc.classList.add(...(isP ? off : on));
     }
 
+    const fmtH = (s) => String(s).replace(':', 'h');
     const dash = (v) => (v === undefined || v === null || String(v).trim() === '' || String(v) === 'undefined') ? '-' : esc(v);
 
     async function loadDailySheet() {
@@ -701,17 +795,22 @@
       const fr = isoToFR(iso);
       const btn = $('btn-load');
       btn.disabled = true;
+      lastReport = null;
 
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getReports&date=${encodeURIComponent(iso)}&serre=${encodeURIComponent(serre)}`);
         const data = await res.json();
         if (data.error) throw new Error(data.message || 'Erreur serveur');
 
+        lastReport = { iso, serre, fr, data };
+
         // ----- Fiche 1
         $('f1-date').textContent = fr;
         $('f1-year').textContent = iso.slice(0, 4);
         $('f1-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
         const p = data.plant;
+        $('f1-ecl-debut').textContent = (p && p.eclairageDebut) ? fmtH(p.eclairageDebut) : '.......';
+        $('f1-ecl-fin').textContent = (p && p.eclairageFin) ? fmtH(p.eclairageFin) : '.......';
         if (p) {
           $('f1-init').textContent = p.initial;
           $('f1-isoles').textContent = p.isoles;
@@ -749,7 +848,7 @@
           </tr>`;
         }).join('');
         // lignes vides pour un rendu "fiche papier"
-        for (let i = records.length; i < 12; i++) {
+        for (let i = records.length; i < 10; i++) {
           html += `<tr>${Array(10).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
         }
         $('f2-tbody').innerHTML = html;
@@ -764,45 +863,187 @@
       }
     }
 
-    /* ---------- Export PDF réel (html2pdf.js) ---------- */
+    /* ---------- Impression ---------- */
+    function printFiche() {
+      const which = currentView;
+      let st = $('print-page-style');
+      if (!st) { st = document.createElement('style'); st.id = 'print-page-style'; document.head.appendChild(st); }
+      st.textContent = `@page { size: A4 ${which === 'clim' ? 'landscape' : 'portrait'}; margin: 8mm; }`;
+      document.body.classList.add('print-' + which);
+      const done = () => { document.body.classList.remove('print-plants', 'print-clim'); window.removeEventListener('afterprint', done); };
+      window.addEventListener('afterprint', done);
+      window.print();
+    }
+
+    /* ---------- Export PDF vectoriel (texte sélectionnable) : jsPDF + AutoTable ---------- */
+    const pdfSafe = (v) => String(v ?? '').replace(/\u00A0/g, ' ').replace(/[^\u0020-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026\u20AC]/g, '');
+    const pdfDash = (v) => { const s = pdfSafe(v).trim(); return (s === '' || s === 'undefined') ? '-' : s; };
+    const logoFormat = () => { const m = (LOGO.data || '').match(/^data:image\/(\w+)/); return m ? m[1].toUpperCase().replace('JPG', 'JPEG') : 'PNG'; };
+
+    function pdfHeader(doc, which, rep) {
+      const landscape = which === 'clim';
+      const W = doc.internal.pageSize.getWidth();
+      const M = 12;
+      const dark = [15, 23, 42];
+      const serreTxt = rep.serre === 'ALL' ? 'Toutes les serres' : rep.serre;
+
+      let tx = M;
+      if (LOGO.data) { try { doc.addImage(LOGO.data, logoFormat(), M, 8, 17, 17); tx = M + 21; } catch (e) { tx = M; } }
+      doc.setTextColor(...dark);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20); doc.text('ARDIE', tx, 15);
+      doc.setFontSize(landscape ? 12 : 14);
+      doc.text(landscape ? 'RELEVÉS CLIMATIQUES SERRE ET IRRIGATION' : 'FICHE SUIVI JOURNALIER', tx, 22);
+      if (!landscape) {
+        doc.setFontSize(10); doc.setTextColor(51, 65, 85);
+        doc.text('VITROPLANTS FRUITS A PAIN', tx, 27.5);
+      }
+      doc.setFontSize(9);
+      doc.setTextColor(148, 163, 184); doc.text(rep.iso.slice(0, 4), W - M, 10, { align: 'right' });
+      doc.setTextColor(...dark);
+      doc.text((landscape ? 'Date : ' : 'Date du jour : ') + rep.fr, W - M, 16, { align: 'right' });
+      doc.setTextColor(6, 95, 70);
+      doc.text((landscape ? 'SERRE : ' : 'Emplacement : ') + pdfSafe(serreTxt), W - M, 21.5, { align: 'right' });
+      doc.setDrawColor(...dark); doc.setLineWidth(0.6); doc.line(M, 31, W - M, 31);
+    }
+
+    function makePDF(which, rep) {
+      const { jsPDF } = window.jspdf;
+      const landscape = which === 'clim';
+      const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
+      const M = 12;
+      const dark = [15, 23, 42];
+      const gridStyle = { lineColor: [148, 163, 184], lineWidth: 0.25, textColor: dark, font: 'helvetica' };
+      const headStyle = { fillColor: [241, 245, 249], textColor: [30, 41, 59], fontStyle: 'bold', halign: 'center', valign: 'middle' };
+
+      pdfHeader(doc, which, rep);
+
+      if (!landscape) {
+        /* ===== FICHE 1 : suivi journalier vitroplants ===== */
+        const p = rep.data.plant;
+        doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.3);
+        doc.roundedRect(M, 36, W - 2 * M, 27, 1.5, 1.5);
+        doc.setTextColor(...dark); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+        doc.text('Conditions climatiques intérieures :', M + 4, 43);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(51, 65, 85);
+        doc.text('BRUMISATEUR AMBIANT : Durée : h24 / Fréquence : 7/7', M + 4, 50);
+        const d = (p && p.eclairageDebut) ? fmtH(p.eclairageDebut) : '.......';
+        const f = (p && p.eclairageFin) ? fmtH(p.eclairageFin) : '.......';
+        doc.text('ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Programmé de ' + d + ' à ' + f + ' / Fréquence : 7/7', M + 4, 56.5);
+
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...dark);
+        doc.text('QUANTITÉ VITRO PLANTS FRUITS À PAIN :', M, 71);
+
+        const v = (k) => p ? pdfDash(p[k]) : '-';
+        const agent = p ? ((p.intervenant && p.intervenant !== 'undefined') ? pdfSafe(p.intervenant) : '(non renseigné)') : 'Aucun bilan pour ce jour';
+        doc.autoTable({
+          startY: 74,
+          margin: { left: M, right: M },
+          theme: 'grid',
+          styles: Object.assign({ fontSize: 10, cellPadding: 3.2, valign: 'middle' }, gridStyle),
+          headStyles: headStyle,
+          columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 28, halign: 'center', fontStyle: 'bold' }, 2: { cellWidth: 52 } },
+          head: [['Quantité', 'Nombre', 'Intervenant technicien']],
+          body: [
+            ['Nombre de vitro plants initial au démarrage', v('initial'), { content: agent, rowSpan: 5, styles: { valign: 'middle' } }],
+            ['Total vitro plants isolés ce jour', v('isoles')],
+            ['Total vitro plants morts ce jour', v('morts')],
+            ['Total vitro plants mis sous surveillance ce jour', v('surveillance')],
+            ['Total des vitro plants restant en culture saine', v('sains')]
+          ],
+          didParseCell: (data) => {
+            if (data.section !== 'body') return;
+            const colors = { 1: [146, 64, 14], 2: [153, 27, 27], 3: [30, 64, 175] };
+            if (data.column.index < 2 && colors[data.row.index]) data.cell.styles.textColor = colors[data.row.index];
+            if (data.row.index === 4 && data.column.index < 2) {
+              data.cell.styles.fillColor = [236, 253, 245];
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.textColor = [2, 44, 34];
+              if (data.column.index === 1) data.cell.styles.fontSize = 13;
+            }
+          }
+        });
+
+        let y = doc.lastAutoTable.finalY + 12;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...dark);
+        doc.text('• Remarques / Observations supplémentaires :', M, y);
+        const obsRaw = p ? pdfSafe(p.observations).trim() : '';
+        const obs = (p && obsRaw && obsRaw !== '-') ? obsRaw : (p ? 'Aucune observation saisie.' : 'Aucun bilan enregistré.');
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(10); doc.setTextColor(51, 65, 85);
+        const lines = doc.splitTextToSize(obs, W - 2 * M - 8);
+        const boxH = Math.max(28, lines.length * 5 + 10);
+        doc.setDrawColor(203, 213, 225); doc.setFillColor(248, 250, 252);
+        doc.roundedRect(M, y + 3, W - 2 * M, boxH, 1.5, 1.5, 'FD');
+        doc.text(lines, M + 4, y + 10);
+      } else {
+        /* ===== FICHE 2 : relevés climatiques ===== */
+        const recs = rep.data.climats || [];
+        const nRows = Math.max(recs.length, 10);
+        const fs = nRows <= 16 ? 8 : (nRows <= 22 ? 7 : 6.5);
+        const pad = nRows <= 16 ? 2.2 : (nRows <= 22 ? 1.4 : 1);
+        const unit = (val, u) => { const s = pdfDash(val); return s === '-' ? s : s + u; };
+        const body = recs.map(c => [
+          pdfDash(c.heure), unit(c.temp, '°C'), unit(c.hygro, '%'), pdfDash(c.lumens), unit(c.humTerreau, '%'),
+          pdfDash(c.ph), pdfDash(c.eclairage), pdfDash(c.arrosage), pdfDash(c.remarque),
+          (c.intervenant && c.intervenant !== 'undefined') ? pdfSafe(c.intervenant) : '(non renseigné)'
+        ]);
+        while (body.length < 10) body.push(['', '', '', '', '', '', '', '', '', '']);
+
+        doc.autoTable({
+          startY: 35,
+          margin: { left: M, right: M, bottom: 16 },
+          theme: 'grid',
+          styles: Object.assign({ fontSize: fs, cellPadding: pad, valign: 'middle', halign: 'center', minCellHeight: 8 }, gridStyle),
+          headStyles: Object.assign({}, headStyle, { fontSize: fs }),
+          columnStyles: {
+            0: { cellWidth: 14, fontStyle: 'bold' }, 1: { cellWidth: 18 }, 2: { cellWidth: 22 }, 3: { cellWidth: 16 },
+            4: { cellWidth: 18 }, 5: { cellWidth: 12 }, 6: { cellWidth: 20 },
+            7: { cellWidth: 55, halign: 'left' }, 8: { cellWidth: 52, halign: 'left' }, 9: { cellWidth: 46 }
+          },
+          head: [['Heure', 'Température (°C)', 'Humidité ambiante (min 75%)', 'Lumens (Lux)', 'Humidité terreau', 'pH',
+                  'Éclairage artificiel (jour)', 'Arrosage manuel tuyau (7h30 et 16h30) / pulvérisateur', 'Remarques / Commentaires', 'Intervenant']],
+          body,
+          didParseCell: (data) => {
+            if (data.section === 'body' && data.column.index === 2) {
+              const hy = num(data.cell.raw);
+              if (!isNaN(hy) && hy < 75) { data.cell.styles.fillColor = [254, 226, 226]; data.cell.styles.textColor = [185, 28, 28]; data.cell.styles.fontStyle = 'bold'; }
+            }
+          }
+        });
+
+        const yEnd = doc.lastAutoTable.finalY + 6;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(51, 65, 85);
+        if (yEnd < H - 8) doc.text('• Relevés réguliers toutes les 30 min à partir de 06h00.', M, yEnd);
+      }
+
+      // Pied de page
+      const n = doc.getNumberOfPages();
+      for (let i = 1; i <= n; i++) {
+        doc.setPage(i);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(148, 163, 184);
+        const now = new Date();
+        doc.text('ARDIE - document généré le ' + now.toLocaleDateString('fr-FR') + ' à ' + localHHmm(now) + (n > 1 ? '  -  page ' + i + '/' + n : ''), W / 2, H - 5, { align: 'center' });
+      }
+      return doc;
+    }
+
     async function exportPDF(which) {
-      if (typeof html2pdf === 'undefined') return toast('Moteur PDF non chargé (connexion ?)', 'err');
-      const isPlants = which === 'plants';
-      const src = $(isPlants ? 'view-sheet-plants' : 'view-sheet-clim');
-      const widthPx = isPlants ? 794 : 1123;          // A4 portrait / paysage à 96 dpi
-
-      // Clone hors écran à largeur fixe : le PDF est identique sur smartphone et PC,
-      // et un bloc masqué (display:none) ne se rend pas en canvas.
-      const wrap = document.createElement('div');
-      wrap.style.cssText = `position:fixed;left:-10000px;top:0;width:${widthPx}px;background:#fff;`;
-      const clone = src.cloneNode(true);
-      clone.removeAttribute('id');
-      clone.classList.remove('hidden', 'min-w-[560px]', 'min-w-[900px]', 'shadow-sm', 'rounded-xl', 'border');
-      clone.style.width = widthPx + 'px';
-      clone.style.minWidth = '0';
-      wrap.appendChild(clone);
-      document.body.appendChild(wrap);
-
-      const iso = $('rep-date').value || localISODate();
-      const serre = ($('rep-serre-filter').value || 'toutes').replace(/\s+/g, '-');
-      const filename = `ARDIE_${isPlants ? 'Fiche1_Plants' : 'Fiche2_Climat'}_${serre}_${iso}.pdf`;
-
-      toast('Génération du PDF...');
+      if (!window.jspdf || !window.jspdf.jsPDF) return toast('Moteur PDF non chargé (connexion ?)', 'err');
+      const iso = $('rep-date').value;
+      const serre = $('rep-serre-filter').value || 'ALL';
+      if (!iso) return toast('Sélectionnez une date', 'err');
+      if (!lastReport || lastReport.iso !== iso || lastReport.serre !== serre) await loadDailySheet();
+      if (!lastReport) return;
       try {
-        await html2pdf().set({
-          margin: 8,
-          filename,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: widthPx },
-          jsPDF: { unit: 'mm', format: 'a4', orientation: isPlants ? 'portrait' : 'landscape' },
-          pagebreak: { mode: ['avoid-all', 'css'] }
-        }).from(clone).save();
+        const doc = makePDF(which, lastReport);
+        const sName = (lastReport.serre === 'ALL' ? 'toutes' : lastReport.serre).replace(/\s+/g, '-');
+        doc.save(`ARDIE_${which === 'plants' ? 'Fiche1_Plants' : 'Fiche2_Climat'}_${sName}_${iso}.pdf`);
         toast('PDF téléchargé ✔');
       } catch (err) {
         console.error(err);
         toast('Échec du PDF : ' + err.message, 'err');
-      } finally {
-        wrap.remove();
       }
     }
 
@@ -817,6 +1058,7 @@
         b.classList.toggle('text-slate-600', k !== id);
       });
       if (id === 'clim') $('c-heure').value = localHHmm();
+      if (id === 'plants') checkTodayPlant();
       if (id === 'reports') {
         const s = $('global-serre').value;
         if (s && [...$('rep-serre-filter').options].some(o => o.value === s)) $('rep-serre-filter').value = s;
