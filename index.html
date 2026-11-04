@@ -10,22 +10,20 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+  <!-- Tailwind, Lucide Icons et Moteur VRAI PDF -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     input, select, textarea { font-size: 16px !important; }
-    @media print {
-      body { background: white !important; color: black !important; padding: 0 !important; }
-      header, .no-print { display: none !important; }
-      .print-sheet { border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
-    }
+    .pdf-container { background: white !important; color: black !important; padding: 20px !important; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col pb-12">
 
   <!-- En-tête ARDIE -->
-  <header class="bg-emerald-900 text-white shadow-md sticky top-0 z-50 no-print">
+  <header class="bg-emerald-900 text-white shadow-md sticky top-0 z-50">
     <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-3">
         <span class="bg-white text-emerald-900 font-black px-2 py-0.5 rounded text-xs tracking-wider shadow-sm">ARDIE</span>
@@ -41,7 +39,7 @@
   </header>
 
   <!-- Sélecteurs Rapides Serre & Agent -->
-  <div class="max-w-4xl w-full mx-auto px-4 pt-3 no-print">
+  <div class="max-w-4xl w-full mx-auto px-4 pt-3">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div>
         <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-1">Emplacement / Serre</label>
@@ -62,7 +60,7 @@
   </div>
 
   <!-- Barre d'onglets -->
-  <div class="max-w-4xl w-full mx-auto px-4 mt-3 no-print">
+  <div class="max-w-4xl w-full mx-auto px-4 mt-3">
     <div class="flex bg-slate-200 p-1 rounded-xl gap-1">
       <button onclick="switchTab('clim')" id="btn-clim" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-white text-emerald-900 shadow-sm flex items-center justify-center gap-1.5 transition">
         <i data-lucide="thermometer" class="w-4 h-4"></i><span>Climat</span>
@@ -194,9 +192,9 @@
       </form>
     </div>
 
-    <!-- 3. RAPPORTS : 2 FICHES DISTINCTES -->
+    <!-- 3. RAPPORTS : 2 FICHES & VRAI EXPORT PDF -->
     <div id="tab-reports" class="space-y-4 hidden">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3 no-print">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
         <div class="flex flex-wrap items-end gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Date du relevé</label>
@@ -211,21 +209,22 @@
           </button>
         </div>
 
-        <div class="flex gap-2 pt-2 border-t">
+        <div class="flex flex-wrap gap-2 pt-2 border-t">
           <button onclick="showReportView('plants')" id="btn-view-plants" class="flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-800 text-white shadow-sm flex items-center justify-center gap-1.5">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Fiche 1 : Bilan Plants (Page 1)</span>
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Fiche 1 : Bilan Plants</span>
           </button>
           <button onclick="showReportView('clim')" id="btn-view-clim" class="flex-1 py-2 text-xs font-bold rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center gap-1.5">
-            <i data-lucide="table-properties" class="w-4 h-4"></i><span>Fiche 2 : Relevés Climat (Page 3)</span>
+            <i data-lucide="table-properties" class="w-4 h-4"></i><span>Fiche 2 : Relevés Climat</span>
           </button>
-          <button onclick="window.print()" class="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow">
-            <i data-lucide="file-down" class="w-4 h-4"></i><span>Exporter en PDF</span>
+          <!-- VRAI BOUTON EXPORT PDF DIRECT -->
+          <button onclick="generateRealPDF()" class="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow">
+            <i data-lucide="download" class="w-4 h-4"></i><span>Télécharger le PDF</span>
           </button>
         </div>
       </div>
 
       <!-- FICHE 1 : SUIVI JOURNALIER PLANTS -->
-      <div id="view-sheet-plants" class="bg-white p-8 rounded-xl border border-slate-300 shadow-sm print-sheet space-y-6">
+      <div id="view-sheet-plants" class="bg-white p-8 rounded-xl border border-slate-300 shadow-sm pdf-container space-y-6">
         <div class="flex justify-between items-start border-b-2 border-slate-900 pb-3">
           <div>
             <span class="text-2xl font-black text-slate-900 tracking-wider">ARDIE</span>
@@ -257,24 +256,24 @@
             </thead>
             <tbody>
               <tr>
-                <td class="border border-slate-400 p-2 font-medium">Nombre de Vitro plants <span class="underline">initial au démarrage</span></td>
+                <td class="border border-slate-400 p-2 font-medium">Nombre de Vitro plants initial au démarrage</td>
                 <td class="border border-slate-400 p-2 text-center font-bold text-sm" id="f1-init">-</td>
                 <td class="border border-slate-400 p-2 font-medium text-slate-700" rowspan="5" id="f1-agent">-</td>
               </tr>
               <tr>
-                <td class="border border-slate-400 p-2 text-amber-800 font-medium">Total vitro plants <span class="underline">isolés ce jour</span></td>
+                <td class="border border-slate-400 p-2 text-amber-800 font-medium">Total vitro plants isolés ce jour</td>
                 <td class="border border-slate-400 p-2 text-center font-bold text-amber-800" id="f1-isoles">-</td>
               </tr>
               <tr>
-                <td class="border border-slate-400 p-2 text-red-800 font-medium">Total vitro plants <span class="underline">morts ce jour</span></td>
+                <td class="border border-slate-400 p-2 text-red-800 font-medium">Total vitro plants morts ce jour</td>
                 <td class="border border-slate-400 p-2 text-center font-bold text-red-800" id="f1-morts">-</td>
               </tr>
               <tr>
-                <td class="border border-slate-400 p-2 text-blue-800 font-medium">Total vitro plants <span class="underline">mis sous surveillance ce jour</span></td>
+                <td class="border border-slate-400 p-2 text-blue-800 font-medium">Total vitro plants mis sous surveillance ce jour</td>
                 <td class="border border-slate-400 p-2 text-center font-bold text-blue-800" id="f1-surv">-</td>
               </tr>
               <tr class="bg-emerald-50">
-                <td class="border border-slate-400 p-2 font-bold text-emerald-950">Total des vitro plants <span class="underline">restant en culture saine</span></td>
+                <td class="border border-slate-400 p-2 font-bold text-emerald-950">Total des vitro plants restant en culture saine</td>
                 <td class="border border-slate-400 p-2 text-center font-black text-base text-emerald-900" id="f1-sains">-</td>
               </tr>
             </tbody>
@@ -288,7 +287,7 @@
       </div>
 
       <!-- FICHE 2 : RELEVÉS CLIMATIQUES (HEURES RÉELLES) -->
-      <div id="view-sheet-clim" class="bg-white p-6 rounded-xl border border-slate-300 shadow-sm print-sheet space-y-4 hidden">
+      <div id="view-sheet-clim" class="bg-white p-6 rounded-xl border border-slate-300 shadow-sm pdf-container space-y-4 hidden">
         <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
           <div>
             <span class="text-xl font-black text-slate-900 tracking-wider">ARDIE</span>
@@ -318,7 +317,7 @@
               </tr>
             </thead>
             <tbody id="f2-tbody">
-              <!-- Relevés réels affichés chronologiquement -->
+              <!-- Relevés réels -->
             </tbody>
           </table>
         </div>
@@ -423,9 +422,9 @@
           rSerre.innerHTML = '<option value="ALL">Toutes les serres</option>' + state.emplacements.map(e => `<option value="${e}">${e}</option>`).join('');
         }
 
-        // Agents Actifs
+        // Agents Actifs (remplit avec le nom réel)
         if (state.agentsActifs && state.agentsActifs.length > 0) {
-          sAgent.innerHTML = state.agentsActifs.map(a => `<option value="${a.displayName}">👤 ${a.label}</option>`).join('');
+          sAgent.innerHTML = state.agentsActifs.map(a => `<option value="${a.displayName || a.nom}">👤 ${a.label || a.displayName || a.nom}</option>`).join('');
         }
 
         renderAdmin();
@@ -620,7 +619,7 @@
         document.getElementById('f1-obs').textContent = 'Aucun bilan enregistré.';
       }
 
-      // 2. Fiche Climat (affiche l'heure exacte de chaque relevé)
+      // 2. Fiche Climat (affiche l'heure exacte réelle de chaque relevé)
       document.getElementById('f2-date').textContent = formattedDate;
       document.getElementById('f2-serre').textContent = (serre === 'ALL') ? 'Toutes les serres' : serre;
       const tbody = document.getElementById('f2-tbody');
@@ -645,6 +644,23 @@
           </tr>
         `).join('');
       }
+    }
+
+    // VRAI TÉLÉCHARGEMENT DIRECT EN PDF
+    function generateRealPDF() {
+      const isPlants = !document.getElementById('view-sheet-plants').classList.contains('hidden');
+      const element = isPlants ? document.getElementById('view-sheet-plants') : document.getElementById('view-sheet-clim');
+      const dateVal = document.getElementById('rep-date').value || 'date';
+
+      const opt = {
+        margin:       8,
+        filename:     isPlants ? `ARDIE_Fiche_Plants_${dateVal}.pdf` : `ARDIE_Fiche_Climat_${dateVal}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2 },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: isPlants ? 'portrait' : 'landscape' }
+      };
+
+      html2pdf().set(opt).from(element).save();
     }
 
     function switchTab(id) {
