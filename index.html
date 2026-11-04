@@ -18,7 +18,7 @@
     @media print {
       body { background: white !important; color: black !important; padding: 0 !important; }
       header, .no-print { display: none !important; }
-      .print-sheet { border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; page-break-after: always; }
+      .print-sheet { border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; }
     }
   </style>
 </head>
@@ -132,7 +132,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Arrosage manuel / Pulvérisateur (détails durée)</label>
-            <input type="text" id="c-arrosage" placeholder="ex: Tuyau 7h30 (2 min) / Pulvé jusqu'à 75%" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+            <input type="text" id="c-arrosage" placeholder="ex: Tuyau 7h30 (2 min) / Pulvé" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Remarques / Commentaires</label>
@@ -213,18 +213,18 @@
 
         <div class="flex gap-2 pt-2 border-t">
           <button onclick="showReportView('plants')" id="btn-view-plants" class="flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-800 text-white shadow-sm flex items-center justify-center gap-1.5">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Fiche 1 : Bilan Plants (Page 1 PDF)</span>
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Fiche 1 : Bilan Plants (Page 1)</span>
           </button>
           <button onclick="showReportView('clim')" id="btn-view-clim" class="flex-1 py-2 text-xs font-bold rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center gap-1.5">
-            <i data-lucide="table-properties" class="w-4 h-4"></i><span>Fiche 2 : Relevés Climat (Page 3 PDF)</span>
+            <i data-lucide="table-properties" class="w-4 h-4"></i><span>Fiche 2 : Relevés Climat (Page 3)</span>
           </button>
-          <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow">
-            <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimer</span>
+          <button onclick="window.print()" class="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow">
+            <i data-lucide="file-down" class="w-4 h-4"></i><span>Exporter en PDF</span>
           </button>
         </div>
       </div>
 
-      <!-- FICHE 1 : SUIVI JOURNALIER PLANTS (PAGE 1 DU PDF) -->
+      <!-- FICHE 1 : SUIVI JOURNALIER PLANTS -->
       <div id="view-sheet-plants" class="bg-white p-8 rounded-xl border border-slate-300 shadow-sm print-sheet space-y-6">
         <div class="flex justify-between items-start border-b-2 border-slate-900 pb-3">
           <div>
@@ -287,7 +287,7 @@
         </div>
       </div>
 
-      <!-- FICHE 2 : RELEVÉS CLIMATIQUES (PAGE 3 DU PDF) -->
+      <!-- FICHE 2 : RELEVÉS CLIMATIQUES (HEURES RÉELLES) -->
       <div id="view-sheet-clim" class="bg-white p-6 rounded-xl border border-slate-300 shadow-sm print-sheet space-y-4 hidden">
         <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
           <div>
@@ -318,14 +318,14 @@
               </tr>
             </thead>
             <tbody id="f2-tbody">
-              <!-- Grille générée dynamiquement dès 06h00 toutes les 30 min -->
+              <!-- Relevés réels affichés chronologiquement -->
             </tbody>
           </table>
         </div>
 
         <div class="pt-2 text-[11px] text-slate-700">
           <p class="font-bold">• Remarques / Observations supplémentaires / Intervenant(s) :</p>
-          <div class="mt-1 p-2 border border-slate-200 rounded min-h-[40px] italic">Relevés réguliers des créneaux de journée.</div>
+          <div class="mt-1 p-2 border border-slate-200 rounded min-h-[40px] italic">Relevés chronologiques de la journée.</div>
         </div>
       </div>
 
@@ -354,7 +354,6 @@
           <span class="text-[10px] text-slate-400">Cliquez pour activer/désactiver</span>
         </div>
 
-        <!-- Formulaire d'ajout avec ATELIER -->
         <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 grid grid-cols-1 md:grid-cols-5 gap-2">
           <select id="new-agent-civ" class="bg-white border rounded p-1.5 text-xs">
             <option value="M.">M.</option>
@@ -418,15 +417,15 @@
         const res = await fetch(`${SCRIPT_URL}?action=getConfig`);
         state = await res.json();
 
-        // 1. Serres
+        // Serres
         if (state.emplacements && state.emplacements.length > 0) {
           sSerre.innerHTML = state.emplacements.map(e => `<option value="${e}">🌱 ${e}</option>`).join('');
           rSerre.innerHTML = '<option value="ALL">Toutes les serres</option>' + state.emplacements.map(e => `<option value="${e}">${e}</option>`).join('');
         }
 
-        // 2. Agents Actifs
+        // Agents Actifs
         if (state.agentsActifs && state.agentsActifs.length > 0) {
-          sAgent.innerHTML = state.agentsActifs.map(a => `<option value="${a.displayName || a.nom}">👤 ${a.label || a.displayName || a.nom}</option>`).join('');
+          sAgent.innerHTML = state.agentsActifs.map(a => `<option value="${a.displayName}">👤 ${a.label}</option>`).join('');
         }
 
         renderAdmin();
@@ -438,7 +437,6 @@
     }
 
     function renderAdmin() {
-      // Liste serres
       document.getElementById('list-loc').innerHTML = state.emplacements.map(e => `
         <li class="py-2 flex justify-between items-center">
           <span class="font-medium text-slate-700">🌱 ${e}</span>
@@ -446,7 +444,6 @@
         </li>
       `).join('');
 
-      // Liste agents
       document.getElementById('list-agents').innerHTML = state.tousLesAgents.map(ag => {
         const isActif = (String(ag.status).toLowerCase() === 'actif');
         return `
@@ -590,7 +587,7 @@
       }
     }
 
-    // Chargement dynamique des 2 fiches avec horaires dès 06h00 toutes les 30 min
+    // Chargement dynamique des 2 fiches avec relevés réels
     async function loadDailySheet() {
       const rawDate = document.getElementById('rep-date').value;
       if (!rawDate) return alert("Sélectionnez une date");
@@ -602,7 +599,7 @@
       const res = await fetch(`${SCRIPT_URL}?action=getReports&date=${formattedDate}&serre=${serre}`);
       const data = await res.json();
 
-      // Fiche 1 (Plants)
+      // 1. Fiche Plants
       document.getElementById('f1-date').textContent = formattedDate;
       document.getElementById('f1-serre').textContent = (serre === 'ALL') ? 'Toutes les serres' : serre;
       if (data.plant) {
@@ -623,87 +620,31 @@
         document.getElementById('f1-obs').textContent = 'Aucun bilan enregistré.';
       }
 
-      // Fiche 2 (Climat) - Grille dès 06h00 toutes les 30 min
+      // 2. Fiche Climat (affiche l'heure exacte de chaque relevé)
       document.getElementById('f2-date').textContent = formattedDate;
       document.getElementById('f2-serre').textContent = (serre === 'ALL') ? 'Toutes les serres' : serre;
       const tbody = document.getElementById('f2-tbody');
 
-      // Créneaux horaires de 06h00 à 18h00 toutes les 30 min
-      const slots = [
-        '06h00', '06h30', '07h00', '07h30', '08h00', '08h30', '09h00', '09h30',
-        '10h00', '10h30', '11h00', '11h30', '12h00', '12h30', '13h00', '13h30',
-        '14h00', '14h30', '15h00', '15h30', '16h00', '16h30', '17h00', '17h30', '18h00'
-      ];
-
       const records = data.climats || [];
-      let rowsHtml = '';
 
-      slots.forEach(slot => {
-        // Recherche d'un relevé correspondant au créneau
-        const slotHour = slot.slice(0, 2);
-        const slotMin = slot.slice(3, 5);
-        
-        const foundIndex = records.findIndex(c => {
-          if (!c.heure) return false;
-          const h = c.heure.replace('h', ':');
-          const [cH, cM] = h.split(':');
-          return cH === slotHour && Math.abs(parseInt(cM) - parseInt(slotMin)) < 15;
-        });
-
-        if (foundIndex !== -1) {
-          const c = records[foundIndex];
-          rowsHtml += `
-            <tr class="text-center hover:bg-slate-50 bg-emerald-50/30">
-              <td class="border border-slate-400 p-1 font-bold font-mono text-emerald-900">${c.heure}</td>
-              <td class="border border-slate-400 p-1 font-bold">${c.temp}°C</td>
-              <td class="border border-slate-400 p-1 font-bold ${Number(c.hygro) < 75 ? 'text-red-700 bg-red-50' : 'text-emerald-800'}">${c.hygro}%</td>
-              <td class="border border-slate-400 p-1">${c.lumens}</td>
-              <td class="border border-slate-400 p-1">${c.humTerreau}%</td>
-              <td class="border border-slate-400 p-1">${c.ph}</td>
-              <td class="border border-slate-400 p-1">${c.eclairage}</td>
-              <td class="border border-slate-400 p-1 text-left">${c.arrosage}</td>
-              <td class="border border-slate-400 p-1 text-left">${c.remarque}</td>
-              <td class="border border-slate-400 p-1 font-medium text-slate-900">${c.intervenant}</td>
-            </tr>
-          `;
-          records.splice(foundIndex, 1); // Déjà affiché
-        } else {
-          rowsHtml += `
-            <tr class="text-center text-slate-400">
-              <td class="border border-slate-400 p-1 font-mono font-semibold text-slate-600">${slot}</td>
-              <td class="border border-slate-400 p-1"></td>
-              <td class="border border-slate-400 p-1"></td>
-              <td class="border border-slate-400 p-1"></td>
-              <td class="border border-slate-400 p-1"></td>
-              <td class="border border-slate-400 p-1"></td>
-              <td class="border border-slate-400 p-1"></td>
-              <td class="border border-slate-400 p-1"></td>
-              <td class="border border-slate-400 p-1"></td>
-              <td class="border border-slate-400 p-1"></td>
-            </tr>
-          `;
-        }
-      });
-
-      // Ajoute à la fin les relevés hors créneaux fixes (ex: votre test de 13:31)
-      records.forEach(c => {
-        rowsHtml += `
-          <tr class="text-center hover:bg-slate-50 bg-amber-50/40">
-            <td class="border border-slate-400 p-1 font-bold font-mono text-amber-900">${c.heure}</td>
-            <td class="border border-slate-400 p-1 font-bold">${c.temp}°C</td>
-            <td class="border border-slate-400 p-1 font-bold ${Number(c.hygro) < 75 ? 'text-red-700' : 'text-emerald-800'}">${c.hygro}%</td>
-            <td class="border border-slate-400 p-1">${c.lumens}</td>
-            <td class="border border-slate-400 p-1">${c.humTerreau}%</td>
-            <td class="border border-slate-400 p-1">${c.ph}</td>
-            <td class="border border-slate-400 p-1">${c.eclairage}</td>
-            <td class="border border-slate-400 p-1 text-left">${c.arrosage}</td>
-            <td class="border border-slate-400 p-1 text-left">${c.remarque}</td>
-            <td class="border border-slate-400 p-1 font-medium text-slate-900">${c.intervenant}</td>
+      if (records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" class="text-center p-4 text-slate-400">Aucun relevé météo enregistré pour cette date (${formattedDate}).</td></tr>`;
+      } else {
+        tbody.innerHTML = records.map(c => `
+          <tr class="text-center hover:bg-slate-50">
+            <td class="border border-slate-400 p-1.5 font-bold font-mono text-emerald-900">${c.heure}</td>
+            <td class="border border-slate-400 p-1.5 font-bold">${c.temp}°C</td>
+            <td class="border border-slate-400 p-1.5 font-bold ${Number(c.hygro) < 75 ? 'text-red-700 bg-red-50' : 'text-emerald-800'}">${c.hygro}%</td>
+            <td class="border border-slate-400 p-1.5">${c.lumens}</td>
+            <td class="border border-slate-400 p-1.5">${c.humTerreau}%</td>
+            <td class="border border-slate-400 p-1.5">${c.ph}</td>
+            <td class="border border-slate-400 p-1.5">${c.eclairage}</td>
+            <td class="border border-slate-400 p-1.5 text-left">${c.arrosage}</td>
+            <td class="border border-slate-400 p-1.5 text-left">${c.remarque}</td>
+            <td class="border border-slate-400 p-1.5 font-medium text-slate-900">${c.intervenant}</td>
           </tr>
-        `;
-      });
-
-      tbody.innerHTML = rowsHtml;
+        `).join('');
+      }
     }
 
     function switchTab(id) {
