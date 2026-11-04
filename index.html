@@ -2,27 +2,28 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>ARDIE - Suivi Vitroplants Fruits à Pain</title>
-  
+
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#064e3b">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-  <!-- Tailwind, Lucide Icons et Moteur VRAI PDF -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
   <style>
     input, select, textarea { font-size: 16px !important; }
-    .pdf-container { background: white !important; color: black !important; padding: 20px !important; }
+    .sheet { background: #fff; color: #000; }
+    .sheet-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   </style>
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col pb-12">
 
-  <!-- En-tête ARDIE -->
+  <!-- En-tête -->
   <header class="bg-emerald-900 text-white shadow-md sticky top-0 z-50">
     <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-3">
@@ -38,7 +39,12 @@
     </div>
   </header>
 
-  <!-- Sélecteurs Rapides Serre & Agent -->
+  <!-- Bandeau d'alerte (déploiement obsolète / hors ligne) -->
+  <div id="banner" class="hidden max-w-4xl w-full mx-auto px-4 pt-3">
+    <div id="banner-text" class="bg-amber-100 border border-amber-300 text-amber-900 text-xs font-semibold rounded-lg p-3"></div>
+  </div>
+
+  <!-- Sélecteurs globaux -->
   <div class="max-w-4xl w-full mx-auto px-4 pt-3">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div>
@@ -49,8 +55,8 @@
       </div>
       <div>
         <div class="flex justify-between items-center mb-1">
-          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Agent Actif (SharePoint)</label>
-          <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.2 rounded font-medium">Actifs</span>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Agent actif</label>
+          <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 rounded font-medium">Actifs uniquement</span>
         </div>
         <select id="global-intervenant" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-500">
           <option value="" disabled selected>⏳ Chargement agents...</option>
@@ -59,7 +65,7 @@
     </div>
   </div>
 
-  <!-- Barre d'onglets -->
+  <!-- Onglets -->
   <div class="max-w-4xl w-full mx-auto px-4 mt-3">
     <div class="flex bg-slate-200 p-1 rounded-xl gap-1">
       <button onclick="switchTab('clim')" id="btn-clim" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-white text-emerald-900 shadow-sm flex items-center justify-center gap-1.5 transition">
@@ -69,7 +75,7 @@
         <i data-lucide="sprout" class="w-4 h-4"></i><span>Plants</span>
       </button>
       <button onclick="switchTab('reports')" id="btn-reports" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1.5 transition">
-        <i data-lucide="files" class="w-4 h-4"></i><span>Fiches ARDIE</span>
+        <i data-lucide="files" class="w-4 h-4"></i><span>Fiches</span>
       </button>
       <button onclick="switchTab('admin')" id="btn-admin" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1.5 transition">
         <i data-lucide="settings" class="w-4 h-4"></i><span>Admin</span>
@@ -77,7 +83,6 @@
     </div>
   </div>
 
-  <!-- Contenu Principal -->
   <main class="max-w-4xl w-full mx-auto px-4 py-3 flex-grow">
 
     <!-- 1. CLIMAT -->
@@ -85,7 +90,7 @@
       <form id="form-clim" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="flex items-center justify-between border-b pb-2">
           <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i data-lucide="gauge" class="w-4 h-4 text-emerald-600"></i>Relevé Climatique Serre & Irrigation
+            <i data-lucide="gauge" class="w-4 h-4 text-emerald-600"></i>Relevé climatique serre &amp; irrigation
           </h2>
           <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Objectif HR ≥ 75%</span>
         </div>
@@ -97,14 +102,14 @@
           </div>
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Température (°C)</label>
-            <input type="number" step="0.1" id="c-temp" required placeholder="ex: 28.5" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+            <input type="number" inputmode="decimal" step="0.1" id="c-temp" required placeholder="ex: 28.5" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Humidité Air (%)</label>
-            <input type="number" step="0.1" id="c-hygro" required placeholder="ex: 78" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Humidité air (%)</label>
+            <input type="number" inputmode="decimal" step="0.1" id="c-hygro" required placeholder="ex: 78" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Éclairage Artificiel</label>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Éclairage artificiel</label>
             <select id="c-eclairage" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
               <option value="Non">Non</option>
               <option value="Oui">Oui</option>
@@ -115,21 +120,21 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
           <div>
             <label class="block text-xs font-bold text-emerald-950 mb-1">Luminosité (Lumens / Lux)</label>
-            <input type="number" id="c-lumens" placeholder="ex: 12000" class="w-full bg-white border border-emerald-200 rounded-lg p-2 text-sm">
+            <input type="number" inputmode="decimal" id="c-lumens" placeholder="ex: 12000" class="w-full bg-white border border-emerald-200 rounded-lg p-2 text-sm">
           </div>
           <div>
-            <label class="block text-xs font-bold text-emerald-950 mb-1">Humidité Terreau (%)</label>
-            <input type="number" step="0.1" id="c-hum-terreau" placeholder="ex: 80" class="w-full bg-white border border-emerald-200 rounded-lg p-2 text-sm">
+            <label class="block text-xs font-bold text-emerald-950 mb-1">Humidité terreau (%)</label>
+            <input type="number" inputmode="decimal" step="0.1" id="c-hum-terreau" placeholder="ex: 80" class="w-full bg-white border border-emerald-200 rounded-lg p-2 text-sm">
           </div>
           <div>
-            <label class="block text-xs font-bold text-emerald-950 mb-1">pH Terreau</label>
-            <input type="number" step="0.1" id="c-ph" placeholder="ex: 6.2" class="w-full bg-white border border-emerald-200 rounded-lg p-2 text-sm">
+            <label class="block text-xs font-bold text-emerald-950 mb-1">pH terreau</label>
+            <input type="number" inputmode="decimal" step="0.1" id="c-ph" placeholder="ex: 6.2" class="w-full bg-white border border-emerald-200 rounded-lg p-2 text-sm">
           </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Arrosage manuel / Pulvérisateur (détails durée)</label>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Arrosage manuel tuyau (7h30 et 16h30) / pulvérisateur</label>
             <input type="text" id="c-arrosage" placeholder="ex: Tuyau 7h30 (2 min) / Pulvé" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
           </div>
           <div>
@@ -138,8 +143,8 @@
           </div>
         </div>
 
-        <button type="submit" id="btn-submit-clim" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow transition active:scale-[0.99]">
-          <i data-lucide="check" class="w-5 h-5"></i><span>Valider le Relevé</span>
+        <button type="submit" id="btn-submit-clim" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow transition active:scale-[0.99] disabled:opacity-60">
+          <i data-lucide="check" class="w-5 h-5"></i><span>Valider le relevé</span>
         </button>
       </form>
     </div>
@@ -149,7 +154,7 @@
       <form id="form-plants" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="flex items-center justify-between border-b pb-2">
           <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-600"></i>Fiche Suivi Journalier Vitroplants Fruits à Pain
+            <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-600"></i>Suivi journalier vitroplants Fruits à Pain
           </h2>
           <span class="text-xs bg-slate-100 font-mono text-slate-600 px-2 py-0.5 rounded">FAP</span>
         </div>
@@ -157,187 +162,193 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">Nombre initial au démarrage</label>
-            <input type="number" id="p-initial" value="605" min="0" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-base">
+            <input type="number" inputmode="numeric" id="p-initial" value="605" min="0" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-base">
           </div>
           <div>
             <label class="block text-xs font-bold text-amber-700 mb-1">Total isolés ce jour</label>
-            <input type="number" id="p-isoles" value="0" min="0" required class="w-full bg-amber-50 border border-amber-300 rounded-lg p-2 font-bold text-base text-amber-900">
+            <input type="number" inputmode="numeric" id="p-isoles" value="0" min="0" required class="w-full bg-amber-50 border border-amber-300 rounded-lg p-2 font-bold text-base text-amber-900">
           </div>
           <div>
             <label class="block text-xs font-bold text-red-700 mb-1">Total morts ce jour</label>
-            <input type="number" id="p-morts" value="0" min="0" required class="w-full bg-red-50 border border-red-300 rounded-lg p-2 font-bold text-base text-red-900">
+            <input type="number" inputmode="numeric" id="p-morts" value="0" min="0" required class="w-full bg-red-50 border border-red-300 rounded-lg p-2 font-bold text-base text-red-900">
           </div>
           <div>
             <label class="block text-xs font-bold text-blue-700 mb-1">Mis sous surveillance ce jour</label>
-            <input type="number" id="p-surveillance" value="0" min="0" required class="w-full bg-blue-50 border border-blue-300 rounded-lg p-2 font-bold text-base text-blue-900">
+            <input type="number" inputmode="numeric" id="p-surveillance" value="0" min="0" required class="w-full bg-blue-50 border border-blue-300 rounded-lg p-2 font-bold text-base text-blue-900">
           </div>
         </div>
 
         <div class="bg-gradient-to-r from-emerald-800 to-teal-800 text-white p-4 rounded-xl flex items-center justify-between shadow-inner">
           <div>
-            <p class="text-xs uppercase font-bold tracking-wider text-emerald-200">Total des vitroplants restant en culture saine</p>
-            <p class="text-[11px] text-emerald-300">Calcul : Initial - (Isolés + Morts)</p>
+            <p class="text-xs uppercase font-bold tracking-wider text-emerald-200">Total restant en culture saine</p>
+            <p class="text-[11px] text-emerald-300">Calcul : Initial − (Isolés + Morts)</p>
           </div>
           <span class="text-3xl md:text-4xl font-mono font-black" id="p-sains-display">605</span>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1">Remarques / Observations supplémentaires / Intervenant(s)</label>
+          <label class="block text-xs font-semibold text-slate-700 mb-1">Remarques / Observations supplémentaires</label>
           <textarea id="p-observations" rows="2" placeholder="État du lot, enracinement..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"></textarea>
         </div>
 
-        <button type="submit" id="btn-submit-plants" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow transition active:scale-[0.99]">
-          <i data-lucide="check-circle-2" class="w-5 h-5"></i><span>Valider le Bilan Journalier</span>
+        <button type="submit" id="btn-submit-plants" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow transition active:scale-[0.99] disabled:opacity-60">
+          <i data-lucide="check-circle-2" class="w-5 h-5"></i><span>Valider le bilan journalier</span>
         </button>
       </form>
     </div>
 
-    <!-- 3. RAPPORTS : 2 FICHES & VRAI EXPORT PDF -->
+    <!-- 3. FICHES ARDIE -->
     <div id="tab-reports" class="space-y-4 hidden">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
-        <div class="flex flex-wrap items-end gap-3">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
           <div>
-            <label class="block text-xs font-bold text-slate-600 mb-1">Date du relevé</label>
-            <input type="date" id="rep-date" class="bg-slate-50 border rounded-lg p-2 text-xs font-semibold">
+            <label class="block text-xs font-bold text-slate-600 mb-1">Date</label>
+            <input type="date" id="rep-date" class="w-full bg-slate-50 border rounded-lg p-2 text-sm font-semibold">
           </div>
           <div>
             <label class="block text-xs font-bold text-slate-600 mb-1">Serre</label>
-            <select id="rep-serre-filter" class="bg-slate-50 border rounded-lg p-2 text-xs font-semibold"></select>
+            <select id="rep-serre-filter" class="w-full bg-slate-50 border rounded-lg p-2 text-sm font-semibold"></select>
           </div>
-          <button onclick="loadDailySheet()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-1.5 shadow">
+          <button onclick="loadDailySheet()" id="btn-load" class="col-span-2 bg-emerald-700 hover:bg-emerald-800 text-white text-sm font-bold px-4 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow">
             <i data-lucide="search" class="w-4 h-4"></i><span>Charger les données</span>
           </button>
         </div>
 
-        <div class="flex flex-wrap gap-2 pt-2 border-t">
+        <!-- Sous-onglets -->
+        <div class="flex gap-2 pt-2 border-t">
           <button onclick="showReportView('plants')" id="btn-view-plants" class="flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-800 text-white shadow-sm flex items-center justify-center gap-1.5">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Fiche 1 : Bilan Plants</span>
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Fiche 1 : Plants</span>
           </button>
           <button onclick="showReportView('clim')" id="btn-view-clim" class="flex-1 py-2 text-xs font-bold rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center gap-1.5">
-            <i data-lucide="table-properties" class="w-4 h-4"></i><span>Fiche 2 : Relevés Climat</span>
+            <i data-lucide="table-properties" class="w-4 h-4"></i><span>Fiche 2 : Climat</span>
           </button>
-          <!-- VRAI BOUTON EXPORT PDF DIRECT -->
-          <button onclick="generateRealPDF()" class="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow">
-            <i data-lucide="download" class="w-4 h-4"></i><span>Télécharger le PDF</span>
+        </div>
+
+        <!-- Deux exports PDF distincts -->
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="exportPDF('plants')" class="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-3 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow disabled:opacity-60">
+            <i data-lucide="download" class="w-4 h-4"></i><span>PDF Fiche 1</span>
+          </button>
+          <button onclick="exportPDF('clim')" class="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-3 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow disabled:opacity-60">
+            <i data-lucide="download" class="w-4 h-4"></i><span>PDF Fiche 2</span>
           </button>
         </div>
       </div>
 
-      <!-- FICHE 1 : SUIVI JOURNALIER PLANTS -->
-      <div id="view-sheet-plants" class="bg-white p-8 rounded-xl border border-slate-300 shadow-sm pdf-container space-y-6">
-        <div class="flex justify-between items-start border-b-2 border-slate-900 pb-3">
+      <!-- FICHE 1 -->
+      <div class="sheet-scroll">
+        <div id="view-sheet-plants" class="sheet p-6 md:p-8 rounded-xl border border-slate-300 shadow-sm space-y-6 min-w-[560px]">
+          <div class="flex justify-between items-start border-b-2 border-slate-900 pb-3">
+            <div>
+              <span class="text-2xl font-black text-slate-900 tracking-wider">ARDIE</span>
+              <h2 class="text-xl font-black text-slate-900 uppercase mt-2">Fiche suivi journalier</h2>
+              <h3 class="text-sm font-bold text-slate-700">VITROPLANTS FRUITS A PAIN</h3>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold text-slate-400 font-mono" id="f1-year">2026</span>
+              <p class="text-sm font-bold text-slate-900 mt-3">Date du jour : <span id="f1-date" class="underline font-mono">--/--/----</span></p>
+              <p class="text-xs font-bold text-emerald-800 mt-1">Emplacement : <span id="f1-serre">--</span></p>
+            </div>
+          </div>
+
+          <div class="border border-slate-300 rounded p-3 text-xs space-y-1">
+            <p class="font-bold text-slate-900">Conditions climatiques intérieures :</p>
+            <p class="text-slate-700 pt-1">BRUMISATEUR AMBIANT : Durée : <strong>h24</strong> / Fréquence : <strong>7/7</strong></p>
+            <p class="text-slate-700">ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Fréquence : <strong>7/7</strong></p>
+          </div>
+
           <div>
-            <span class="text-2xl font-black text-slate-900 tracking-wider">ARDIE</span>
-            <h2 class="text-xl font-black text-slate-900 uppercase mt-2">FICHE SUIVI JOURNALIER</h2>
-            <h3 class="text-sm font-bold text-slate-700">VITROPLANTS FRUITS A PAIN</h3>
+            <h4 class="text-xs font-bold uppercase text-slate-800 mb-2">Quantité vitro plants Fruits à pain :</h4>
+            <table class="w-full border-collapse border border-slate-500 text-xs">
+              <thead>
+                <tr class="bg-slate-100 text-slate-800">
+                  <th class="border border-slate-400 p-2 text-left">Quantité</th>
+                  <th class="border border-slate-400 p-2 text-center w-24">Nombre</th>
+                  <th class="border border-slate-400 p-2 text-left w-48">Intervenant technicien</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="border border-slate-400 p-2 font-medium">Nombre de vitro plants initial au démarrage</td>
+                  <td class="border border-slate-400 p-2 text-center font-bold text-sm" id="f1-init">-</td>
+                  <td class="border border-slate-400 p-2 font-medium text-slate-700" rowspan="5" id="f1-agent">-</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 p-2 text-amber-800 font-medium">Total vitro plants isolés ce jour</td>
+                  <td class="border border-slate-400 p-2 text-center font-bold text-amber-800" id="f1-isoles">-</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 p-2 text-red-800 font-medium">Total vitro plants morts ce jour</td>
+                  <td class="border border-slate-400 p-2 text-center font-bold text-red-800" id="f1-morts">-</td>
+                </tr>
+                <tr>
+                  <td class="border border-slate-400 p-2 text-blue-800 font-medium">Total vitro plants mis sous surveillance ce jour</td>
+                  <td class="border border-slate-400 p-2 text-center font-bold text-blue-800" id="f1-surv">-</td>
+                </tr>
+                <tr class="bg-emerald-50">
+                  <td class="border border-slate-400 p-2 font-bold text-emerald-950">Total des vitro plants restant en culture saine</td>
+                  <td class="border border-slate-400 p-2 text-center font-black text-base text-emerald-900" id="f1-sains">-</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
-          <div class="text-right">
-            <span class="text-xs font-bold text-slate-400 font-mono">2026</span>
-            <p class="text-sm font-bold text-slate-900 mt-3">Date du jour : <span id="f1-date" class="underline font-mono">--/--/2026</span></p>
-            <p class="text-xs font-bold text-emerald-800 mt-1">Serre : <span id="f1-serre">--</span></p>
+
+          <div class="pt-4 border-t border-slate-200 text-xs">
+            <p class="font-bold text-slate-800">• Remarques / Observations supplémentaires :</p>
+            <div id="f1-obs" class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded min-h-[60px] text-slate-700 italic">-</div>
           </div>
-        </div>
-
-        <div class="border border-slate-300 rounded p-3 text-xs space-y-1">
-          <p class="font-bold text-slate-900">Conditions climatiques intérieur serre principale :</p>
-          <p class="text-slate-700 pt-1">BRUMISATEUR AMBIANT : Durée : <strong>h24</strong> / Fréquence : <strong>7/7</strong></p>
-          <p class="text-slate-700">ECLAIRAGE ARTIFICIEL AMBIANT (nuit) : Fréquence : <strong>7/7</strong></p>
-        </div>
-
-        <div>
-          <h4 class="text-xs font-bold uppercase text-slate-800 mb-2">Quantité Vitro Plants Fruits à pain :</h4>
-          <table class="w-full border-collapse border border-slate-500 text-xs">
-            <thead>
-              <tr class="bg-slate-100 text-slate-800">
-                <th class="border border-slate-400 p-2 text-left">Quantité</th>
-                <th class="border border-slate-400 p-2 text-center w-28">Serre</th>
-                <th class="border border-slate-400 p-2 text-left">Intervenant Technicien</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td class="border border-slate-400 p-2 font-medium">Nombre de Vitro plants initial au démarrage</td>
-                <td class="border border-slate-400 p-2 text-center font-bold text-sm" id="f1-init">-</td>
-                <td class="border border-slate-400 p-2 font-medium text-slate-700" rowspan="5" id="f1-agent">-</td>
-              </tr>
-              <tr>
-                <td class="border border-slate-400 p-2 text-amber-800 font-medium">Total vitro plants isolés ce jour</td>
-                <td class="border border-slate-400 p-2 text-center font-bold text-amber-800" id="f1-isoles">-</td>
-              </tr>
-              <tr>
-                <td class="border border-slate-400 p-2 text-red-800 font-medium">Total vitro plants morts ce jour</td>
-                <td class="border border-slate-400 p-2 text-center font-bold text-red-800" id="f1-morts">-</td>
-              </tr>
-              <tr>
-                <td class="border border-slate-400 p-2 text-blue-800 font-medium">Total vitro plants mis sous surveillance ce jour</td>
-                <td class="border border-slate-400 p-2 text-center font-bold text-blue-800" id="f1-surv">-</td>
-              </tr>
-              <tr class="bg-emerald-50">
-                <td class="border border-slate-400 p-2 font-bold text-emerald-950">Total des vitro plants restant en culture saine</td>
-                <td class="border border-slate-400 p-2 text-center font-black text-base text-emerald-900" id="f1-sains">-</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="pt-4 border-t border-slate-200 text-xs">
-          <p class="font-bold text-slate-800">• Remarques / Observations supplémentaires / Intervenant(s) :</p>
-          <div id="f1-obs" class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded min-h-[60px] text-slate-700 italic">-</div>
         </div>
       </div>
 
-      <!-- FICHE 2 : RELEVÉS CLIMATIQUES (HEURES RÉELLES) -->
-      <div id="view-sheet-clim" class="bg-white p-6 rounded-xl border border-slate-300 shadow-sm pdf-container space-y-4 hidden">
-        <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
-          <div>
-            <span class="text-xl font-black text-slate-900 tracking-wider">ARDIE</span>
-            <h2 class="text-base font-black text-slate-900 uppercase mt-1">RELEVÉS CLIMATIQUES SERRE ET IRRIGATION</h2>
+      <!-- FICHE 2 -->
+      <div class="sheet-scroll">
+        <div id="view-sheet-clim" class="sheet p-5 rounded-xl border border-slate-300 shadow-sm space-y-4 hidden min-w-[900px]">
+          <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
+            <div>
+              <span class="text-xl font-black text-slate-900 tracking-wider">ARDIE</span>
+              <h2 class="text-base font-black text-slate-900 uppercase mt-1">Relevés climatiques serre et irrigation</h2>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold text-slate-400 font-mono" id="f2-year">2026</span>
+              <p class="text-xs font-bold text-slate-800">Date : <span id="f2-date" class="underline font-mono">--/--/----</span></p>
+              <p class="text-xs font-bold text-emerald-800">SERRE : <span id="f2-serre">--</span></p>
+            </div>
           </div>
-          <div class="text-right">
-            <span class="text-xs font-bold text-slate-400 font-mono">2026</span>
-            <p class="text-xs font-bold text-slate-800">Date : <span id="f2-date" class="underline font-mono">--/--/2026</span></p>
-            <p class="text-xs font-bold text-emerald-800">SERRE : <span id="f2-serre">--</span></p>
-          </div>
-        </div>
 
-        <div class="overflow-x-auto">
           <table class="w-full border-collapse border border-slate-500 text-[10px]">
             <thead>
               <tr class="bg-slate-100 text-center font-bold">
                 <th class="border border-slate-400 p-1 w-12">Heure</th>
                 <th class="border border-slate-400 p-1 w-14">Température (°C)</th>
-                <th class="border border-slate-400 p-1 w-14">Humidité Ambiant (min 75%)</th>
+                <th class="border border-slate-400 p-1 w-16">Humidité ambiante (min 75%)</th>
                 <th class="border border-slate-400 p-1 w-14">Lumens (Lux)</th>
-                <th class="border border-slate-400 p-1 w-14">Humidité Terreau</th>
+                <th class="border border-slate-400 p-1 w-14">Humidité terreau</th>
                 <th class="border border-slate-400 p-1 w-10">pH</th>
                 <th class="border border-slate-400 p-1 w-14">Éclairage artificiel (jour)</th>
                 <th class="border border-slate-400 p-1">Arrosage manuel tuyau (7h30 et 16h30) / pulvérisateur</th>
-                <th class="border border-slate-400 p-1">Remarques / Commentaire</th>
-                <th class="border border-slate-400 p-1 w-24">Intervenant</th>
+                <th class="border border-slate-400 p-1">Remarques / Commentaires</th>
+                <th class="border border-slate-400 p-1 w-28">Intervenant</th>
               </tr>
             </thead>
-            <tbody id="f2-tbody">
-              <!-- Relevés réels -->
-            </tbody>
+            <tbody id="f2-tbody"></tbody>
           </table>
-        </div>
 
-        <div class="pt-2 text-[11px] text-slate-700">
-          <p class="font-bold">• Remarques / Observations supplémentaires / Intervenant(s) :</p>
-          <div class="mt-1 p-2 border border-slate-200 rounded min-h-[40px] italic">Relevés chronologiques de la journée.</div>
+          <div class="pt-2 text-[11px] text-slate-700">
+            <p class="font-bold">• Relevés réguliers toutes les 30 min à partir de 06h00.</p>
+            <p id="f2-empty" class="mt-1 italic text-slate-500"></p>
+          </div>
         </div>
       </div>
-
     </div>
 
     <!-- 4. ADMIN -->
     <div id="tab-admin" class="space-y-4 hidden">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <h3 class="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
-          <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600"></i>Gestion des Emplacements / Serres
+          <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600"></i>Emplacements / Serres
         </h3>
         <div class="flex gap-2 mb-3">
-          <input type="text" id="new-loc" placeholder="Nom nouvelle serre (ex: Tunnel 3)" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs">
+          <input type="text" id="new-loc" placeholder="Nom nouvelle serre (ex: Serre principale)" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
           <button onclick="addLocation()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1">
             <i data-lucide="plus" class="w-3.5 h-3.5"></i>Ajouter
           </button>
@@ -348,331 +359,470 @@
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div class="flex items-center justify-between mb-3 border-b pb-2">
           <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>Gestion des Agents ARDIE (SharePoint)
+            <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>Agents ARDIE
           </h3>
-          <span class="text-[10px] text-slate-400">Cliquez pour activer/désactiver</span>
+          <span class="text-[10px] text-slate-400">Touchez le statut pour activer / désactiver</span>
         </div>
 
-        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 grid grid-cols-1 md:grid-cols-5 gap-2">
-          <select id="new-agent-civ" class="bg-white border rounded p-1.5 text-xs">
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 grid grid-cols-2 md:grid-cols-5 gap-2">
+          <select id="new-agent-civ" class="bg-white border rounded p-2 text-sm">
             <option value="M.">M.</option>
             <option value="Mme">Mme</option>
           </select>
-          <input type="text" id="new-agent-name" placeholder="Nom Prénom" class="bg-white border rounded p-1.5 text-xs">
-          <select id="new-agent-contrat" class="bg-white border rounded p-1.5 text-xs">
+          <input type="text" id="new-agent-name" placeholder="NOM Prénom" class="bg-white border rounded p-2 text-sm col-span-1 md:col-span-1">
+          <select id="new-agent-contrat" class="bg-white border rounded p-2 text-sm">
             <option value="Salarié en Insertion">Salarié en Insertion</option>
             <option value="Encadrant technique">Encadrant technique</option>
             <option value="Assistant Technique">Assistant Technique</option>
           </select>
-          <select id="new-agent-atelier" class="bg-white border rounded p-1.5 text-xs">
+          <select id="new-agent-atelier" class="bg-white border rounded p-2 text-sm">
             <option value="Plateau diversification">Plateau diversification</option>
             <option value="Pépinière">Pépinière</option>
             <option value="ARDIE">ARDIE</option>
           </select>
-          <button onclick="addAgent()" class="bg-emerald-700 hover:bg-emerald-800 text-white rounded p-1.5 text-xs font-bold flex items-center justify-center gap-1">
-            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>Ajouter Agent
+          <button onclick="addAgent()" class="col-span-2 md:col-span-1 bg-emerald-700 hover:bg-emerald-800 text-white rounded p-2 text-xs font-bold flex items-center justify-center gap-1">
+            <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>Ajouter
           </button>
         </div>
 
         <ul id="list-agents" class="divide-y divide-slate-100 text-xs"></ul>
       </div>
     </div>
-
   </main>
+
+  <!-- Toast -->
+  <div id="toast" class="hidden fixed left-1/2 -translate-x-1/2 bottom-6 z-[60] max-w-[90vw] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white"></div>
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
+    const EXPECTED_VERSION = "V9";
 
     let state = { emplacements: [], agentsActifs: [], tousLesAgents: [] };
 
-    window.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('date-label').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
-      document.getElementById('c-heure').value = new Date().toTimeString().slice(0, 5);
-      document.getElementById('rep-date').value = new Date().toISOString().slice(0, 10);
+    /* ---------- Utilitaires ---------- */
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const pad = (n) => String(n).padStart(2, '0');
+    const icons = () => { if (window.lucide) lucide.createIcons(); };
+    const num = (v) => parseFloat(String(v ?? '').replace(',', '.'));
 
+    // Date / heure LOCALES (toISOString() donnerait la date UTC : faux la nuit à La Réunion, UTC+4)
+    function localISODate(d = new Date()) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
+    function localHHmm(d = new Date()) { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+    function isoToFR(iso) { const p = iso.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+
+    let toastTimer;
+    function toast(msg, type = 'ok') {
+      const t = $('toast');
+      t.textContent = msg;
+      t.className = `fixed left-1/2 -translate-x-1/2 bottom-6 z-[60] max-w-[90vw] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white ${type === 'ok' ? 'bg-emerald-700' : 'bg-red-700'}`;
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.add('hidden'), 3500);
+    }
+    function banner(msg) {
+      const b = $('banner');
+      if (!msg) { b.classList.add('hidden'); return; }
+      $('banner-text').textContent = msg;
+      b.classList.remove('hidden');
+    }
+    function setBtn(btn, busy, label, iconName) {
+      btn.disabled = busy;
+      btn.innerHTML = busy
+        ? `<span class="animate-pulse">Envoi en cours...</span>`
+        : `<i data-lucide="${iconName}" class="w-5 h-5"></i><span>${label}</span>`;
+      icons();
+    }
+    const store = {
+      get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+      set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    };
+
+    /* ---------- Démarrage ---------- */
+    window.addEventListener('DOMContentLoaded', () => {
+      $('date-label').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+      $('c-heure').value = localHHmm();
+      $('rep-date').value = localISODate();
+      $('global-serre').addEventListener('change', e => store.set('ardie_serre', e.target.value));
+      $('global-intervenant').addEventListener('change', e => store.set('ardie_agent', e.target.value));
+      ['p-initial', 'p-isoles', 'p-morts'].forEach(id => $(id).addEventListener('input', calcPlants));
       loadConfig();
-      lucide.createIcons();
+      icons();
     });
 
     function calcPlants() {
-      const init = parseInt(document.getElementById('p-initial').value) || 0;
-      const isoles = parseInt(document.getElementById('p-isoles').value) || 0;
-      const morts = parseInt(document.getElementById('p-morts').value) || 0;
+      const init = parseInt($('p-initial').value) || 0;
+      const isoles = parseInt($('p-isoles').value) || 0;
+      const morts = parseInt($('p-morts').value) || 0;
       const sains = Math.max(0, init - (isoles + morts));
-      document.getElementById('p-sains-display').textContent = sains;
+      $('p-sains-display').textContent = sains;
       return sains;
     }
-    ['p-initial', 'p-isoles', 'p-morts'].forEach(id => document.getElementById(id).addEventListener('input', calcPlants));
 
+    /* ---------- Configuration (serres + agents) ---------- */
     async function loadConfig() {
-      const icon = document.getElementById('sync-icon');
-      const sSerre = document.getElementById('global-serre');
-      const sAgent = document.getElementById('global-intervenant');
-      const rSerre = document.getElementById('rep-serre-filter');
-
+      const icon = $('sync-icon');
       if (icon) icon.classList.add('animate-spin');
-
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getConfig`);
-        state = await res.json();
+        const raw = await res.json();
+        if (raw.error) throw new Error(raw.message || 'Erreur serveur');
 
-        // Serres
-        if (state.emplacements && state.emplacements.length > 0) {
-          sSerre.innerHTML = state.emplacements.map(e => `<option value="${e}">🌱 ${e}</option>`).join('');
-          rSerre.innerHTML = '<option value="ALL">Toutes les serres</option>' + state.emplacements.map(e => `<option value="${e}">${e}</option>`).join('');
-        }
+        // Normalisation défensive : jamais de "undefined" à l'écran
+        const agentsRaw = Array.isArray(raw.tousLesAgents) ? raw.tousLesAgents : [];
+        const tous = agentsRaw.map(a => {
+          const nom = String(a.nom ?? a.name ?? '').trim();
+          const civ = String(a.civilite ?? '').trim();
+          const displayName = String(a.displayName ?? ((civ ? civ + ' ' : '') + nom)).trim();
+          const contrat = String(a.contrat ?? '').trim();
+          return {
+            id: String(a.id ?? '').trim(),
+            nom, displayName, contrat,
+            atelier: String(a.atelier ?? '').trim(),
+            actif: String(a.statut ?? a.status ?? '').toLowerCase() === 'actif',
+            label: String(a.label ?? (displayName + (contrat ? ` (${contrat})` : '')))
+          };
+        }).filter(a => a.nom && a.displayName && a.nom !== 'undefined');
 
-        // Agents Actifs (remplit avec le nom réel)
-        if (state.agentsActifs && state.agentsActifs.length > 0) {
-          sAgent.innerHTML = state.agentsActifs.map(a => `<option value="${a.displayName || a.nom}">👤 ${a.label || a.displayName || a.nom}</option>`).join('');
-        }
+        state = {
+          emplacements: (raw.emplacements || []).map(e => String(e).trim()).filter(Boolean),
+          tousLesAgents: tous,
+          agentsActifs: tous.filter(a => a.actif)
+        };
 
+        banner(raw.version === EXPECTED_VERSION ? '' :
+          `⚠️ Le script Google déployé est obsolète (version « ${raw.version || 'inconnue'} » au lieu de ${EXPECTED_VERSION}). ` +
+          `Dans Apps Script : Déployer → Gérer les déploiements → ✏️ → Version : Nouvelle version → Déployer.`);
+
+        renderSelects();
         renderAdmin();
       } catch (err) {
-        console.error("Erreur chargement :", err);
+        console.error('Erreur chargement :', err);
+        banner("Impossible de joindre le serveur Google. Vérifiez la connexion puis touchez ↻.");
       } finally {
         if (icon) icon.classList.remove('animate-spin');
       }
     }
 
+    function renderSelects() {
+      const sSerre = $('global-serre'), sAgent = $('global-intervenant'), rSerre = $('rep-serre-filter');
+      const prevSerre = sSerre.value || store.get('ardie_serre') || '';
+      const prevAgent = sAgent.value || store.get('ardie_agent') || '';
+      const prevRep = rSerre.value;
+
+      if (state.emplacements.length) {
+        sSerre.innerHTML = '<option value="" disabled>Choisir une serre...</option>' +
+          state.emplacements.map(e => `<option value="${esc(e)}">🌱 ${esc(e)}</option>`).join('');
+        rSerre.innerHTML = state.emplacements.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
+        sSerre.value = state.emplacements.includes(prevSerre) ? prevSerre : state.emplacements[0];
+        rSerre.value = state.emplacements.includes(prevRep) ? prevRep : sSerre.value;
+      } else {
+        sSerre.innerHTML = '<option value="" disabled selected>Aucune serre configurée</option>';
+        rSerre.innerHTML = '';
+      }
+
+      if (state.agentsActifs.length) {
+        sAgent.innerHTML = '<option value="" disabled>Choisir un agent...</option>' +
+          state.agentsActifs.map(a => `<option value="${esc(a.displayName)}">👤 ${esc(a.label)}</option>`).join('');
+        const ok = state.agentsActifs.some(a => a.displayName === prevAgent);
+        sAgent.value = ok ? prevAgent : '';
+      } else {
+        sAgent.innerHTML = '<option value="" disabled selected>Aucun agent actif</option>';
+      }
+    }
+
     function renderAdmin() {
-      document.getElementById('list-loc').innerHTML = state.emplacements.map(e => `
+      $('list-loc').innerHTML = state.emplacements.map(e => `
         <li class="py-2 flex justify-between items-center">
-          <span class="font-medium text-slate-700">🌱 ${e}</span>
-          <button onclick="delLocation('${e}')" class="text-red-600 border border-red-200 px-2 py-0.5 rounded text-[10px] hover:bg-red-50">Supprimer</button>
-        </li>
-      `).join('');
+          <span class="font-medium text-slate-700">🌱 ${esc(e)}</span>
+          <button data-del-loc="${esc(e)}" class="text-red-600 border border-red-200 px-2 py-1 rounded text-[11px] hover:bg-red-50">Supprimer</button>
+        </li>`).join('') || '<li class="py-2 text-slate-400">Aucune serre.</li>';
 
-      document.getElementById('list-agents').innerHTML = state.tousLesAgents.map(ag => {
-        const isActif = (String(ag.status).toLowerCase() === 'actif');
-        return `
-          <li class="py-2.5 flex justify-between items-center border-b border-slate-100">
-            <div>
-              <div class="font-bold text-slate-800 text-xs">${ag.displayName}</div>
-              <div class="text-[10px] text-slate-400">${ag.contrat} • ${ag.atelier}</div>
-            </div>
-            <button onclick="toggleAgent('${ag.name}')" 
-                    class="px-3 py-1 rounded-full text-[10px] font-bold tracking-wide transition ${isActif ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-200 text-slate-500'}">
-              ${isActif ? 'Actif' : 'Inactif'}
-            </button>
-          </li>
-        `;
-      }).join('');
-
-      lucide.createIcons();
+      $('list-agents').innerHTML = state.tousLesAgents.map(a => `
+        <li class="py-2.5 flex justify-between items-center gap-2">
+          <div class="min-w-0">
+            <div class="font-bold text-slate-800 text-xs truncate">${esc(a.displayName)}</div>
+            <div class="text-[10px] text-slate-500">${esc(a.contrat || '—')} • ${esc(a.atelier || '—')}</div>
+          </div>
+          <button data-toggle-agent="${esc(a.id)}" data-name="${esc(a.nom)}"
+                  class="shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold tracking-wide transition ${a.actif ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-200 text-slate-500'}">
+            ${a.actif ? 'Actif' : 'Inactif'}
+          </button>
+        </li>`).join('') || '<li class="py-2 text-slate-400">Aucun agent.</li>';
+      icons();
     }
 
+    // Délégation d'événements (évite les problèmes de guillemets dans les noms)
+    document.addEventListener('click', (ev) => {
+      const del = ev.target.closest('[data-del-loc]');
+      if (del) return delLocation(del.dataset.delLoc);
+      const tg = ev.target.closest('[data-toggle-agent]');
+      if (tg) return toggleAgent(tg.dataset.toggleAgent, tg.dataset.name);
+    });
+
+    /* ---------- Envoi vers Apps Script ---------- */
+    // Pas d'en-tête personnalisé => "requête simple" (pas de preflight CORS) et la réponse reste lisible.
     async function postData(payload) {
-      await fetch(SCRIPT_URL, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+      const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
+      const out = await res.json();
+      if (out.status !== 'success') throw new Error(out.message || 'Erreur serveur');
+      return out;
     }
 
-    // Soumission Climat
-    document.getElementById('form-clim').addEventListener('submit', async (e) => {
+    function requireSerreAgent() {
+      const serre = $('global-serre').value;
+      const agent = $('global-intervenant').value;
+      if (!serre || !agent || agent === 'undefined') {
+        toast('Choisissez une serre ET un agent.', 'err');
+        return null;
+      }
+      return { serre, agent };
+    }
+
+    $('form-clim').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const sVal = document.getElementById('global-serre').value;
-      const aVal = document.getElementById('global-intervenant').value;
-      if (!sVal || !aVal) return alert("Sélectionnez une serre et un agent.");
-
-      const btn = document.getElementById('btn-submit-clim');
-      btn.disabled = true;
-      btn.innerText = "Envoi...";
-
-      await postData({
-        type: 'CLIMAT',
-        date: new Date().toLocaleDateString('fr-FR'),
-        heure: document.getElementById('c-heure').value,
-        serre: sVal,
-        intervenant: aVal,
-        temperature: document.getElementById('c-temp').value,
-        humidite_air: document.getElementById('c-hygro').value,
-        lumens: document.getElementById('c-lumens').value || '-',
-        humidite_terreau: document.getElementById('c-hum-terreau').value || '-',
-        ph: document.getElementById('c-ph').value || '-',
-        eclairage: document.getElementById('c-eclairage').value,
-        arrosage: document.getElementById('c-arrosage').value || '-',
-        remarque: document.getElementById('c-remarque').value || '-'
-      });
-
-      alert("Relevé climatique enregistré !");
-      document.getElementById('c-remarque').value = '';
-      btn.disabled = false;
-      btn.innerHTML = `<i data-lucide="check" class="w-5 h-5"></i><span>Valider le Relevé</span>`;
-      lucide.createIcons();
+      const ctx = requireSerreAgent(); if (!ctx) return;
+      const btn = $('btn-submit-clim');
+      setBtn(btn, true);
+      try {
+        await postData({
+          type: 'CLIMAT',
+          date: localISODate(),
+          heure: $('c-heure').value || localHHmm(),
+          serre: ctx.serre,
+          intervenant: ctx.agent,
+          temperature: $('c-temp').value,
+          humidite_air: $('c-hygro').value,
+          lumens: $('c-lumens').value || '-',
+          humidite_terreau: $('c-hum-terreau').value || '-',
+          ph: $('c-ph').value || '-',
+          eclairage: $('c-eclairage').value,
+          arrosage: $('c-arrosage').value || '-',
+          remarque: $('c-remarque').value || '-'
+        });
+        toast('Relevé climatique enregistré ✔');
+        $('c-remarque').value = '';
+        $('c-arrosage').value = '';
+        $('c-heure').value = localHHmm();
+      } catch (err) {
+        toast('Échec : ' + err.message, 'err');
+      } finally {
+        setBtn(btn, false, 'Valider le relevé', 'check');
+      }
     });
 
-    // Soumission Plants
-    document.getElementById('form-plants').addEventListener('submit', async (e) => {
+    $('form-plants').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const sVal = document.getElementById('global-serre').value;
-      const aVal = document.getElementById('global-intervenant').value;
-      if (!sVal || !aVal) return alert("Sélectionnez une serre et un agent.");
-
-      const btn = document.getElementById('btn-submit-plants');
-      btn.disabled = true;
-      btn.innerText = "Envoi...";
-
-      await postData({
-        type: 'SUIVI_PLANTS',
-        date: new Date().toLocaleDateString('fr-FR'),
-        heure: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        serre: sVal,
-        intervenant: aVal,
-        initial: document.getElementById('p-initial').value,
-        isoles: document.getElementById('p-isoles').value,
-        morts: document.getElementById('p-morts').value,
-        surveillance: document.getElementById('p-surveillance').value,
-        sains: calcPlants(),
-        observations: document.getElementById('p-observations').value || '-'
-      });
-
-      alert("Bilan vitroplants validé !");
-      btn.disabled = false;
-      btn.innerHTML = `<i data-lucide="check-circle-2" class="w-5 h-5"></i><span>Valider le Bilan Journalier</span>`;
-      lucide.createIcons();
+      const ctx = requireSerreAgent(); if (!ctx) return;
+      const btn = $('btn-submit-plants');
+      setBtn(btn, true);
+      try {
+        await postData({
+          type: 'SUIVI_PLANTS',
+          date: localISODate(),
+          heure: localHHmm(),
+          serre: ctx.serre,
+          intervenant: ctx.agent,
+          initial: $('p-initial').value,
+          isoles: $('p-isoles').value,
+          morts: $('p-morts').value,
+          surveillance: $('p-surveillance').value,
+          sains: calcPlants(),
+          observations: $('p-observations').value || '-'
+        });
+        toast('Bilan vitroplants enregistré ✔');
+        ['p-isoles', 'p-morts', 'p-surveillance'].forEach(id => $(id).value = 0);
+        $('p-observations').value = '';
+        calcPlants();
+      } catch (err) {
+        toast('Échec : ' + err.message, 'err');
+      } finally {
+        setBtn(btn, false, 'Valider le bilan journalier', 'check-circle-2');
+      }
     });
 
+    /* ---------- Admin ---------- */
     async function addLocation() {
-      const v = document.getElementById('new-loc').value.trim();
+      const v = $('new-loc').value.trim();
       if (!v) return;
-      await postData({ type: 'MANAGE_LOCATION', subAction: 'ADD', name: v });
-      document.getElementById('new-loc').value = '';
-      loadConfig();
+      try {
+        await postData({ type: 'MANAGE_LOCATION', subAction: 'ADD', name: v });
+        $('new-loc').value = '';
+        toast('Serre ajoutée ✔');
+        loadConfig();
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
     }
     async function delLocation(name) {
-      if (!confirm(`Supprimer ${name} ?`)) return;
-      await postData({ type: 'MANAGE_LOCATION', subAction: 'DELETE', name });
-      loadConfig();
+      if (!confirm(`Supprimer « ${name} » ?`)) return;
+      try {
+        await postData({ type: 'MANAGE_LOCATION', subAction: 'DELETE', name });
+        toast('Serre supprimée');
+        loadConfig();
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
     }
     async function addAgent() {
-      const civ = document.getElementById('new-agent-civ').value;
-      const name = document.getElementById('new-agent-name').value.trim();
-      const contrat = document.getElementById('new-agent-contrat').value;
-      const atelier = document.getElementById('new-agent-atelier').value;
-      if (!name) return alert("Indiquez le nom de l'agent.");
-      await postData({ type: 'MANAGE_AGENT', subAction: 'ADD', civilite: civ, name: name, contrat: contrat, atelier: atelier });
-      document.getElementById('new-agent-name').value = '';
-      loadConfig();
+      const name = $('new-agent-name').value.trim();
+      if (!name) return toast("Indiquez le nom de l'agent.", 'err');
+      try {
+        await postData({
+          type: 'MANAGE_AGENT', subAction: 'ADD',
+          civilite: $('new-agent-civ').value, name,
+          contrat: $('new-agent-contrat').value, atelier: $('new-agent-atelier').value
+        });
+        $('new-agent-name').value = '';
+        toast('Agent ajouté ✔');
+        loadConfig();
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
     }
-    async function toggleAgent(name) {
-      await postData({ type: 'MANAGE_AGENT', subAction: 'TOGGLE_STATUS', name: name });
-      loadConfig();
+    async function toggleAgent(id, name) {
+      try {
+        await postData({ type: 'MANAGE_AGENT', subAction: 'TOGGLE_STATUS', id, name });
+        loadConfig();
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
     }
 
+    /* ---------- Fiches ARDIE ---------- */
     function showReportView(view) {
-      const p = document.getElementById('view-sheet-plants');
-      const c = document.getElementById('view-sheet-clim');
-      const bp = document.getElementById('btn-view-plants');
-      const bc = document.getElementById('btn-view-clim');
-
-      if (view === 'plants') {
-        p.classList.remove('hidden');
-        c.classList.add('hidden');
-        bp.classList.replace('bg-slate-200', 'bg-emerald-800');
-        bp.classList.replace('text-slate-700', 'text-white');
-        bc.classList.replace('bg-emerald-800', 'bg-slate-200');
-        bc.classList.replace('text-white', 'text-slate-700');
-      } else {
-        c.classList.remove('hidden');
-        p.classList.add('hidden');
-        bc.classList.replace('bg-slate-200', 'bg-emerald-800');
-        bc.classList.replace('text-slate-700', 'text-white');
-        bp.classList.replace('bg-emerald-800', 'bg-slate-200');
-        bp.classList.replace('text-white', 'text-slate-700');
-      }
+      const on = ['bg-emerald-800', 'text-white', 'shadow-sm'];
+      const off = ['bg-slate-200', 'text-slate-700'];
+      const isP = view === 'plants';
+      $('view-sheet-plants').classList.toggle('hidden', !isP);
+      $('view-sheet-clim').classList.toggle('hidden', isP);
+      const bp = $('btn-view-plants'), bc = $('btn-view-clim');
+      bp.classList.remove(...(isP ? off : on)); bp.classList.add(...(isP ? on : off));
+      bc.classList.remove(...(isP ? on : off)); bc.classList.add(...(isP ? off : on));
     }
 
-    // Chargement dynamique des 2 fiches avec relevés réels
+    const dash = (v) => (v === undefined || v === null || String(v).trim() === '' || String(v) === 'undefined') ? '-' : esc(v);
+
     async function loadDailySheet() {
-      const rawDate = document.getElementById('rep-date').value;
-      if (!rawDate) return alert("Sélectionnez une date");
-      
-      const parts = rawDate.split('-');
-      const formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`;
-      const serre = document.getElementById('rep-serre-filter').value;
+      const iso = $('rep-date').value;
+      if (!iso) return toast('Sélectionnez une date', 'err');
+      const serre = $('rep-serre-filter').value || 'ALL';
+      const fr = isoToFR(iso);
+      const btn = $('btn-load');
+      btn.disabled = true;
 
-      const res = await fetch(`${SCRIPT_URL}?action=getReports&date=${formattedDate}&serre=${serre}`);
-      const data = await res.json();
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=getReports&date=${encodeURIComponent(iso)}&serre=${encodeURIComponent(serre)}`);
+        const data = await res.json();
+        if (data.error) throw new Error(data.message || 'Erreur serveur');
 
-      // 1. Fiche Plants
-      document.getElementById('f1-date').textContent = formattedDate;
-      document.getElementById('f1-serre').textContent = (serre === 'ALL') ? 'Toutes les serres' : serre;
-      if (data.plant) {
-        document.getElementById('f1-init').textContent = data.plant.initial;
-        document.getElementById('f1-isoles').textContent = data.plant.isoles;
-        document.getElementById('f1-morts').textContent = data.plant.morts;
-        document.getElementById('f1-surv').textContent = data.plant.surveillance;
-        document.getElementById('f1-sains').textContent = data.plant.sains;
-        document.getElementById('f1-agent').textContent = data.plant.intervenant;
-        document.getElementById('f1-obs').textContent = data.plant.observations || 'Aucune observation saisie.';
-      } else {
-        document.getElementById('f1-init').textContent = '-';
-        document.getElementById('f1-isoles').textContent = '-';
-        document.getElementById('f1-morts').textContent = '-';
-        document.getElementById('f1-surv').textContent = '-';
-        document.getElementById('f1-sains').textContent = '-';
-        document.getElementById('f1-agent').textContent = 'Aucun bilan pour ce jour';
-        document.getElementById('f1-obs').textContent = 'Aucun bilan enregistré.';
-      }
+        // ----- Fiche 1
+        $('f1-date').textContent = fr;
+        $('f1-year').textContent = iso.slice(0, 4);
+        $('f1-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
+        const p = data.plant;
+        if (p) {
+          $('f1-init').textContent = p.initial;
+          $('f1-isoles').textContent = p.isoles;
+          $('f1-morts').textContent = p.morts;
+          $('f1-surv').textContent = p.surveillance;
+          $('f1-sains').textContent = p.sains;
+          $('f1-agent').textContent = (p.intervenant && p.intervenant !== 'undefined') ? p.intervenant : '(non renseigné)';
+          $('f1-obs').textContent = (p.observations && p.observations !== '-') ? p.observations : 'Aucune observation saisie.';
+        } else {
+          ['f1-init', 'f1-isoles', 'f1-morts', 'f1-surv', 'f1-sains'].forEach(id => $(id).textContent = '-');
+          $('f1-agent').textContent = 'Aucun bilan pour ce jour';
+          $('f1-obs').textContent = 'Aucun bilan enregistré.';
+        }
 
-      // 2. Fiche Climat (affiche l'heure exacte réelle de chaque relevé)
-      document.getElementById('f2-date').textContent = formattedDate;
-      document.getElementById('f2-serre').textContent = (serre === 'ALL') ? 'Toutes les serres' : serre;
-      const tbody = document.getElementById('f2-tbody');
+        // ----- Fiche 2
+        $('f2-date').textContent = fr;
+        $('f2-year').textContent = iso.slice(0, 4);
+        $('f2-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
+        const records = data.climats || [];
+        const cell = 'border border-slate-400 p-1.5';
+        let html = records.map(c => {
+          const hy = num(c.hygro);
+          const low = !isNaN(hy) && hy < 75;
+          return `<tr class="text-center">
+            <td class="${cell} font-bold font-mono text-emerald-900">${dash(c.heure)}</td>
+            <td class="${cell} font-bold">${dash(c.temp)}${c.temp && c.temp !== '-' ? '°C' : ''}</td>
+            <td class="${cell} font-bold ${low ? 'text-red-700 bg-red-50' : 'text-emerald-800'}">${dash(c.hygro)}${c.hygro && c.hygro !== '-' ? '%' : ''}</td>
+            <td class="${cell}">${dash(c.lumens)}</td>
+            <td class="${cell}">${dash(c.humTerreau)}${c.humTerreau && c.humTerreau !== '-' ? '%' : ''}</td>
+            <td class="${cell}">${dash(c.ph)}</td>
+            <td class="${cell}">${dash(c.eclairage)}</td>
+            <td class="${cell} text-left">${dash(c.arrosage)}</td>
+            <td class="${cell} text-left">${dash(c.remarque)}</td>
+            <td class="${cell} font-medium text-slate-900">${dash(c.intervenant)}</td>
+          </tr>`;
+        }).join('');
+        // lignes vides pour un rendu "fiche papier"
+        for (let i = records.length; i < 12; i++) {
+          html += `<tr>${Array(10).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
+        }
+        $('f2-tbody').innerHTML = html;
+        $('f2-empty').textContent = records.length ? '' : `Aucun relevé enregistré pour le ${fr}.`;
 
-      const records = data.climats || [];
-
-      if (records.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center p-4 text-slate-400">Aucun relevé météo enregistré pour cette date (${formattedDate}).</td></tr>`;
-      } else {
-        tbody.innerHTML = records.map(c => `
-          <tr class="text-center hover:bg-slate-50">
-            <td class="border border-slate-400 p-1.5 font-bold font-mono text-emerald-900">${c.heure}</td>
-            <td class="border border-slate-400 p-1.5 font-bold">${c.temp}°C</td>
-            <td class="border border-slate-400 p-1.5 font-bold ${Number(c.hygro) < 75 ? 'text-red-700 bg-red-50' : 'text-emerald-800'}">${c.hygro}%</td>
-            <td class="border border-slate-400 p-1.5">${c.lumens}</td>
-            <td class="border border-slate-400 p-1.5">${c.humTerreau}%</td>
-            <td class="border border-slate-400 p-1.5">${c.ph}</td>
-            <td class="border border-slate-400 p-1.5">${c.eclairage}</td>
-            <td class="border border-slate-400 p-1.5 text-left">${c.arrosage}</td>
-            <td class="border border-slate-400 p-1.5 text-left">${c.remarque}</td>
-            <td class="border border-slate-400 p-1.5 font-medium text-slate-900">${c.intervenant}</td>
-          </tr>
-        `).join('');
+        toast(`${records.length} relevé(s) • ${p ? '1 bilan plants' : 'aucun bilan plants'}`);
+      } catch (err) {
+        console.error(err);
+        toast('Chargement impossible : ' + err.message, 'err');
+      } finally {
+        btn.disabled = false;
       }
     }
 
-    // VRAI TÉLÉCHARGEMENT DIRECT EN PDF
-    function generateRealPDF() {
-      const isPlants = !document.getElementById('view-sheet-plants').classList.contains('hidden');
-      const element = isPlants ? document.getElementById('view-sheet-plants') : document.getElementById('view-sheet-clim');
-      const dateVal = document.getElementById('rep-date').value || 'date';
+    /* ---------- Export PDF réel (html2pdf.js) ---------- */
+    async function exportPDF(which) {
+      if (typeof html2pdf === 'undefined') return toast('Moteur PDF non chargé (connexion ?)', 'err');
+      const isPlants = which === 'plants';
+      const src = $(isPlants ? 'view-sheet-plants' : 'view-sheet-clim');
+      const widthPx = isPlants ? 794 : 1123;          // A4 portrait / paysage à 96 dpi
 
-      const opt = {
-        margin:       8,
-        filename:     isPlants ? `ARDIE_Fiche_Plants_${dateVal}.pdf` : `ARDIE_Fiche_Climat_${dateVal}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2 },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: isPlants ? 'portrait' : 'landscape' }
-      };
+      // Clone hors écran à largeur fixe : le PDF est identique sur smartphone et PC,
+      // et un bloc masqué (display:none) ne se rend pas en canvas.
+      const wrap = document.createElement('div');
+      wrap.style.cssText = `position:fixed;left:-10000px;top:0;width:${widthPx}px;background:#fff;`;
+      const clone = src.cloneNode(true);
+      clone.removeAttribute('id');
+      clone.classList.remove('hidden', 'min-w-[560px]', 'min-w-[900px]', 'shadow-sm', 'rounded-xl', 'border');
+      clone.style.width = widthPx + 'px';
+      clone.style.minWidth = '0';
+      wrap.appendChild(clone);
+      document.body.appendChild(wrap);
 
-      html2pdf().set(opt).from(element).save();
+      const iso = $('rep-date').value || localISODate();
+      const serre = ($('rep-serre-filter').value || 'toutes').replace(/\s+/g, '-');
+      const filename = `ARDIE_${isPlants ? 'Fiche1_Plants' : 'Fiche2_Climat'}_${serre}_${iso}.pdf`;
+
+      toast('Génération du PDF...');
+      try {
+        await html2pdf().set({
+          margin: 8,
+          filename,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff', windowWidth: widthPx },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: isPlants ? 'portrait' : 'landscape' },
+          pagebreak: { mode: ['avoid-all', 'css'] }
+        }).from(clone).save();
+        toast('PDF téléchargé ✔');
+      } catch (err) {
+        console.error(err);
+        toast('Échec du PDF : ' + err.message, 'err');
+      } finally {
+        wrap.remove();
+      }
     }
 
+    /* ---------- Onglets ---------- */
     function switchTab(id) {
       ['clim', 'plants', 'reports', 'admin'].forEach(k => {
-        document.getElementById(`tab-${k}`).classList.add('hidden');
-        document.getElementById(`btn-${k}`).classList.remove('bg-white', 'text-emerald-900', 'shadow-sm');
-        document.getElementById(`btn-${k}`).classList.add('text-slate-600');
+        $(`tab-${k}`).classList.toggle('hidden', k !== id);
+        const b = $(`btn-${k}`);
+        b.classList.toggle('bg-white', k === id);
+        b.classList.toggle('text-emerald-900', k === id);
+        b.classList.toggle('shadow-sm', k === id);
+        b.classList.toggle('text-slate-600', k !== id);
       });
-      document.getElementById(`tab-${id}`).classList.remove('hidden');
-      document.getElementById(`btn-${id}`).classList.add('bg-white', 'text-emerald-900', 'shadow-sm');
-      document.getElementById(`btn-${id}`).classList.remove('text-slate-600');
-      lucide.createIcons();
+      if (id === 'clim') $('c-heure').value = localHHmm();
+      if (id === 'reports') {
+        const s = $('global-serre').value;
+        if (s && [...$('rep-serre-filter').options].some(o => o.value === s)) $('rep-serre-filter').value = s;
+        loadDailySheet();
+      }
+      icons();
     }
   </script>
 </body>
