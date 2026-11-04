@@ -16,9 +16,9 @@
   <style>
     input, select, textarea { font-size: 16px !important; }
     @media print {
-      body { background: white !important; color: black !important; }
+      body { background: white !important; color: black !important; padding: 0 !important; }
       header, .no-print { display: none !important; }
-      .print-page { border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; }
+      .print-sheet { border: none !important; box-shadow: none !important; width: 100% !important; max-width: 100% !important; padding: 0 !important; margin: 0 !important; page-break-after: always; }
     }
   </style>
 </head>
@@ -71,7 +71,7 @@
         <i data-lucide="sprout" class="w-4 h-4"></i><span>Plants</span>
       </button>
       <button onclick="switchTab('reports')" id="btn-reports" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1.5 transition">
-        <i data-lucide="file-text" class="w-4 h-4"></i><span>Fiche Journalière</span>
+        <i data-lucide="files" class="w-4 h-4"></i><span>Fiches ARDIE</span>
       </button>
       <button onclick="switchTab('admin')" id="btn-admin" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1.5 transition">
         <i data-lucide="settings" class="w-4 h-4"></i><span>Admin</span>
@@ -87,7 +87,7 @@
       <form id="form-clim" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="flex items-center justify-between border-b pb-2">
           <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i data-lucide="gauge" class="w-4 h-4 text-emerald-600"></i>Relevé Climatique & Irrigation
+            <i data-lucide="gauge" class="w-4 h-4 text-emerald-600"></i>Relevé Climatique Serre & Irrigation
           </h2>
           <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Objectif HR ≥ 75%</span>
         </div>
@@ -131,12 +131,12 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Arrosage / Pulvérisation (détails durée)</label>
-            <input type="text" id="c-arrosage" placeholder="ex: Tuyau 7h30 (2 min) / Pulvérisateur" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Arrosage manuel / Pulvérisateur (détails durée)</label>
+            <input type="text" id="c-arrosage" placeholder="ex: Tuyau 7h30 (2 min) / Pulvé jusqu'à 75%" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Remarques / Événements</label>
-            <input type="text" id="c-remarque" placeholder="Ventilation, buses..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Remarques / Commentaires</label>
+            <input type="text" id="c-remarque" placeholder="Observation ponctuelle..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
           </div>
         </div>
 
@@ -151,7 +151,7 @@
       <form id="form-plants" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="flex items-center justify-between border-b pb-2">
           <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-600"></i>Suivi Journalier Vitroplants Fruits à Pain
+            <i data-lucide="clipboard-check" class="w-4 h-4 text-emerald-600"></i>Fiche Suivi Journalier Vitroplants Fruits à Pain
           </h2>
           <span class="text-xs bg-slate-100 font-mono text-slate-600 px-2 py-0.5 rounded">FAP</span>
         </div>
@@ -178,14 +178,14 @@
         <div class="bg-gradient-to-r from-emerald-800 to-teal-800 text-white p-4 rounded-xl flex items-center justify-between shadow-inner">
           <div>
             <p class="text-xs uppercase font-bold tracking-wider text-emerald-200">Total des vitroplants restant en culture saine</p>
-            <p class="text-[11px] text-emerald-300">Formule : Initial - (Isolés + Morts)</p>
+            <p class="text-[11px] text-emerald-300">Calcul : Initial - (Isolés + Morts)</p>
           </div>
           <span class="text-3xl md:text-4xl font-mono font-black" id="p-sains-display">605</span>
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Remarques / Observations supplémentaires / Intervenant(s)</label>
-          <textarea id="p-observations" rows="2" placeholder="Observations globales..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"></textarea>
+          <textarea id="p-observations" rows="2" placeholder="État du lot, enracinement..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"></textarea>
         </div>
 
         <button type="submit" id="btn-submit-plants" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow transition active:scale-[0.99]">
@@ -194,114 +194,148 @@
       </form>
     </div>
 
-    <!-- 3. FICHE JOURNALIÈRE OFFICIELLE ARDIE -->
+    <!-- 3. RAPPORTS : 2 FICHES DISTINCTES CONFORMES PDF -->
     <div id="tab-reports" class="space-y-4 hidden">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-wrap items-end gap-3 no-print">
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Date de la fiche</label>
-          <input type="date" id="rep-date" class="bg-slate-50 border rounded-lg p-2 text-xs font-semibold">
+      <!-- Filtres et Choix de la Fiche -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3 no-print">
+        <div class="flex flex-wrap items-end gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Date</label>
+            <input type="date" id="rep-date" class="bg-slate-50 border rounded-lg p-2 text-xs font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-600 mb-1">Serre</label>
+            <select id="rep-serre-filter" class="bg-slate-50 border rounded-lg p-2 text-xs font-semibold"></select>
+          </div>
+          <button onclick="loadDailySheet()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-1.5 shadow">
+            <i data-lucide="search" class="w-4 h-4"></i><span>Charger les données</span>
+          </button>
         </div>
-        <div>
-          <label class="block text-xs font-bold text-slate-600 mb-1">Serre</label>
-          <select id="rep-serre-filter" class="bg-slate-50 border rounded-lg p-2 text-xs font-semibold"></select>
+
+        <!-- Boutons de choix de fiche -->
+        <div class="flex gap-2 pt-2 border-t">
+          <button onclick="showReportView('plants')" id="btn-view-plants" class="flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-800 text-white shadow-sm flex items-center justify-center gap-1.5">
+            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Fiche 1 : Bilan Plants (Page 1 PDF)</span>
+          </button>
+          <button onclick="showReportView('clim')" id="btn-view-clim" class="flex-1 py-2 text-xs font-bold rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center gap-1.5">
+            <i data-lucide="table-properties" class="w-4 h-4"></i><span>Fiche 2 : Relevés Climat (Page 3 PDF)</span>
+          </button>
+          <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 shadow">
+            <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimer</span>
+          </button>
         </div>
-        <button onclick="loadDailySheet()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-1.5 shadow">
-          <i data-lucide="search" class="w-4 h-4"></i><span>Générer la Fiche</span>
-        </button>
-        <button onclick="window.print()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2.5 rounded-lg flex items-center gap-1.5 shadow ml-auto">
-          <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimer / PDF</span>
-        </button>
       </div>
 
-      <!-- VUE FICHE OFFICIELLE ARDIE -->
-      <div id="printable-sheet" class="bg-white p-6 rounded-xl border border-slate-300 shadow-sm print-page space-y-6">
-        
-        <div class="border-b-2 border-slate-800 pb-3 flex justify-between items-start">
+      <!-- ================= FICHE 1 : SUIVI JOURNALIER PLANTS (PAGE 1 DU PDF) ================= -->
+      <div id="view-sheet-plants" class="bg-white p-8 rounded-xl border border-slate-300 shadow-sm print-sheet space-y-6">
+        <div class="flex justify-between items-start border-b-2 border-slate-900 pb-3">
           <div>
-            <span class="text-xl font-black text-slate-800 tracking-wider">ARDIE</span>
-            <h2 class="text-lg font-black text-slate-900 uppercase mt-1">FICHE SUIVI JOURNALIER</h2>
-            <h3 class="text-sm font-bold text-slate-600">VITROPLANTS FRUITS A PAIN</h3>
+            <span class="text-2xl font-black text-slate-900 tracking-wider">ARDIE</span>
+            <h2 class="text-xl font-black text-slate-900 uppercase mt-2">FICHE SUIVI JOURNALIER</h2>
+            <h3 class="text-sm font-bold text-slate-700">VITROPLANTS FRUITS A PAIN</h3>
           </div>
           <div class="text-right">
-            <span class="text-xs font-bold text-slate-500 font-mono">2026</span>
-            <p class="text-sm font-bold text-slate-800 mt-2">Date du jour : <span id="sheet-date" class="underline">--/--/2026</span></p>
-            <p class="text-xs font-semibold text-emerald-800 mt-0.5">Emplacement : <span id="sheet-serre" class="font-bold">--</span></p>
+            <span class="text-xs font-bold text-slate-400 font-mono">2026</span>
+            <p class="text-sm font-bold text-slate-900 mt-3">Date du jour : <span id="f1-date" class="underline font-mono">--/--/2026</span></p>
+            <p class="text-xs font-bold text-emerald-800 mt-1">Serre : <span id="f1-serre">--</span></p>
           </div>
         </div>
 
-        <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs space-y-1">
-          <p class="font-bold text-slate-800">Conditions climatiques intérieur serre :</p>
-          <div class="flex justify-between text-slate-600 pt-1">
-            <span>• BRUMISATEUR AMBIANT : Durée <strong>h24</strong> / Fréquence <strong>7/7</strong></span>
-            <span>• ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Fréquence <strong>7/7</strong></span>
-          </div>
+        <div class="border border-slate-300 rounded p-3 text-xs space-y-1">
+          <p class="font-bold text-slate-900">Conditions climatiques intérieur serre principale :</p>
+          <p class="text-slate-700 pt-1">BRUMISATEUR AMBIANT : Durée : <strong>h24</strong> / Fréquence : <strong>7/7</strong></p>
+          <p class="text-slate-700">ECLAIRAGE ARTIFICIEL AMBIANT (nuit) : programmé de <strong>-- h</strong> à <strong>-- h</strong> / Fréquence : <strong>7/7</strong></p>
         </div>
 
         <div>
-          <h4 class="text-xs font-bold uppercase text-slate-700 mb-2">1. Quantité Vitro Plants Fruits à pain</h4>
-          <table class="w-full border-collapse border border-slate-400 text-xs">
+          <h4 class="text-xs font-bold uppercase text-slate-800 mb-2">Quantité Vitro Plants Fruits à pain :</h4>
+          <table class="w-full border-collapse border border-slate-500 text-xs">
             <thead>
-              <tr class="bg-slate-100">
-                <th class="border border-slate-300 p-2 text-left">Indicateur</th>
-                <th class="border border-slate-300 p-2 text-center w-28">Quantité</th>
-                <th class="border border-slate-300 p-2 text-left">Intervenant Technicien</th>
+              <tr class="bg-slate-100 text-slate-800">
+                <th class="border border-slate-400 p-2 text-left">Quantité</th>
+                <th class="border border-slate-400 p-2 text-center w-28">Serre</th>
+                <th class="border border-slate-400 p-2 text-left">Intervenant Technicien</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td class="border border-slate-300 p-2 font-medium">Nombre de Vitro plants initial au démarrage</td>
-                <td class="border border-slate-300 p-2 text-center font-bold" id="sheet-p-init">-</td>
-                <td class="border border-slate-300 p-2" rowspan="5" id="sheet-p-agent">-</td>
+                <td class="border border-slate-400 p-2 font-medium">Nombre de Vitro plants <span class="underline">initial au démarrage</span></td>
+                <td class="border border-slate-400 p-2 text-center font-bold text-sm" id="f1-init">605</td>
+                <td class="border border-slate-400 p-2 font-medium text-slate-700" rowspan="5" id="f1-agent">-</td>
               </tr>
               <tr>
-                <td class="border border-slate-300 p-2 text-amber-800 font-medium">Total vitro plants isolés ce jour</td>
-                <td class="border border-slate-300 p-2 text-center font-bold text-amber-800" id="sheet-p-isoles">-</td>
+                <td class="border border-slate-400 p-2 text-amber-800 font-medium">Total vitro plants <span class="underline">isolés ce jour</span></td>
+                <td class="border border-slate-400 p-2 text-center font-bold text-amber-800" id="f1-isoles">0</td>
               </tr>
               <tr>
-                <td class="border border-slate-300 p-2 text-red-800 font-medium">Total vitro plants morts ce jour</td>
-                <td class="border border-slate-300 p-2 text-center font-bold text-red-800" id="sheet-p-morts">-</td>
+                <td class="border border-slate-400 p-2 text-red-800 font-medium">Total vitro plants <span class="underline">morts ce jour</span></td>
+                <td class="border border-slate-400 p-2 text-center font-bold text-red-800" id="f1-morts">0</td>
               </tr>
               <tr>
-                <td class="border border-slate-300 p-2 text-blue-800 font-medium">Total vitro plants mis sous surveillance ce jour</td>
-                <td class="border border-slate-300 p-2 text-center font-bold text-blue-800" id="sheet-p-surv">-</td>
+                <td class="border border-slate-400 p-2 text-blue-800 font-medium">Total vitro plants <span class="underline">mis sous surveillance ce jour</span></td>
+                <td class="border border-slate-400 p-2 text-center font-bold text-blue-800" id="f1-surv">0</td>
               </tr>
               <tr class="bg-emerald-50">
-                <td class="border border-slate-300 p-2 font-bold text-emerald-950">Total des vitro plants restant en culture saine</td>
-                <td class="border border-slate-300 p-2 text-center font-black text-sm text-emerald-900" id="sheet-p-sains">-</td>
+                <td class="border border-slate-400 p-2 font-bold text-emerald-950">Total des vitro plants <span class="underline">restant en culture saine</span></td>
+                <td class="border border-slate-400 p-2 text-center font-black text-base text-emerald-900" id="f1-sains">605</td>
               </tr>
             </tbody>
           </table>
-          <p class="text-[11px] text-slate-600 mt-1 italic">Remarques / Observations : <span id="sheet-p-obs" class="font-normal not-italic">-</span></p>
         </div>
 
-        <div>
-          <h4 class="text-xs font-bold uppercase text-slate-700 mb-2">2. Relevés climatiques serre et irrigation</h4>
-          <table class="w-full border-collapse border border-slate-400 text-[11px]">
+        <div class="pt-4 border-t border-slate-200 text-xs">
+          <p class="font-bold text-slate-800">• Remarques / Observations supplémentaires / Intervenant(s) :</p>
+          <div id="f1-obs" class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded min-h-[60px] text-slate-700 italic">Aucune observation saisie.</div>
+        </div>
+      </div>
+
+      <!-- ================= FICHE 2 : RELEVÉS CLIMATIQUES (PAGE 3 DU PDF) ================= -->
+      <div id="view-sheet-clim" class="bg-white p-6 rounded-xl border border-slate-300 shadow-sm print-sheet space-y-4 hidden">
+        <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
+          <div>
+            <span class="text-xl font-black text-slate-900 tracking-wider">ARDIE</span>
+            <h2 class="text-base font-black text-slate-900 uppercase mt-1">RELEVÉS CLIMATIQUES SERRE ET IRRIGATION</h2>
+          </div>
+          <div class="text-right">
+            <span class="text-xs font-bold text-slate-400 font-mono">2026</span>
+            <p class="text-xs font-bold text-slate-800">Date : <span id="f2-date" class="underline font-mono">--/--/2026</span></p>
+            <p class="text-xs font-bold text-emerald-800">SERRE : <span id="f2-serre">--</span></p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse border border-slate-500 text-[10px]">
             <thead>
-              <tr class="bg-slate-100 text-center">
-                <th class="border border-slate-300 p-1.5 w-14">Heure</th>
-                <th class="border border-slate-300 p-1.5">Temp (°C)</th>
-                <th class="border border-slate-300 p-1.5">Humidité Air (%)</th>
-                <th class="border border-slate-300 p-1.5">Lumens (Lux)</th>
-                <th class="border border-slate-300 p-1.5">Humidité Terreau</th>
-                <th class="border border-slate-300 p-1.5">pH</th>
-                <th class="border border-slate-300 p-1.5">Éclairage</th>
-                <th class="border border-slate-300 p-1.5">Arrosage / Pulvérisateur</th>
-                <th class="border border-slate-300 p-1.5">Remarques</th>
-                <th class="border border-slate-300 p-1.5">Intervenant</th>
+              <tr class="bg-slate-100 text-center font-bold">
+                <th class="border border-slate-400 p-1 w-12">Heure</th>
+                <th class="border border-slate-400 p-1 w-14">Température (°C)</th>
+                <th class="border border-slate-400 p-1 w-14">Humidité Ambiant (min 75%)</th>
+                <th class="border border-slate-400 p-1 w-14">Lumens (Lux)</th>
+                <th class="border border-slate-400 p-1 w-14">Humidité Terreau</th>
+                <th class="border border-slate-400 p-1 w-10">pH</th>
+                <th class="border border-slate-400 p-1 w-14">Éclairage artificiel (jour)</th>
+                <th class="border border-slate-400 p-1">Arrosage manuel tuyau (7h30 et 16h30) / pulvérisateur</th>
+                <th class="border border-slate-400 p-1">Remarques / Commentaire</th>
+                <th class="border border-slate-400 p-1 w-20">Intervenant</th>
               </tr>
             </thead>
-            <tbody id="sheet-clim-tbody">
-              <tr><td colspan="10" class="text-center p-3 text-slate-400">Cliquez sur « Générer la Fiche » pour charger les relevés...</td></tr>
+            <tbody id="f2-tbody">
+              <!-- Rempli dynamiquement -->
             </tbody>
           </table>
         </div>
 
+        <div class="pt-2 text-[11px] text-slate-700">
+          <p class="font-bold">• Remarques / Observations supplémentaires / Intervenant(s) :</p>
+          <div class="mt-1 p-2 border border-slate-200 rounded min-h-[40px] italic">Relevés réguliers des créneaux de journée.</div>
+        </div>
       </div>
+
     </div>
 
     <!-- 4. ADMIN -->
     <div id="tab-admin" class="space-y-4 hidden">
+      <!-- Emplacements -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <h3 class="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
           <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600"></i>Gestion des Emplacements / Serres
@@ -315,14 +349,16 @@
         <ul id="list-loc" class="divide-y divide-slate-100 text-xs"></ul>
       </div>
 
+      <!-- Agents SharePoint -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div class="flex items-center justify-between mb-3 border-b pb-2">
           <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
             <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>Gestion des Agents ARDIE (SharePoint)
           </h3>
-          <span class="text-[10px] text-slate-400">Bascule Actif / Inactif</span>
+          <span class="text-[10px] text-slate-400">Cliquez pour activer/désactiver</span>
         </div>
 
+        <!-- Ajout manuel si besoin -->
         <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 grid grid-cols-1 md:grid-cols-4 gap-2">
           <select id="new-agent-civ" class="bg-white border rounded p-1.5 text-xs">
             <option value="M.">M.</option>
@@ -376,37 +412,25 @@
       const rSerre = document.getElementById('rep-serre-filter');
 
       if (icon) icon.classList.add('animate-spin');
-      sSerre.innerHTML = '<option value="" disabled selected>⏳ Chargement...</option>';
-      sAgent.innerHTML = '<option value="" disabled selected>⏳ Chargement...</option>';
 
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getConfig`);
         state = await res.json();
 
-        // 1. Emplacements
+        // 1. Serres
         if (state.emplacements && state.emplacements.length > 0) {
           sSerre.innerHTML = state.emplacements.map(e => `<option value="${e}">🌱 ${e}</option>`).join('');
           rSerre.innerHTML = '<option value="ALL">Toutes les serres</option>' + state.emplacements.map(e => `<option value="${e}">${e}</option>`).join('');
-        } else {
-          sSerre.innerHTML = '<option value="" disabled selected>⚠️ Aucune serre</option>';
         }
 
-        // 2. Agents Actifs (Anticrash & sans undefined)
+        // 2. Agents Actifs
         if (state.agentsActifs && state.agentsActifs.length > 0) {
-          sAgent.innerHTML = state.agentsActifs.map(a => {
-            const nom = a.nom || a.name || a.displayName || (typeof a === 'string' ? a : 'Agent');
-            const label = a.label || a.displayName || nom;
-            return `<option value="${nom}">👤 ${label}</option>`;
-          }).join('');
-        } else {
-          sAgent.innerHTML = '<option value="" disabled selected>⚠️ Aucun agent actif trouvé</option>';
+          sAgent.innerHTML = state.agentsActifs.map(a => `<option value="${a.nom}">👤 ${a.label}</option>`).join('');
         }
 
         renderAdmin();
       } catch (err) {
-        console.error("Erreur :", err);
-        sSerre.innerHTML = '<option value="" disabled selected>❌ Erreur de chargement</option>';
-        sAgent.innerHTML = '<option value="" disabled selected>❌ Erreur de chargement</option>';
+        console.error("Erreur chargement :", err);
       } finally {
         if (icon) icon.classList.remove('animate-spin');
       }
@@ -421,21 +445,16 @@
         </li>
       `).join('');
 
-      // Liste agents (avec gestion complète sans undefined)
+      // Liste agents (avec nom complet garanti sans undefined)
       document.getElementById('list-agents').innerHTML = state.tousLesAgents.map(ag => {
-        const nom = ag.displayName || ag.name || (typeof ag === 'string' ? ag : 'Agent inconnu');
-        const contrat = ag.contrat || 'Salarié';
-        const atelier = ag.atelier || 'Pépinière';
-        const isActif = (ag.status && String(ag.status).toLowerCase() === 'actif');
-        const targetNom = ag.name || nom;
-
+        const isActif = (String(ag.status).toLowerCase() === 'actif');
         return `
           <li class="py-2.5 flex justify-between items-center border-b border-slate-100">
             <div>
-              <div class="font-bold text-slate-800 text-xs">${nom}</div>
-              <div class="text-[10px] text-slate-400">${contrat} • ${atelier}</div>
+              <div class="font-bold text-slate-800 text-xs">${ag.displayName}</div>
+              <div class="text-[10px] text-slate-400">${ag.contrat} • ${ag.atelier}</div>
             </div>
-            <button onclick="toggleAgent('${targetNom}')" 
+            <button onclick="toggleAgent('${ag.name}')" 
                     class="px-3 py-1 rounded-full text-[10px] font-bold tracking-wide transition ${isActif ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-200 text-slate-500'}">
               ${isActif ? 'Actif' : 'Inactif'}
             </button>
@@ -520,7 +539,6 @@
       lucide.createIcons();
     });
 
-    // Actions Admin
     async function addLocation() {
       const v = document.getElementById('new-loc').value.trim();
       if (!v) return;
@@ -528,29 +546,50 @@
       document.getElementById('new-loc').value = '';
       loadConfig();
     }
-
     async function delLocation(name) {
       if (!confirm(`Supprimer ${name} ?`)) return;
       await postData({ type: 'MANAGE_LOCATION', subAction: 'DELETE', name });
       loadConfig();
     }
-
     async function addAgent() {
       const civ = document.getElementById('new-agent-civ').value;
       const name = document.getElementById('new-agent-name').value.trim();
       const contrat = document.getElementById('new-agent-contrat').value;
       if (!name) return alert("Indiquez le nom de l'agent.");
-      await postData({ type: 'MANAGE_AGENT', subAction: 'ADD', civilite: civ, name: name, contrat: contrat, atelier: 'Pépinière' });
+      await postData({ type: 'MANAGE_AGENT', subAction: 'ADD', civilite: civ, name: name, contrat: contrat });
       document.getElementById('new-agent-name').value = '';
       loadConfig();
     }
-
     async function toggleAgent(name) {
       await postData({ type: 'MANAGE_AGENT', subAction: 'TOGGLE_STATUS', name: name });
       loadConfig();
     }
 
-    // Chargement de la Fiche Journalière ARDIE
+    // Bascule entre la Fiche 1 et la Fiche 2
+    function showReportView(view) {
+      const p = document.getElementById('view-sheet-plants');
+      const c = document.getElementById('view-sheet-clim');
+      const bp = document.getElementById('btn-view-plants');
+      const bc = document.getElementById('btn-view-clim');
+
+      if (view === 'plants') {
+        p.classList.remove('hidden');
+        c.classList.add('hidden');
+        bp.classList.replace('bg-slate-200', 'bg-emerald-800');
+        bp.classList.replace('text-slate-700', 'text-white');
+        bc.classList.replace('bg-emerald-800', 'bg-slate-200');
+        bc.classList.replace('text-white', 'text-slate-700');
+      } else {
+        c.classList.remove('hidden');
+        p.classList.add('hidden');
+        bc.classList.replace('bg-slate-200', 'bg-emerald-800');
+        bc.classList.replace('text-slate-700', 'text-white');
+        bp.classList.replace('bg-emerald-800', 'bg-slate-200');
+        bp.classList.replace('text-white', 'text-slate-700');
+      }
+    }
+
+    // Chargement des données des 2 fiches
     async function loadDailySheet() {
       const rawDate = document.getElementById('rep-date').value;
       if (!rawDate) return alert("Sélectionnez une date");
@@ -561,44 +600,71 @@
       const res = await fetch(`${SCRIPT_URL}?action=getReports&date=${formattedDate}&serre=${serre}`);
       const data = await res.json();
 
-      document.getElementById('sheet-date').textContent = formattedDate;
-      document.getElementById('sheet-serre').textContent = (serre === 'ALL') ? 'Toutes les serres' : serre;
-
-      // Section Plants
+      // Données Fiche 1 (Plants)
+      document.getElementById('f1-date').textContent = formattedDate;
+      document.getElementById('f1-serre').textContent = (serre === 'ALL') ? 'Toutes les serres' : serre;
       if (data.plant) {
-        document.getElementById('sheet-p-init').textContent = data.plant.initial;
-        document.getElementById('sheet-p-isoles').textContent = data.plant.isoles;
-        document.getElementById('sheet-p-morts').textContent = data.plant.morts;
-        document.getElementById('sheet-p-surv').textContent = data.plant.surveillance;
-        document.getElementById('sheet-p-sains').textContent = data.plant.sains;
-        document.getElementById('sheet-p-agent').textContent = data.plant.intervenant;
-        document.getElementById('sheet-p-obs').textContent = data.plant.observations || '-';
+        document.getElementById('f1-init').textContent = data.plant.initial;
+        document.getElementById('f1-isoles').textContent = data.plant.isoles;
+        document.getElementById('f1-morts').textContent = data.plant.morts;
+        document.getElementById('f1-surv').textContent = data.plant.surveillance;
+        document.getElementById('f1-sains').textContent = data.plant.sains;
+        document.getElementById('f1-agent').textContent = data.plant.intervenant;
+        document.getElementById('f1-obs').textContent = data.plant.observations || 'Aucune observation saisie.';
       } else {
-        ['sheet-p-init', 'sheet-p-isoles', 'sheet-p-morts', 'sheet-p-surv', 'sheet-p-sains', 'sheet-p-agent', 'sheet-p-obs'].forEach(id => {
-          document.getElementById(id).textContent = 'Aucun bilan saisi';
-        });
+        document.getElementById('f1-init').textContent = '-';
+        document.getElementById('f1-isoles').textContent = '-';
+        document.getElementById('f1-morts').textContent = '-';
+        document.getElementById('f1-surv').textContent = '-';
+        document.getElementById('f1-sains').textContent = '-';
+        document.getElementById('f1-agent').textContent = 'Aucun bilan pour ce jour';
+        document.getElementById('f1-obs').textContent = 'Aucun bilan enregistré.';
       }
 
-      // Section Climatique
-      const tbody = document.getElementById('sheet-clim-tbody');
-      if (data.climats && data.climats.length > 0) {
-        tbody.innerHTML = data.climats.map(c => `
-          <tr class="hover:bg-slate-50 text-center">
-            <td class="border border-slate-300 p-1 font-bold font-mono">${c.heure}</td>
-            <td class="border border-slate-300 p-1 font-semibold">${c.temp}°C</td>
-            <td class="border border-slate-300 p-1 font-semibold ${Number(c.hygro) < 75 ? 'text-red-600 bg-red-50' : 'text-emerald-700'}">${c.hygro}%</td>
-            <td class="border border-slate-300 p-1">${c.lumens}</td>
-            <td class="border border-slate-300 p-1">${c.humTerreau}%</td>
-            <td class="border border-slate-300 p-1">${c.ph}</td>
-            <td class="border border-slate-300 p-1">${c.eclairage}</td>
-            <td class="border border-slate-300 p-1 text-left">${c.arrosage}</td>
-            <td class="border border-slate-300 p-1 text-left">${c.remarque}</td>
-            <td class="border border-slate-300 p-1 font-medium">${c.intervenant}</td>
-          </tr>
-        `).join('');
-      } else {
-        tbody.innerHTML = `<tr><td colspan="10" class="text-center p-3 text-slate-400">Aucun relevé météo enregistré pour cette journée.</td></tr>`;
-      }
+      // Données Fiche 2 (Climat)
+      document.getElementById('f2-date').textContent = formattedDate;
+      document.getElementById('f2-serre').textContent = (serre === 'ALL') ? 'Toutes les serres' : serre;
+      const tbody = document.getElementById('f2-tbody');
+
+      // Grille type des heures de relevé ARDIE (Page 3 PDF)
+      const defaultSlots = ['07h30', '08h30', '09h30', '10h30', '11h30', '12h30', '13h30', '14h30', '15h30', '16h30'];
+      
+      let rowsHtml = '';
+      defaultSlots.forEach(slot => {
+        const found = (data.climats || []).find(c => c.heure && c.heure.replace(':', 'h').startsWith(slot.slice(0, 3)));
+        if (found) {
+          rowsHtml += `
+            <tr class="text-center hover:bg-slate-50">
+              <td class="border border-slate-400 p-1 font-bold font-mono">${found.heure}</td>
+              <td class="border border-slate-400 p-1 font-semibold">${found.temp}°C</td>
+              <td class="border border-slate-400 p-1 font-semibold ${Number(found.hygro) < 75 ? 'text-red-700 bg-red-50' : 'text-emerald-800'}">${found.hygro}%</td>
+              <td class="border border-slate-400 p-1">${found.lumens}</td>
+              <td class="border border-slate-400 p-1">${found.humTerreau}%</td>
+              <td class="border border-slate-400 p-1">${found.ph}</td>
+              <td class="border border-slate-400 p-1">${found.eclairage}</td>
+              <td class="border border-slate-400 p-1 text-left">${found.arrosage}</td>
+              <td class="border border-slate-400 p-1 text-left">${found.remarque}</td>
+              <td class="border border-slate-400 p-1 font-medium">${found.intervenant}</td>
+            </tr>
+          `;
+        } else {
+          rowsHtml += `
+            <tr class="text-center text-slate-400">
+              <td class="border border-slate-400 p-1 font-mono font-semibold text-slate-600">${slot}</td>
+              <td class="border border-slate-400 p-1"></td>
+              <td class="border border-slate-400 p-1"></td>
+              <td class="border border-slate-400 p-1"></td>
+              <td class="border border-slate-400 p-1"></td>
+              <td class="border border-slate-400 p-1"></td>
+              <td class="border border-slate-400 p-1"></td>
+              <td class="border border-slate-400 p-1"></td>
+              <td class="border border-slate-400 p-1"></td>
+              <td class="border border-slate-400 p-1"></td>
+            </tr>
+          `;
+        }
+      });
+      tbody.innerHTML = rowsHtml;
     }
 
     function switchTab(id) {
