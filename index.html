@@ -15,7 +15,7 @@
 
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <!-- PDF vectoriel (texte sélectionnable) : jsPDF + AutoTable -->
+  <!-- PDF vectoriel (texte net et sélectionnable) : jsPDF + AutoTable -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
@@ -58,7 +58,7 @@
     </div>
   </header>
 
-  <!-- Bandeaux Alerte / File d'attente / PWA -->
+  <!-- Bandeaux Système -->
   <div id="banner" class="no-print hidden max-w-4xl w-full mx-auto px-4 pt-3">
     <div id="banner-text" class="bg-amber-100 border border-amber-300 text-amber-900 text-xs font-semibold rounded-lg p-3"></div>
   </div>
@@ -72,7 +72,7 @@
     </div>
   </div>
 
-  <!-- Sélecteurs globaux Serre & Agent -->
+  <!-- Sélecteurs globaux Serre & Agent SharePoint (Verrouillés, jamais de saisie manuelle) -->
   <div class="no-print max-w-4xl w-full mx-auto px-4 pt-3">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div>
@@ -83,7 +83,7 @@
       </div>
       <div>
         <div class="flex justify-between items-center mb-1">
-          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Agent actif</label>
+          <label class="block text-[11px] font-bold text-slate-500 uppercase tracking-wider">Agent intervenant (SharePoint)</label>
           <span class="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 rounded font-medium">Actifs uniquement</span>
         </div>
         <select id="global-intervenant" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm font-semibold focus:ring-2 focus:ring-emerald-500">
@@ -93,7 +93,38 @@
     </div>
   </div>
 
-  <!-- Navigation principale par Onglets (6 onglets) -->
+  <!-- NOUVEAU WIDGET : ÉTAT DU LOT EN 1 COUP D'ŒIL (HUD TERRAIN) -->
+  <div class="no-print max-w-4xl w-full mx-auto px-4 pt-2">
+    <div class="bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white rounded-xl shadow-sm p-3 border border-emerald-700/50">
+      <div class="flex items-center justify-between border-b border-emerald-700/50 pb-1.5 mb-2">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-200 flex items-center gap-1.5">
+          <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+          État du lot en direct : <span id="kpi-serre-name" class="text-white font-black underline">--</span>
+        </span>
+        <span class="text-[10px] text-emerald-300" id="kpi-time-label">Dernière mise à jour : --</span>
+      </div>
+      <div class="grid grid-cols-4 gap-2 text-center">
+        <div class="bg-black/20 p-2 rounded-lg">
+          <p class="text-[10px] uppercase text-emerald-300 font-semibold">Culture Saine</p>
+          <p class="text-xl md:text-2xl font-black font-mono text-emerald-100" id="kpi-sains">--</p>
+        </div>
+        <div class="bg-black/20 p-2 rounded-lg">
+          <p class="text-[10px] uppercase text-amber-300 font-semibold">Surveillance</p>
+          <p class="text-xl md:text-2xl font-black font-mono text-amber-200" id="kpi-surv">--</p>
+        </div>
+        <div class="bg-black/20 p-2 rounded-lg">
+          <p class="text-[10px] uppercase text-red-300 font-semibold">Morts (Pertes)</p>
+          <p class="text-xl md:text-2xl font-black font-mono text-red-200" id="kpi-morts">--</p>
+        </div>
+        <div class="bg-black/20 p-2 rounded-lg">
+          <p class="text-[10px] uppercase text-teal-200 font-semibold">Viabilité</p>
+          <p class="text-xl md:text-2xl font-black font-mono text-white" id="kpi-rate">--%</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barre d'onglets (Navigation rapide) -->
   <div class="no-print max-w-4xl w-full mx-auto px-4 mt-3">
     <div class="flex flex-wrap bg-slate-200 p-1 rounded-xl gap-1">
       <button onclick="switchTab('clim')" id="btn-clim" class="flex-1 min-w-[70px] py-2 text-xs font-bold rounded-lg bg-white text-emerald-900 shadow-sm flex items-center justify-center gap-1 transition">
@@ -235,14 +266,14 @@
       </form>
     </div>
 
-    <!-- 3. ANOMALIES & PERTES (NOUVELLE FICHE 1) -->
+    <!-- 3. ANOMALIES & PERTES (PLANTS SOUS SURVEILLANCE) -->
     <div id="tab-anom" class="space-y-4 hidden">
       <form id="form-anom" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="border-b pb-2">
           <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
             <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i>Suivi anomalies / pertes – Vitroplants sous surveillance
           </h2>
-          <p class="text-[11px] text-slate-500 mt-0.5">Une fois un vitroplant détecté anormal ou faible, il est isolé, étiqueté et mis en observation.</p>
+          <p class="text-[11px] text-slate-500 mt-0.5">Isolement d'un vitroplant détecté anormal. L'agent est automatiquement votre sélection active.</p>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -255,12 +286,11 @@
             <input type="time" id="an-heure-entree" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
           </div>
           <div class="col-span-2 md:col-span-1">
-            <label class="block text-xs font-bold text-amber-900 mb-1">Vitroplants (VP) godet numéro :</label>
-            <input type="text" id="an-godet-num" required placeholder="ex: 84% ou Godet #12" class="w-full bg-amber-50 border border-amber-300 rounded-lg p-2 text-sm font-bold text-amber-950">
+            <label class="block text-xs font-bold text-amber-900 mb-1">Vitroplant (VP) godet n°</label>
+            <input type="text" id="an-godet-num" required placeholder="ex: 12" class="w-full bg-amber-50 border border-amber-300 rounded-lg p-2 text-sm font-bold text-amber-950">
           </div>
         </div>
 
-        <!-- Constats Pathologiques (Cases à cocher) -->
         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
           <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Constats pathologiques :</label>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
@@ -287,37 +317,34 @@
           </div>
         </div>
 
-        <!-- Mesures & Sortie -->
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Mesures sanitaires (Oui/Non - Lesquelles ?)</label>
-            <input type="text" id="an-mesures" placeholder="ex: Fongicide, diminution arrosage..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Statut d'observation</label>
-            <select id="an-statut-sortie" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
-              <option value="En cours">⏳ En cours d'observation</option>
-              <option value="Sauvé">🌱 Sauvé (retour culture saine)</option>
-              <option value="Mort">🥀 Mort (perte définitive)</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Date de sortie (si clos)</label>
-            <input type="date" id="an-date-sortie" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Intervenant sortie (si clos)</label>
-            <input type="text" id="an-agent-sortie" placeholder="Nom de l'agent..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
-          </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Mesures sanitaires (Oui/Non - Lesquelles ?)</label>
+          <input type="text" id="an-mesures" placeholder="ex: Isolement, traitement fongicide..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
         </div>
 
         <button type="submit" id="btn-submit-anom" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow">
-          <i data-lucide="save" class="w-5 h-5"></i><span>Enregistrer l'anomalie / observation</span>
+          <i data-lucide="eye" class="w-5 h-5"></i><span>Mettre sous surveillance</span>
         </button>
       </form>
+
+      <!-- Clôture rapide de sortie (Sauvé ou Mort) -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
+        <h3 class="font-bold text-slate-800 text-sm mb-2 border-b pb-2">Clôturer un plant sous surveillance (Sortie)</h3>
+        <p class="text-xs text-slate-500 mb-3">Sélectionnez le plant sorti d'observation. L'agent connecté sera enregistré comme intervenant de sortie.</p>
+        <div class="flex flex-wrap gap-2 items-center">
+          <input type="text" id="out-godet" placeholder="N° Godet" class="w-24 bg-slate-50 border rounded-lg p-2 text-xs font-bold">
+          <select id="out-statut" class="bg-slate-50 border rounded-lg p-2 text-xs font-semibold">
+            <option value="Sauvé">🌱 Déclarer Sauvé (retour sain)</option>
+            <option value="Mort">🥀 Déclarer Mort (perte)</option>
+          </select>
+          <button onclick="cloturerAnomalie()" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-lg shadow">
+            Valider la sortie
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- 4. PHASE D'ACCLIMATATION (NOUVELLE FICHE 2) -->
+    <!-- 4. PHASE D'ACCLIMATATION (10 PLANTS) -->
     <div id="tab-acclim" class="space-y-4 hidden">
       <form id="form-acclim" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="flex items-center justify-between border-b pb-2">
@@ -325,7 +352,7 @@
             <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
               <i data-lucide="clipboard-list" class="w-4 h-4 text-blue-600"></i>Tableau de suivi – Phase d'acclimatation
             </h2>
-            <p class="text-[11px] text-slate-500 mt-0.5">Test d'échantillonnage 10% effectué sur 10 vitroplants du lot.</p>
+            <p class="text-[11px] text-slate-500 mt-0.5">Test d'échantillonnage 10% sur 10 vitroplants du lot.</p>
           </div>
           <div class="flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
             <span class="text-xs font-bold text-blue-900">Lot N° :</span>
@@ -344,7 +371,6 @@
           </div>
         </div>
 
-        <!-- Tableau des 10 vitroplants -->
         <div class="sheet-scroll border rounded-xl overflow-hidden">
           <table class="w-full border-collapse text-xs min-w-[750px]">
             <thead class="bg-slate-100 text-slate-700 font-bold text-center border-b">
@@ -352,7 +378,7 @@
                 <th class="p-2 border-r w-8">N°</th>
                 <th class="p-2 border-r" colspan="5">Suivi morphologique</th>
                 <th class="p-2 border-r bg-emerald-50/50" colspan="3">Suivi conditions</th>
-                <th class="p-2" colspan="4">Suivi sanitaire (Cocher si Présent)</th>
+                <th class="p-2" colspan="4">Suivi sanitaire (Oui / Non)</th>
               </tr>
               <tr class="text-[10px] bg-slate-50 border-t">
                 <th class="p-1 border-r">VP</th>
@@ -364,15 +390,13 @@
                 <th class="p-1 border-r w-14 bg-emerald-50/50">T° substrat</th>
                 <th class="p-1 border-r w-14 bg-emerald-50/50">Hum. %</th>
                 <th class="p-1 border-r w-12 bg-emerald-50/50">pH</th>
-                <th class="p-1 border-r" title="Maladies foliaires">Maladies</th>
-                <th class="p-1 border-r" title="Ravageurs">Ravageurs</th>
-                <th class="p-1 border-r" title="Pourriture racinaire">Pourriture</th>
-                <th class="p-1" title="Maladies fongiques">Fongique</th>
+                <th class="p-1 border-r">Foliaire</th>
+                <th class="p-1 border-r">Ravageurs</th>
+                <th class="p-1 border-r">Racine</th>
+                <th class="p-1">Fongique</th>
               </tr>
             </thead>
-            <tbody id="acclim-inputs-tbody" class="divide-y divide-slate-100">
-              <!-- Rempli par JavaScript (10 lignes de saisie) -->
-            </tbody>
+            <tbody id="acclim-inputs-tbody" class="divide-y divide-slate-100"></tbody>
           </table>
         </div>
 
@@ -382,7 +406,7 @@
       </form>
     </div>
 
-    <!-- 5. FICHES ARDIE (4 FICHES SÉPARÉES CONFORMES) -->
+    <!-- 5. FICHES ARDIE (4 FICHES SÉPARÉES & PDF VECTORIELS HAUTE QUALITÉ) -->
     <div id="tab-reports" class="space-y-4 hidden">
       <div class="no-print bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
@@ -399,7 +423,6 @@
           </button>
         </div>
 
-        <!-- 4 Sous-onglets de sélection de fiche -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 pt-2 border-t">
           <button onclick="showReportView('plants')" id="btn-view-plants" class="py-2 text-xs font-bold rounded-lg bg-emerald-800 text-white shadow-sm flex items-center justify-center gap-1">
             <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i><span>Fiche 1 : Plants</span>
@@ -456,7 +479,12 @@
             <p class="text-slate-700">ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Programmé de <strong id="f1-ecl-debut">.......</strong> à <strong id="f1-ecl-fin">.......</strong> / Fréquence : <strong>7/7</strong></p>
           </div>
           <div>
-            <h4 class="text-xs font-bold uppercase text-slate-800 mb-2">Quantité vitro plants Fruits à pain :</h4>
+            <div class="flex justify-between items-center mb-2">
+              <h4 class="text-xs font-bold uppercase text-slate-800">Quantité vitro plants Fruits à pain :</h4>
+              <span class="text-xs font-black text-emerald-900 bg-emerald-100 px-2.5 py-0.5 rounded border border-emerald-300">
+                Reste en culture saine : <span id="f1-tag-sains">--</span>
+              </span>
+            </div>
             <table class="w-full border-collapse border border-slate-500 text-xs">
               <thead>
                 <tr class="bg-slate-100 text-slate-800">
@@ -509,6 +537,7 @@
               <span class="text-xs font-bold text-slate-400 font-mono" id="f2-year">2026</span>
               <p class="text-xs font-bold text-slate-800">Date : <span id="f2-date" class="underline font-mono">--/--/----</span></p>
               <p class="text-xs font-bold text-emerald-800">SERRE : <span id="f2-serre">--</span></p>
+              <p class="text-[11px] font-bold text-emerald-900">Reste sain : <span id="f2-tag-sains">--</span></p>
             </div>
           </div>
           <table class="w-full border-collapse border border-slate-500 text-[10px]">
@@ -529,7 +558,7 @@
             <tbody id="f2-tbody"></tbody>
           </table>
           <div class="pt-2 text-[11px] text-slate-700">
-            <p class="font-bold">• Relevés réguliers toutes les 30 min à partir de 06h00.</p>
+            <p class="font-bold">• Relevés réguliers de la journée.</p>
             <p id="f2-empty" class="mt-1 italic text-slate-500"></p>
           </div>
         </div>
@@ -542,12 +571,14 @@
             <div>
               <div class="flex items-center gap-3"><img class="logo-img hidden h-12 w-12 object-contain" alt=""><span class="text-xl font-black text-slate-900 tracking-wider">ARDIE</span></div>
               <h2 class="text-base font-black text-slate-900 uppercase mt-1">Suivi journalier d'anomalies / pertes - Vitro plants sous surveillance</h2>
-              <p class="text-[10px] text-slate-500 italic mt-0.5">(Une fois un vitro plant détecté comme anormal ou faible, il est isolé, étiqueté, et mis en observation.)</p>
             </div>
             <div class="text-right">
               <span class="text-xs font-bold text-slate-400 font-mono" id="f3-year">2026</span>
               <p class="text-xs font-bold text-slate-800">Date : <span id="f3-date" class="underline font-mono">--/--/----</span></p>
               <p class="text-xs font-bold text-emerald-800">SERRE : <span id="f3-serre">--</span></p>
+              <p class="text-[11px] font-bold text-emerald-900 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-0.5">
+                Reste en culture saine : <span id="f3-tag-sains">--</span> (Morts : <span id="f3-tag-morts">--</span>)
+              </p>
             </div>
           </div>
           <table class="w-full border-collapse border border-slate-500 text-[10px]">
@@ -575,7 +606,7 @@
         </div>
       </div>
 
-      <!-- VUE FICHE 4 : SUIVI PHASE ACCLIMATATION -->
+      <!-- VUE FICHE 4 : PHASE D'ACCLIMATATION -->
       <div class="sheet-scroll">
         <div id="view-sheet-acclim" class="sheet p-6 rounded-xl border border-slate-300 shadow-sm space-y-4 hidden min-w-[900px]">
           <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
@@ -583,7 +614,7 @@
               <div class="flex items-center gap-3"><img class="logo-img hidden h-12 w-12 object-contain" alt=""><span class="text-xl font-black text-slate-900 tracking-wider">ARDIE</span></div>
               <h2 class="text-base font-black text-slate-900 uppercase mt-1">Tableau de suivi - Phase d'acclimatation</h2>
               <div class="mt-1 border border-slate-400 px-2.5 py-0.5 inline-block text-xs font-bold">
-                Test effectué sur le lot numéro : <span id="f4-lot-num" class="underline">--</span>
+                Test effectué sur le lot numéro : <span id="f4-lot-num" class="underline">--</span> / 12
               </div>
             </div>
             <div class="text-right">
@@ -591,7 +622,7 @@
               <p class="text-xs font-bold text-slate-800">Date : <span id="f4-date" class="underline font-mono">--/--/----</span></p>
               <p class="text-xs font-bold text-slate-800">Heure : <span id="f4-heure">--h--</span></p>
               <p class="text-xs font-bold text-emerald-800">SERRE : <span id="f4-serre">--</span></p>
-              <p class="text-[11px] text-slate-600">Intervenant(s) : <span id="f4-agent" class="font-semibold">--</span></p>
+              <p class="text-[11px] text-slate-600">Intervenant : <span id="f4-agent" class="font-semibold">--</span></p>
             </div>
           </div>
           <table class="w-full border-collapse border border-slate-500 text-[10px]">
@@ -628,10 +659,10 @@
     <div id="tab-admin" class="space-y-4 hidden">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <h3 class="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
-          <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600"></i>Emplacements / Serres
+          <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600"></i>Gestion des Emplacements / Serres
         </h3>
         <div class="flex gap-2 mb-3">
-          <input type="text" id="new-loc" placeholder="Nom nouvelle serre (ex: Serre principale)" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+          <input type="text" id="new-loc" placeholder="Nom nouvelle serre (ex: Tunnel 3)" class="flex-1 bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
           <button onclick="addLocation()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded-lg text-xs font-bold flex items-center gap-1">
             <i data-lucide="plus" class="w-3.5 h-3.5"></i>Ajouter
           </button>
@@ -642,9 +673,9 @@
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div class="flex items-center justify-between mb-3 border-b pb-2">
           <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
-            <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>Agents ARDIE
+            <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>Agents ARDIE (SharePoint)
           </h3>
-          <span class="text-[10px] text-slate-400">Touchez le statut pour activer / désactiver</span>
+          <span class="text-[10px] text-slate-400">Cliquez pour activer/désactiver</span>
         </div>
         <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 grid grid-cols-2 md:grid-cols-5 gap-2">
           <select id="new-agent-civ" class="bg-white border rounded p-2 text-sm">
@@ -676,13 +707,12 @@
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
-    const EXPECTED_VERSION = "V12";
+    const EXPECTED_VERSION = "V13";
     const LOGO_FB = "https://scontent.frun1-1.fna.fbcdn.net/v/t39.30808-1/294737113_533509551750014_77347280882068389_n.png?stp=dst-png&cstp=mx1535x1535&ctp=s200x200&_nc_cat=102&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=GshwLzCRSKkQ7kNvwEGqleF&_nc_oc=AdoJ-dITzrKn9nnKCBmbmjyRdspNPGeI_C9TuqF-WcLYe2PnDowJiU4YsAPoWT3fHUQ&_nc_zt=24&_nc_ht=scontent.frun1-1.fna&_nc_gid=i3rs_GE-zo3m4cVjH4DBrQ&_nc_ss=7b2a8&oh=00_AQQKAmyMziEgAgyhZI9zWdTbB2MauPL4dfEQnVP-rmNASA&oe=6AF0F81C";
     const LOGO_CANDIDATES = ['logo.png', LOGO_FB];
     let LOGO = { src: null, data: null };
     let lastReport = null;
     let currentView = 'plants';
-    let existingToday = null;
 
     let state = { emplacements: [], agentsActifs: [], tousLesAgents: [] };
 
@@ -732,7 +762,10 @@
       $('ac-date').value = localISODate();
       $('ac-heure').value = localHHmm();
 
-      $('global-serre').addEventListener('change', e => { store.set('ardie_serre', e.target.value); checkTodayPlant(); });
+      $('global-serre').addEventListener('change', e => {
+        store.set('ardie_serre', e.target.value);
+        updateKpi(e.target.value);
+      });
       $('global-intervenant').addEventListener('change', e => store.set('ardie_agent', e.target.value));
       ['p-initial', 'p-isoles', 'p-morts'].forEach(id => $(id).addEventListener('input', calcPlants));
       $('p-ecl-debut').value = store.get('ardie_ecl_debut') || '';
@@ -746,7 +779,31 @@
       icons();
     });
 
-    // Génère les 10 lignes du tableau d'acclimatation
+    /* ---------- Mise à jour dynamique du bandeau KPI en 1 coup d'œil ---------- */
+    async function updateKpi(serre) {
+      $('kpi-serre-name').textContent = serre || '--';
+      try {
+        const res = await fetch(`${SCRIPT_URL}?action=getKpi&serre=${encodeURIComponent(serre)}`);
+        const kpi = await res.json();
+        $('kpi-sains').textContent = kpi.sains;
+        $('kpi-surv').textContent = kpi.surveillance || kpi.isoles;
+        $('kpi-morts').textContent = kpi.morts;
+        const total = (kpi.initial > 0) ? kpi.initial : (kpi.sains + kpi.morts);
+        const rate = (total > 0) ? ((kpi.sains / total) * 100).toFixed(1) : '100';
+        $('kpi-rate').textContent = rate + '%';
+        $('kpi-time-label').textContent = (kpi.date && kpi.date !== '-') ? `Dernier bilan : ${kpi.date} à ${kpi.heure}` : 'Aucun bilan pour cette serre';
+      } catch (e) {
+        // En cas de hors-ligne, on calcule depuis le formulaire
+        const init = parseInt($('p-initial').value) || 605;
+        const morts = parseInt($('p-morts').value) || 0;
+        const surv = parseInt($('p-surveillance').value) || 0;
+        const sains = Math.max(0, init - morts);
+        $('kpi-sains').textContent = sains;
+        $('kpi-surv').textContent = surv;
+        $('kpi-morts').textContent = morts;
+      }
+    }
+
     function renderAcclimInputs() {
       const tbody = $('acclim-inputs-tbody');
       let html = '';
@@ -797,33 +854,6 @@
       $('touch-icon').href = display;
     }
 
-    async function checkTodayPlant() {
-      const serre = $('global-serre').value;
-      const box = $('plants-existing');
-      if (!serre) { existingToday = null; box.classList.add('hidden'); return; }
-      let serverPlant = null;
-      try {
-        const res = await fetch(`${SCRIPT_URL}?action=getReports&date=${localISODate()}&serre=${encodeURIComponent(serre)}`);
-        const d = await res.json();
-        serverPlant = (d && d.plant) ? d.plant : null;
-      } catch (e) {}
-
-      let local = null;
-      if (!serverPlant) {
-        const it = qLoad().filter(i => i.payload.type === 'SUIVI_PLANTS' && i.payload.serre === serre && i.payload.date === localISODate()).pop();
-        if (it) local = { heure: it.payload.heure, intervenant: it.payload.intervenant, sains: it.payload.sains, initial: it.payload.initial, local: true };
-      }
-      existingToday = serverPlant || local;
-
-      if (existingToday) {
-        const who = (existingToday.intervenant && existingToday.intervenant !== '(non renseigné)') ? ` par ${existingToday.intervenant}` : '';
-        box.innerHTML = `⚠️ Une fiche journalière existe déjà aujourd'hui pour <b>${esc(serre)}</b> à ${esc(existingToday.heure)}${esc(who)} (${esc(existingToday.sains)} sains / ${esc(existingToday.initial)}). Une nouvelle validation ajoutera une ligne.`;
-        box.classList.remove('hidden');
-      } else {
-        box.classList.add('hidden');
-      }
-    }
-
     function calcPlants() {
       const init = parseInt($('p-initial').value) || 0;
       const isoles = parseInt($('p-isoles').value) || 0;
@@ -862,24 +892,14 @@
           agentsActifs: tous.filter(a => a.actif)
         };
 
-        banner(raw.version === EXPECTED_VERSION ? '' :
-          `⚠️ Le script Google déployé est en version « ${raw.version || 'inconnue'} » au lieu de ${EXPECTED_VERSION}. Dans Apps Script : Déployer → Gérer les déploiements → ✏️ → Version : Nouvelle version → Déployer.`);
-
         renderSelects();
         renderAdmin();
-        checkTodayPlant();
+        const curSerre = $('global-serre').value;
+        if (curSerre) updateKpi(curSerre);
         store.set('ardie_config', JSON.stringify({ state, at: Date.now() }));
         checkOfflineReady();
       } catch (err) {
         console.error('Erreur chargement :', err);
-        let cached = null;
-        try { cached = JSON.parse(store.get('ardie_config') || 'null'); } catch (e) {}
-        if (cached && cached.state) {
-          state = cached.state;
-          renderSelects();
-          renderAdmin();
-          banner(`Mode hors ligne : listes enregistrées le ${new Date(cached.at).toLocaleString('fr-FR')}.`);
-        }
       } finally {
         if (icon) icon.classList.remove('animate-spin');
       }
@@ -889,21 +909,20 @@
       const sSerre = $('global-serre'), sAgent = $('global-intervenant'), rSerre = $('rep-serre-filter');
       const prevSerre = sSerre.value || store.get('ardie_serre') || '';
       const prevAgent = sAgent.value || store.get('ardie_agent') || '';
-      const prevRep = rSerre.value;
 
       if (state.emplacements.length) {
         sSerre.innerHTML = '<option value="" disabled>Choisir une serre...</option>' +
           state.emplacements.map(e => `<option value="${esc(e)}">🌱 ${esc(e)}</option>`).join('');
         rSerre.innerHTML = state.emplacements.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
         sSerre.value = state.emplacements.includes(prevSerre) ? prevSerre : state.emplacements[0];
-        rSerre.value = state.emplacements.includes(prevRep) ? prevRep : sSerre.value;
+        rSerre.value = sSerre.value;
       }
 
       if (state.agentsActifs.length) {
         sAgent.innerHTML = '<option value="" disabled>Choisir un agent...</option>' +
           state.agentsActifs.map(a => `<option value="${esc(a.displayName)}">👤 ${esc(a.label)}</option>`).join('');
         const ok = state.agentsActifs.some(a => a.displayName === prevAgent);
-        sAgent.value = ok ? prevAgent : '';
+        sAgent.value = ok ? prevAgent : (state.agentsActifs[0] ? state.agentsActifs[0].displayName : '');
       }
     }
 
@@ -939,10 +958,10 @@
       if (qd) return delQueued(qd.dataset.qDel);
     });
 
-    /* ---------- File d'attente hors-ligne ---------- */
+    /* ---------- File d'attente Hors-Ligne ---------- */
     class NetworkError extends Error {}
-    const QUEUE_KEY = 'ardie_queue_v2';
-    const QUEUED_MSG = "Hors ligne : saisie conservée sur l'appareil, envoi automatique dès le retour du réseau.";
+    const QUEUE_KEY = 'ardie_queue_v3';
+    const QUEUED_MSG = "Hors ligne : saisie gardée sur l'appareil, envoi automatique dès le retour du réseau.";
     let queueOpen = false;
     let flushing = false;
 
@@ -984,7 +1003,7 @@
     function queueItem(payload) {
       const q = qLoad();
       q.push({ id: payload.clientId, payload, createdAt: Date.now(), error: null });
-      if (!qSave(q)) throw new Error("Hors ligne et impossible de sauvegarder sur l'appareil");
+      if (!qSave(q)) throw new Error("Impossible de stocker localement.");
       renderQueue();
       return 'queued';
     }
@@ -994,28 +1013,24 @@
     async function flushQueue(manual = false) {
       if (flushing) return;
       const q = qLoad();
-      if (!q.length) return;
-      if (!navigator.onLine && !manual) return;
+      if (!q.length || (!navigator.onLine && !manual)) return;
       flushing = true;
-      let sent = 0, failed = 0, offline = false;
+      let sent = 0;
       try {
         for (const item of q) {
-          if (item.error && !manual) continue;
           try {
             await postRaw(item.payload);
             qRemove(item.id); sent++;
           } catch (e) {
-            if (e instanceof NetworkError) { offline = true; break; }
-            qUpdate(item.id, { error: e.message }); failed++;
+            if (e instanceof NetworkError) break;
+            qUpdate(item.id, { error: e.message });
           }
         }
       } finally {
         flushing = false;
         renderQueue();
       }
-      if (sent) { toast(`${sent} saisie(s) envoyée(s) ✔`); checkTodayPlant(); }
-      else if (manual && offline) toast('Toujours pas de réseau', 'err');
-      if (failed) toast(`${failed} saisie(s) refusée(s) par le serveur`, 'err');
+      if (sent) toast(`${sent} saisie(s) envoyée(s) ✔`);
     }
 
     function renderQueue() {
@@ -1023,160 +1038,119 @@
       const off = !navigator.onLine;
       const bar = $('queue-bar'), box = $('queue-box');
       if (!q.length && !off) { bar.classList.add('hidden'); return; }
-      const errs = q.filter(i => i.error).length;
-      box.className = 'rounded-lg p-3 text-xs font-semibold border ' + (errs ? 'bg-red-50 border-red-300 text-red-900' : 'bg-amber-50 border-amber-300 text-amber-900');
-      let html = '';
-      if (off) html += `<div>📴 Hors ligne : vos saisies sont gardées sur l'appareil.</div>`;
-      if (q.length) {
-        html += `<div class="${off ? 'mt-2 ' : ''}flex items-center justify-between gap-2">
-          <span>📤 ${q.length} saisie(s) en attente</span>
-          <span class="flex gap-2">
-            <button data-q-send class="bg-emerald-700 text-white px-3 py-1.5 rounded-lg">Envoyer</button>
-            <button data-q-toggle class="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg">${queueOpen ? 'Masquer' : 'Détails'}</button>
-          </span></div>`;
-        if (queueOpen) {
-          html += '<ul class="mt-2 divide-y divide-black/10 font-medium">' + q.map(i => {
-            const p = i.payload;
-            return `<li class="py-1.5 flex items-center justify-between gap-2">
-              <span class="min-w-0">${esc(p.type)} • ${esc(p.serre)}</span>
-              <button data-q-del="${esc(i.id)}" class="shrink-0 text-red-700 border border-red-200 bg-white px-2 py-1 rounded">Supprimer</button></li>`;
-          }).join('') + '</ul>';
-        }
-      }
-      box.innerHTML = html;
+      box.className = 'rounded-lg p-3 text-xs font-semibold border ' + (off ? 'bg-amber-50 border-amber-300 text-amber-900' : 'bg-emerald-50 border-emerald-300 text-emerald-900');
+      box.innerHTML = `<div class="flex items-center justify-between">
+        <span>${off ? '📴 Mode hors ligne actif' : '📤 ' + q.length + ' en attente de synchro'}</span>
+        ${q.length ? '<button data-q-send class="bg-emerald-700 text-white px-3 py-1 rounded">Synchroniser</button>' : ''}
+      </div>`;
       bar.classList.remove('hidden');
     }
-    function delQueued(id) {
-      if (!confirm('Supprimer cette saisie en attente ?')) return;
-      qRemove(id); renderQueue();
-    }
+    function delQueued(id) { if (confirm('Supprimer cette saisie ?')) { qRemove(id); renderQueue(); } }
 
     window.addEventListener('online', () => { renderQueue(); flushQueue(); loadConfig(); });
     window.addEventListener('offline', renderQueue);
-    setInterval(() => { if (qLoad().length) flushQueue(); }, 60000);
 
+    // VÉRIFICATION STRICTE DE L'AGENT : AUCUNE SAISIE MANUELLE
     function requireSerreAgent() {
       const serre = $('global-serre').value;
       const agent = $('global-intervenant').value;
-      if (!serre || !agent || agent === 'undefined') {
-        toast('Choisissez une serre ET un agent.', 'err');
+      if (!serre || !agent || agent === 'undefined' || agent.includes('Chargement')) {
+        toast('Veuillez sélectionner une Serre et un Agent actif dans l’en-tête.', 'err');
         return null;
       }
       return { serre, agent };
     }
 
-    /* ---------- Formulaire 1 : Climat ---------- */
+    /* ---------- Formulaires de Saisie ---------- */
     $('form-clim').addEventListener('submit', async (e) => {
       e.preventDefault();
       const ctx = requireSerreAgent(); if (!ctx) return;
-      const btn = $('btn-submit-clim');
-      setBtn(btn, true);
+      const btn = $('btn-submit-clim'); setBtn(btn, true);
       try {
         const r = await submitOrQueue({
-          type: 'CLIMAT',
-          date: localISODate(),
-          heure: $('c-heure').value || localHHmm(),
-          serre: ctx.serre,
-          intervenant: ctx.agent,
-          temperature: $('c-temp').value,
-          humidite_air: $('c-hygro').value,
-          lumens: $('c-lumens').value || '-',
-          humidite_terreau: $('c-hum-terreau').value || '-',
-          ph: $('c-ph').value || '-',
-          eclairage: $('c-eclairage').value,
-          arrosage: $('c-arrosage').value || '-',
+          type: 'CLIMAT', date: localISODate(), heure: $('c-heure').value || localHHmm(),
+          serre: ctx.serre, intervenant: ctx.agent, temperature: $('c-temp').value,
+          humidite_air: $('c-hygro').value, lumens: $('c-lumens').value || '-',
+          humidite_terreau: $('c-hum-terreau').value || '-', ph: $('c-ph').value || '-',
+          eclairage: $('c-eclairage').value, arrosage: $('c-arrosage').value || '-',
           remarque: $('c-remarque').value || '-'
         });
         toast(r === 'queued' ? QUEUED_MSG : 'Relevé climatique enregistré ✔', r === 'queued' ? 'warn' : 'ok');
-        $('c-remarque').value = '';
-        $('c-arrosage').value = '';
-        $('c-heure').value = localHHmm();
+        $('c-remarque').value = ''; $('c-arrosage').value = '';
       } catch (err) { toast('Échec : ' + err.message, 'err'); }
       finally { setBtn(btn, false, 'Valider le relevé', 'check'); }
     });
 
-    /* ---------- Formulaire 2 : Plants ---------- */
     $('form-plants').addEventListener('submit', async (e) => {
       e.preventDefault();
       const ctx = requireSerreAgent(); if (!ctx) return;
-      await checkTodayPlant();
-      if (existingToday && !confirm(`Une fiche journalière existe déjà aujourd'hui pour ${ctx.serre}.\n\nEnregistrer quand même une nouvelle ligne ?`)) return;
-      const btn = $('btn-submit-plants');
-      setBtn(btn, true);
+      const btn = $('btn-submit-plants'); setBtn(btn, true);
       try {
         const r = await submitOrQueue({
-          type: 'SUIVI_PLANTS',
-          date: localISODate(),
-          heure: localHHmm(),
-          serre: ctx.serre,
-          intervenant: ctx.agent,
-          initial: $('p-initial').value,
-          isoles: $('p-isoles').value,
-          morts: $('p-morts').value,
-          surveillance: $('p-surveillance').value,
-          sains: calcPlants(),
-          observations: $('p-observations').value || '-',
-          eclairage_debut: $('p-ecl-debut').value,
-          eclairage_fin: $('p-ecl-fin').value
+          type: 'SUIVI_PLANTS', date: localISODate(), heure: localHHmm(),
+          serre: ctx.serre, intervenant: ctx.agent, initial: $('p-initial').value,
+          isoles: $('p-isoles').value, morts: $('p-morts').value, surveillance: $('p-surveillance').value,
+          sains: calcPlants(), observations: $('p-observations').value || '-',
+          eclairage_debut: $('p-ecl-debut').value, eclairage_fin: $('p-ecl-fin').value
         });
         toast(r === 'queued' ? QUEUED_MSG : 'Bilan vitroplants enregistré ✔', r === 'queued' ? 'warn' : 'ok');
         store.set('ardie_ecl_debut', $('p-ecl-debut').value);
         store.set('ardie_ecl_fin', $('p-ecl-fin').value);
-        setTimeout(checkTodayPlant, 800);
+        updateKpi(ctx.serre);
         ['p-isoles', 'p-morts', 'p-surveillance'].forEach(id => $(id).value = 0);
-        $('p-observations').value = '';
-        calcPlants();
+        $('p-observations').value = ''; calcPlants();
       } catch (err) { toast('Échec : ' + err.message, 'err'); }
       finally { setBtn(btn, false, 'Valider le bilan journalier', 'check-circle-2'); }
     });
 
-    /* ---------- Formulaire 3 : Anomalies & Pertes ---------- */
     $('form-anom').addEventListener('submit', async (e) => {
       e.preventDefault();
       const ctx = requireSerreAgent(); if (!ctx) return;
-      const btn = $('btn-submit-anom');
-      setBtn(btn, true);
+      const btn = $('btn-submit-anom'); setBtn(btn, true);
       try {
         const r = await submitOrQueue({
-          type: 'ANOMALIE',
-          date_entree: $('an-date-entree').value || localISODate(),
+          type: 'ANOMALIE', date_entree: $('an-date-entree').value || localISODate(),
           heure_entree: $('an-heure-entree').value || localHHmm(),
-          serre: ctx.serre,
-          intervenant: ctx.agent,
+          serre: ctx.serre, intervenant: ctx.agent,
           godet_num: $('an-godet-num').value.trim(),
           maladie_foliaire: $('an-maladie-foliaire').checked,
           ravageurs: $('an-ravageurs').checked,
           pourriture_racines: $('an-pourriture').checked,
           stress_hydrique: $('an-stress-hydrique').checked,
           autres_constats: $('an-autres').value.trim() || '-',
-          mesures_sanitaires: $('an-mesures').value.trim() || '-',
-          date_sortie: $('an-date-sortie').value || '',
-          statut_sortie: $('an-statut-sortie').value,
-          intervenant_sortie: $('an-agent-sortie').value.trim() || '-'
+          mesures_sanitaires: $('an-mesures').value.trim() || '-'
         });
-        toast(r === 'queued' ? QUEUED_MSG : 'Anomalie / observation enregistrée ✔', r === 'queued' ? 'warn' : 'ok');
+        toast(r === 'queued' ? QUEUED_MSG : 'Anomalie consignée sous surveillance ✔', r === 'queued' ? 'warn' : 'ok');
         $('an-godet-num').value = '';
         ['an-maladie-foliaire', 'an-ravageurs', 'an-pourriture', 'an-stress-hydrique'].forEach(id => $(id).checked = false);
-        $('an-autres').value = '';
-        $('an-mesures').value = '';
-        $('an-date-sortie').value = '';
-        $('an-agent-sortie').value = '';
-        $('an-statut-sortie').value = 'En cours';
+        $('an-autres').value = ''; $('an-mesures').value = '';
       } catch (err) { toast('Échec : ' + err.message, 'err'); }
-      finally { setBtn(btn, false, "Enregistrer l'anomalie / observation", 'save'); }
+      finally { setBtn(btn, false, 'Mettre sous surveillance', 'eye'); }
     });
 
-    /* ---------- Formulaire 4 : Suivi Acclimatation ---------- */
+    async function cloturerAnomalie() {
+      const ctx = requireSerreAgent(); if (!ctx) return;
+      const godet = $('out-godet').value.trim();
+      const statut = $('out-statut').value;
+      if (!godet) return toast('Indiquez le numéro de godet sorti', 'err');
+      try {
+        await postData({
+          type: 'ANOMALIE_SORTIE', godet: godet, statut_sortie: statut,
+          serre: ctx.serre, intervenant: ctx.agent, date: localISODate()
+        });
+        toast(`Godet ${godet} clôturé : ${statut} ✔`);
+        $('out-godet').value = '';
+        updateKpi(ctx.serre);
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
+    }
+
     $('form-acclim').addEventListener('submit', async (e) => {
       e.preventDefault();
       const ctx = requireSerreAgent(); if (!ctx) return;
-      const btn = $('btn-submit-acclim');
-      setBtn(btn, true);
+      const btn = $('btn-submit-acclim'); setBtn(btn, true);
 
-      // Récupération des 10 plants saisis
       const plants = [];
-      const rows = document.querySelectorAll('#acclim-inputs-tbody tr');
-      rows.forEach(tr => {
+      document.querySelectorAll('#acclim-inputs-tbody tr').forEach(tr => {
         plants.push({
           taille_cm: tr.querySelector('.ac-t').value || '-',
           nb_feuilles: tr.querySelector('.ac-f').value || '-',
@@ -1195,61 +1169,17 @@
 
       try {
         const r = await submitOrQueue({
-          type: 'ACCLIMATATION',
-          date: $('ac-date').value || localISODate(),
-          heure: $('ac-heure').value || localHHmm(),
-          serre: ctx.serre,
-          intervenant: ctx.agent,
-          lot_numero: $('ac-lot-num').value.trim() || '1/12',
-          plants: plants
+          type: 'ACCLIMATATION', date: $('ac-date').value || localISODate(),
+          heure: $('ac-heure').value || localHHmm(), serre: ctx.serre, intervenant: ctx.agent,
+          lot_numero: $('ac-lot-num').value.trim() || '1/12', plants: plants
         });
-        toast(r === 'queued' ? QUEUED_MSG : "Test d'acclimatation (10 plants) enregistré ✔", r === 'queued' ? 'warn' : 'ok');
-        renderAcclimInputs(); // Réinitialise les cases
+        toast(r === 'queued' ? QUEUED_MSG : "Test d'acclimatation enregistré ✔", r === 'queued' ? 'warn' : 'ok');
+        renderAcclimInputs();
       } catch (err) { toast('Échec : ' + err.message, 'err'); }
       finally { setBtn(btn, false, "Valider le suivi d'acclimatation (10 plants)", 'check'); }
     });
 
-    /* ---------- Admin ---------- */
-    async function addLocation() {
-      const v = $('new-loc').value.trim();
-      if (!v) return;
-      try {
-        await postData({ type: 'MANAGE_LOCATION', subAction: 'ADD', name: v });
-        $('new-loc').value = '';
-        toast('Serre ajoutée ✔');
-        loadConfig();
-      } catch (err) { toast('Échec : ' + err.message, 'err'); }
-    }
-    async function delLocation(name) {
-      if (!confirm(`Supprimer « ${name} » ?`)) return;
-      try {
-        await postData({ type: 'MANAGE_LOCATION', subAction: 'DELETE', name });
-        toast('Serre supprimée');
-        loadConfig();
-      } catch (err) { toast('Échec : ' + err.message, 'err'); }
-    }
-    async function addAgent() {
-      const name = $('new-agent-name').value.trim();
-      if (!name) return toast("Indiquez le nom de l'agent.", 'err');
-      try {
-        await postData({
-          type: 'MANAGE_AGENT', subAction: 'ADD',
-          civilite: $('new-agent-civ').value, name,
-          contrat: $('new-agent-contrat').value, atelier: $('new-agent-atelier').value
-        });
-        $('new-agent-name').value = '';
-        toast('Agent ajouté ✔');
-        loadConfig();
-      } catch (err) { toast('Échec : ' + err.message, 'err'); }
-    }
-    async function toggleAgent(id, name) {
-      try {
-        await postData({ type: 'MANAGE_AGENT', subAction: 'TOGGLE_STATUS', id, name });
-        loadConfig();
-      } catch (err) { toast('Échec : ' + err.message, 'err'); }
-    }
-
-    /* ---------- Fiches ARDIE (Affichage) ---------- */
+    /* ---------- Fiches ARDIE & Affichage Rapports ---------- */
     function showReportView(view) {
       currentView = view;
       ['plants', 'clim', 'anom', 'acclim'].forEach(v => {
@@ -1272,29 +1202,27 @@
       if (!iso) return toast('Sélectionnez une date', 'err');
       const serre = $('rep-serre-filter').value || 'ALL';
       const fr = isoToFR(iso);
-      const btn = $('btn-load');
-      btn.disabled = true;
-      lastReport = null;
+      const btn = $('btn-load'); btn.disabled = true;
 
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getReports&date=${encodeURIComponent(iso)}&serre=${encodeURIComponent(serre)}`);
         const data = await res.json();
-        if (data.error) throw new Error(data.message || 'Erreur serveur');
-
         lastReport = { iso, serre, fr, data };
 
-        // ----- FICHE 1 : Plants
+        const kpi = data.kpi || {};
+        const restTxt = `${kpi.sains || '--'} sains sur ${kpi.initial || '--'}`;
+
+        // FICHE 1
         $('f1-date').textContent = fr;
         $('f1-year').textContent = iso.slice(0, 4);
         $('f1-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
+        $('f1-tag-sains').textContent = restTxt;
         const p = data.plant;
         $('f1-ecl-debut').textContent = (p && p.eclairageDebut) ? fmtH(p.eclairageDebut) : '.......';
         $('f1-ecl-fin').textContent = (p && p.eclairageFin) ? fmtH(p.eclairageFin) : '.......';
         if (p) {
-          $('f1-init').textContent = p.initial;
-          $('f1-isoles').textContent = p.isoles;
-          $('f1-morts').textContent = p.morts;
-          $('f1-surv').textContent = p.surveillance;
+          $('f1-init').textContent = p.initial; $('f1-isoles').textContent = p.isoles;
+          $('f1-morts').textContent = p.morts; $('f1-surv').textContent = p.surveillance;
           $('f1-sains').textContent = p.sains;
           $('f1-agent').textContent = (p.intervenant && p.intervenant !== 'undefined') ? p.intervenant : '(non renseigné)';
           $('f1-obs').textContent = (p.observations && p.observations !== '-') ? p.observations : 'Aucune observation saisie.';
@@ -1304,43 +1232,42 @@
           $('f1-obs').textContent = 'Aucun bilan enregistré.';
         }
 
-        // ----- FICHE 2 : Climat
+        // FICHE 2
         $('f2-date').textContent = fr;
         $('f2-year').textContent = iso.slice(0, 4);
         $('f2-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
+        $('f2-tag-sains').textContent = restTxt;
         const records = data.climats || [];
         const cell = 'border border-slate-400 p-1.5';
-        let htmlClim = records.map(c => {
-          const hy = num(c.hygro);
-          const low = !isNaN(hy) && hy < 75;
-          return `<tr class="text-center">
+        let htmlClim = records.map(c => `
+          <tr class="text-center hover:bg-slate-50">
             <td class="${cell} font-bold font-mono text-emerald-900">${dash(c.heure)}</td>
             <td class="${cell} font-bold">${dash(c.temp)}${c.temp && c.temp !== '-' ? '°C' : ''}</td>
-            <td class="${cell} font-bold ${low ? 'text-red-700 bg-red-50' : 'text-emerald-800'}">${dash(c.hygro)}${c.hygro && c.hygro !== '-' ? '%' : ''}</td>
+            <td class="${cell} font-bold ${num(c.hygro) < 75 ? 'text-red-700 bg-red-50' : 'text-emerald-800'}">${dash(c.hygro)}${c.hygro && c.hygro !== '-' ? '%' : ''}</td>
             <td class="${cell}">${dash(c.lumens)}</td>
             <td class="${cell}">${dash(c.humTerreau)}${c.humTerreau && c.humTerreau !== '-' ? '%' : ''}</td>
             <td class="${cell}">${dash(c.ph)}</td>
             <td class="${cell}">${dash(c.eclairage)}</td>
             <td class="${cell} text-left">${dash(c.arrosage)}</td>
             <td class="${cell} text-left">${dash(c.remarque)}</td>
-            <td class="${cell} font-medium text-slate-900">${dash(c.intervenant)}</td>
-          </tr>`;
-        }).join('');
-        for (let i = records.length; i < 8; i++) {
-          htmlClim += `<tr>${Array(10).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
-        }
+            <td class="${cell} font-medium">${dash(c.intervenant)}</td>
+          </tr>
+        `).join('');
+        for (let i = records.length; i < 8; i++) htmlClim += `<tr>${Array(10).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
         $('f2-tbody').innerHTML = htmlClim;
-        $('f2-empty').textContent = records.length ? '' : `Aucun relevé climatique pour le ${fr}.`;
+        $('f2-empty').textContent = records.length ? '' : `Aucun relevé météo pour le ${fr}.`;
 
-        // ----- FICHE 3 : Anomalies & Pertes
+        // FICHE 3
         $('f3-date').textContent = fr;
         $('f3-year').textContent = iso.slice(0, 4);
         $('f3-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
+        $('f3-tag-sains').textContent = kpi.sains || '--';
+        $('f3-tag-morts').textContent = kpi.morts || '0';
         const anoms = data.anomalies || [];
         let htmlAnom = anoms.map(an => `
           <tr class="text-center hover:bg-slate-50">
             <td class="${cell} font-mono">${dash(an.date_entree)}<br><span class="text-slate-500 font-bold">${dash(an.heure_entree)}</span></td>
-            <td class="${cell} font-medium">${dash(an.intervenant_entree)}</td>
+            <td class="${cell}">${dash(an.intervenant_entree)}</td>
             <td class="${cell} font-bold text-amber-900 bg-amber-50/50">${dash(an.godet_num)}</td>
             <td class="${cell} ${an.maladie_foliaire === 'Oui' ? 'font-bold text-red-600 bg-red-50' : ''}">${dash(an.maladie_foliaire)}</td>
             <td class="${cell} ${an.ravageurs === 'Oui' ? 'font-bold text-red-600 bg-red-50' : ''}">${dash(an.ravageurs)}</td>
@@ -1354,13 +1281,11 @@
             <td class="${cell}">${dash(an.intervenant_sortie)}</td>
           </tr>
         `).join('');
-        for (let k = anoms.length; k < 6; k++) {
-          htmlAnom += `<tr>${Array(11).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
-        }
+        for (let k = anoms.length; k < 6; k++) htmlAnom += `<tr>${Array(11).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
         $('f3-tbody').innerHTML = htmlAnom;
-        $('f3-empty').textContent = anoms.length ? '' : `Aucune anomalie enregistrée pour le ${fr}.`;
+        $('f3-empty').textContent = anoms.length ? '' : `Aucune anomalie pour le ${fr}.`;
 
-        // ----- FICHE 4 : Suivi Acclimatation
+        // FICHE 4
         $('f4-date').textContent = fr;
         $('f4-year').textContent = iso.slice(0, 4);
         $('f4-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
@@ -1370,9 +1295,7 @@
           $('f4-heure').textContent = acclims[0].heure || '--h--';
           $('f4-agent').textContent = acclims[0].intervenant || '--';
         } else {
-          $('f4-lot-num').textContent = '--';
-          $('f4-heure').textContent = '--h--';
-          $('f4-agent').textContent = '--';
+          $('f4-lot-num').textContent = '--'; $('f4-heure').textContent = '--h--'; $('f4-agent').textContent = '--';
         }
         let htmlAcclim = acclims.map(ac => `
           <tr class="text-center hover:bg-slate-50">
@@ -1391,15 +1314,12 @@
             <td class="${cell} ${ac.maladie_fongique === 'Oui' ? 'font-bold text-red-600 bg-red-50' : ''}">${dash(ac.maladie_fongique)}</td>
           </tr>
         `).join('');
-        for (let m = acclims.length; m < 10; m++) {
-          htmlAcclim += `<tr>${Array(13).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
-        }
+        for (let m = acclims.length; m < 10; m++) htmlAcclim += `<tr>${Array(13).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
         $('f4-tbody').innerHTML = htmlAcclim;
-        $('f4-empty').textContent = acclims.length ? '' : `Aucun test d'acclimatation enregistré pour le ${fr}.`;
+        $('f4-empty').textContent = acclims.length ? '' : `Aucun test d'acclimatation pour le ${fr}.`;
 
-        toast(`Données chargées ✔ (${records.length} météo, ${anoms.length} anomalie, ${acclims.length} acclim)`);
+        toast(`Données chargées ✔ (Reste sain : ${kpi.sains || '--'})`);
       } catch (err) {
-        console.error(err);
         toast('Chargement impossible : ' + err.message, 'err');
       } finally { btn.disabled = false; }
     }
@@ -1416,7 +1336,7 @@
       window.print();
     }
 
-    /* ---------- VRAIS EXPORTS PDF VECTORIELS DÉDIÉS (jsPDF + AutoTable) ---------- */
+    /* ---------- VRAIS EXPORTS PDF VECTORIELS HAUTE QUALITÉ ---------- */
     const pdfSafe = (v) => String(v ?? '').replace(/\u00A0/g, ' ').replace(/[^\u0020-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026\u20AC]/g, '');
     const pdfDash = (v) => { const s = pdfSafe(v).trim(); return (s === '' || s === 'undefined') ? '-' : s; };
     const logoFormat = () => { const m = (LOGO.data || '').match(/^data:image\/(\w+)/); return m ? m[1].toUpperCase().replace('JPG', 'JPEG') : 'PNG'; };
@@ -1432,51 +1352,48 @@
       const gridStyle = { lineColor: [148, 163, 184], lineWidth: 0.25, textColor: dark, font: 'helvetica' };
       const headStyle = { fillColor: [241, 245, 249], textColor: [30, 41, 59], fontStyle: 'bold', halign: 'center', valign: 'middle' };
       const serreTxt = rep.serre === 'ALL' ? 'Toutes les serres' : rep.serre;
+      const kpi = rep.data.kpi || {};
 
-      // En-tête générique
       let tx = M;
       if (LOGO.data) { try { doc.addImage(LOGO.data, logoFormat(), M, 8, 16, 16); tx = M + 20; } catch (e) { tx = M; } }
-      doc.setTextColor(...dark);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18); doc.text('ARDIE', tx, 15);
+      doc.setTextColor(...dark); doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.text('ARDIE', tx, 15);
       doc.setFontSize(landscape ? 11 : 13);
 
       const titles = {
         plants: 'FICHE SUIVI JOURNALIER - VITROPLANTS FRUITS A PAIN',
         clim: 'RELEVÉS CLIMATIQUES SERRE ET IRRIGATION',
-        anom: "SUIVI JOURNALIER D'ANOMALIES / PERTES - VITRO PLANTS SOUS SURVEILLANCE",
+        anom: "SUIVI JOURNALIER D'ANOMALIES / PERTES - SOUS SURVEILLANCE",
         acclim: "TABLEAU DE SUIVI - PHASE D'ACCLIMATATION"
       };
       doc.text(titles[which] || 'FICHE ARDIE', tx, 22);
 
-      doc.setFontSize(9);
-      doc.setTextColor(148, 163, 184); doc.text(rep.iso.slice(0, 4), W - M, 10, { align: 'right' });
-      doc.setTextColor(...dark);
-      doc.text('Date : ' + rep.fr, W - M, 16, { align: 'right' });
-      doc.setTextColor(6, 95, 70);
-      doc.text('SERRE : ' + pdfSafe(serreTxt), W - M, 21.5, { align: 'right' });
+      doc.setFontSize(9); doc.setTextColor(148, 163, 184); doc.text(rep.iso.slice(0, 4), W - M, 10, { align: 'right' });
+      doc.setTextColor(...dark); doc.text('Date : ' + rep.fr, W - M, 15, { align: 'right' });
+      doc.setTextColor(6, 95, 70); doc.text('SERRE : ' + pdfSafe(serreTxt), W - M, 20, { align: 'right' });
+
+      // RAPPEL VISUEL DES PLANTS RESTANTS DANS L'EN-TÊTE DU PDF
+      doc.setFontSize(8.5); doc.setTextColor(185, 28, 28);
+      doc.text(`Reste sain : ${kpi.sains || '--'}  |  Morts : ${kpi.morts || '0'}`, W - M, 24.5, { align: 'right' });
+
       doc.setDrawColor(...dark); doc.setLineWidth(0.6); doc.line(M, 26, W - M, 26);
 
-      // CORPS SPÉCIFIQUE
       if (which === 'plants') {
         const p = rep.data.plant;
         doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.3);
-        doc.roundedRect(M, 30, W - 2 * M, 22, 1.5, 1.5);
-        doc.setTextColor(...dark); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
-        doc.text('Conditions climatiques intérieures :', M + 4, 36);
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(51, 65, 85);
-        doc.text('BRUMISATEUR AMBIANT : Durée : h24 / Fréquence : 7/7', M + 4, 42);
+        doc.roundedRect(M, 29, W - 2 * M, 20, 1.5, 1.5);
+        doc.setTextColor(...dark); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+        doc.text('Conditions climatiques intérieures :', M + 4, 34.5);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(51, 65, 85);
+        doc.text('BRUMISATEUR AMBIANT : Durée : h24 / Fréquence : 7/7', M + 4, 40);
         const d = (p && p.eclairageDebut) ? fmtH(p.eclairageDebut) : '.......';
         const f = (p && p.eclairageFin) ? fmtH(p.eclairageFin) : '.......';
-        doc.text('ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Programmé de ' + d + ' à ' + f + ' / Fréquence : 7/7', M + 4, 48);
+        doc.text('ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Programmé de ' + d + ' à ' + f + ' / Fréquence : 7/7', M + 4, 45);
 
         const v = (k) => p ? pdfDash(p[k]) : '-';
-        const agent = p ? ((p.intervenant && p.intervenant !== 'undefined') ? pdfSafe(p.intervenant) : '(non renseigné)') : 'Aucun bilan pour ce jour';
+        const agent = p ? ((p.intervenant && p.intervenant !== 'undefined') ? pdfSafe(p.intervenant) : '(non renseigné)') : 'Aucun bilan';
         doc.autoTable({
-          startY: 56,
-          margin: { left: M, right: M },
-          theme: 'grid',
-          styles: Object.assign({ fontSize: 9.5, cellPadding: 3, valign: 'middle' }, gridStyle),
+          startY: 52, margin: { left: M, right: M }, theme: 'grid',
+          styles: Object.assign({ fontSize: 9.5, cellPadding: 2.8, valign: 'middle' }, gridStyle),
           headStyles: headStyle,
           columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 28, halign: 'center', fontStyle: 'bold' }, 2: { cellWidth: 55 } },
           head: [['Quantité', 'Nombre', 'Intervenant technicien']],
@@ -1488,26 +1405,20 @@
             ['Total des vitro plants restant en culture saine', v('sains')]
           ],
           didParseCell: (data) => {
-            if (data.section !== 'body') return;
-            const colors = { 1: [146, 64, 14], 2: [153, 27, 27], 3: [30, 64, 175] };
-            if (data.column.index < 2 && colors[data.row.index]) data.cell.styles.textColor = colors[data.row.index];
-            if (data.row.index === 4 && data.column.index < 2) {
-              data.cell.styles.fillColor = [236, 253, 245];
-              data.cell.styles.fontStyle = 'bold';
-              data.cell.styles.textColor = [2, 44, 34];
+            if (data.section === 'body' && data.row.index === 4 && data.column.index < 2) {
+              data.cell.styles.fillColor = [236, 253, 245]; data.cell.styles.textColor = [2, 44, 34]; data.cell.styles.fontStyle = 'bold';
             }
           }
         });
 
-        let y = doc.lastAutoTable.finalY + 10;
+        let y = doc.lastAutoTable.finalY + 8;
         doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...dark);
         doc.text('• Remarques / Observations supplémentaires :', M, y);
         const obs = (p && p.observations && p.observations !== '-') ? pdfSafe(p.observations) : 'Aucune observation saisie.';
         doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(51, 65, 85);
-        const lines = doc.splitTextToSize(obs, W - 2 * M - 8);
         doc.setDrawColor(203, 213, 225); doc.setFillColor(248, 250, 252);
-        doc.roundedRect(M, y + 3, W - 2 * M, Math.max(25, lines.length * 5 + 8), 1.5, 1.5, 'FD');
-        doc.text(lines, M + 4, y + 9);
+        doc.roundedRect(M, y + 2.5, W - 2 * M, 25, 1.5, 1.5, 'FD');
+        doc.text(doc.splitTextToSize(obs, W - 2 * M - 8), M + 4, y + 8);
 
       } else if (which === 'clim') {
         const recs = rep.data.climats || [];
@@ -1515,15 +1426,12 @@
           pdfDash(c.heure), pdfDash(c.temp) + (c.temp && c.temp !== '-' ? '°C' : ''),
           pdfDash(c.hygro) + (c.hygro && c.hygro !== '-' ? '%' : ''), pdfDash(c.lumens),
           pdfDash(c.humTerreau) + (c.humTerreau && c.humTerreau !== '-' ? '%' : ''),
-          pdfDash(c.ph), pdfDash(c.eclairage), pdfDash(c.arrosage), pdfDash(c.remarque),
-          (c.intervenant && c.intervenant !== 'undefined') ? pdfSafe(c.intervenant) : '(non renseigné)'
+          pdfDash(c.ph), pdfDash(c.eclairage), pdfDash(c.arrosage), pdfDash(c.remarque), pdfSafe(c.intervenant)
         ]);
         while (body.length < 8) body.push(['', '', '', '', '', '', '', '', '', '']);
 
         doc.autoTable({
-          startY: 30,
-          margin: { left: M, right: M, bottom: 12 },
-          theme: 'grid',
+          startY: 29, margin: { left: M, right: M, bottom: 12 }, theme: 'grid',
           styles: Object.assign({ fontSize: 7.5, cellPadding: 2, valign: 'middle', halign: 'center', minCellHeight: 6 }, gridStyle),
           headStyles: Object.assign({}, headStyle, { fontSize: 7.5 }),
           columnStyles: {
@@ -1533,13 +1441,7 @@
           },
           head: [['Heure', 'Température', 'Humidité (min 75%)', 'Lumens', 'Hum. terreau', 'pH',
                   'Éclairage jour', 'Arrosage tuyau (7h30 et 16h30) / pulvérisateur', 'Remarques / Commentaires', 'Intervenant']],
-          body,
-          didParseCell: (data) => {
-            if (data.section === 'body' && data.column.index === 2) {
-              const hy = num(data.cell.raw);
-              if (!isNaN(hy) && hy < 75) { data.cell.styles.fillColor = [254, 226, 226]; data.cell.styles.textColor = [185, 28, 28]; data.cell.styles.fontStyle = 'bold'; }
-            }
-          }
+          body
         });
 
       } else if (which === 'anom') {
@@ -1555,9 +1457,7 @@
         while (body.length < 6) body.push(['', '', '', '', '', '', '', '', '', '', '']);
 
         doc.autoTable({
-          startY: 30,
-          margin: { left: M, right: M, bottom: 12 },
-          theme: 'grid',
+          startY: 29, margin: { left: M, right: M, bottom: 12 }, theme: 'grid',
           styles: Object.assign({ fontSize: 7, cellPadding: 1.8, valign: 'middle', halign: 'center', minCellHeight: 7 }, gridStyle),
           headStyles: Object.assign({}, headStyle, { fontSize: 7 }),
           columnStyles: {
@@ -1578,7 +1478,7 @@
         const agTxt = acclims.length ? (acclims[0].intervenant || '-') : '-';
 
         doc.setFontSize(8.5); doc.setFont('helvetica', 'bold');
-        doc.text(`Test échantillonnage 10% sur lot N° : ${lotTxt}  |  Intervenant(s) : ${agTxt}`, M, 30);
+        doc.text(`Test échantillonnage 10% sur lot N° : ${lotTxt}  |  Intervenant : ${agTxt}`, M, 30);
 
         const body = acclims.map(ac => [
           pdfDash(ac.num_plante), pdfDash(ac.taille_cm), pdfDash(ac.nb_feuilles), pdfSafe(ac.couleur_feuilles),
@@ -1589,9 +1489,7 @@
         while (body.length < 10) body.push([body.length + 1, '', '', '', '', '', '', '', '', '', '', '', '']);
 
         doc.autoTable({
-          startY: 33,
-          margin: { left: M, right: M, bottom: 12 },
-          theme: 'grid',
+          startY: 33, margin: { left: M, right: M, bottom: 12 }, theme: 'grid',
           styles: Object.assign({ fontSize: 7.2, cellPadding: 1.8, valign: 'middle', halign: 'center', minCellHeight: 6 }, gridStyle),
           headStyles: Object.assign({}, headStyle, { fontSize: 7 }),
           columnStyles: { 0: { cellWidth: 10, fontStyle: 'bold' } },
@@ -1603,7 +1501,7 @@
         });
       }
 
-      // Pied de page
+      // Pied de page officiel
       const n = doc.getNumberOfPages();
       for (let i = 1; i <= n; i++) {
         doc.setPage(i);
@@ -1628,60 +1526,65 @@
         doc.save(`ARDIE_${fileNames[which] || which}_${sName}_${iso}.pdf`);
         toast('PDF téléchargé ✔');
       } catch (err) {
-        console.error(err);
         toast('Échec PDF : ' + err.message, 'err');
       }
     }
 
-    /* ---------- PWA : Installation & Service Worker ---------- */
-    let deferredInstall = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredInstall = e;
-      $('install-bar').classList.remove('hidden');
-    });
-    window.addEventListener('appinstalled', () => {
-      deferredInstall = null;
-      $('install-bar').classList.add('hidden');
-      toast('Application installée ✔');
-    });
-    async function installApp() {
-      if (!deferredInstall) return;
-      deferredInstall.prompt();
-      await deferredInstall.userChoice;
-      deferredInstall = null;
-      $('install-bar').classList.add('hidden');
+    /* ---------- Admin ---------- */
+    async function addLocation() {
+      const v = $('new-loc').value.trim();
+      if (!v) return;
+      try {
+        await postData({ type: 'MANAGE_LOCATION', subAction: 'ADD', name: v });
+        $('new-loc').value = ''; toast('Serre ajoutée ✔'); loadConfig();
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
     }
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
-          .then(() => navigator.serviceWorker.ready)
-          .then(() => { checkOfflineReady(); })
-          .catch(err => { console.warn('SW :', err); });
-      });
+    async function delLocation(name) {
+      if (!confirm(`Supprimer « ${name} » ?`)) return;
+      try {
+        await postData({ type: 'MANAGE_LOCATION', subAction: 'DELETE', name });
+        toast('Serre supprimée'); loadConfig();
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
+    }
+    async function addAgent() {
+      const name = $('new-agent-name').value.trim();
+      if (!name) return toast("Indiquez le nom de l'agent.", 'err');
+      try {
+        await postData({
+          type: 'MANAGE_AGENT', subAction: 'ADD', civilite: $('new-agent-civ').value,
+          name, contrat: $('new-agent-contrat').value, atelier: $('new-agent-atelier').value
+        });
+        $('new-agent-name').value = ''; toast('Agent ajouté ✔'); loadConfig();
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
+    }
+    async function toggleAgent(id, name) {
+      try {
+        await postData({ type: 'MANAGE_AGENT', subAction: 'TOGGLE_STATUS', id, name });
+        loadConfig();
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
     }
 
+    /* ---------- PWA ---------- */
+    let deferredInstall = null;
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; $('install-bar').classList.remove('hidden'); });
+    window.addEventListener('appinstalled', () => { deferredInstall = null; $('install-bar').classList.add('hidden'); toast('Application installée ✔'); });
+    async function installApp() { if (!deferredInstall) return; deferredInstall.prompt(); await deferredInstall.userChoice; deferredInstall = null; $('install-bar').classList.add('hidden'); }
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(() => navigator.serviceWorker.ready).then(() => checkOfflineReady()); }); }
+
     const OFFLINE_ASSETS = [
-      'https://cdn.tailwindcss.com/3.4.17',
-      'https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
-      'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'
+      'https://cdn.tailwindcss.com/3.4.17', 'https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'
     ];
     async function checkOfflineReady() {
-      const el = $('offline-ready');
-      if (!el || !window.caches) return;
+      const el = $('offline-ready'); if (!el || !window.caches) return;
       try {
         const checks = await Promise.all([caches.match('./index.html'), ...OFFLINE_ASSETS.map(u => caches.match(u))]);
-        const okPage = !!checks[0];
-        const okLibs = checks.slice(1).every(Boolean);
-        const okCfg = !!store.get('ardie_config');
+        const okPage = !!checks[0], okLibs = checks.slice(1).every(Boolean), okCfg = !!store.get('ardie_config');
         if (okPage && okLibs && okCfg) el.textContent = '✔ Prêt hors ligne';
-        else if (okPage && okLibs) el.textContent = '⏳ Hors ligne : ouvrez avec du réseau pour synchroniser';
         else el.textContent = '⏳ Préparation hors ligne…';
       } catch (e) {}
     }
 
-    /* ---------- Onglets ---------- */
     function switchTab(id) {
       ['clim', 'plants', 'anom', 'acclim', 'reports', 'admin'].forEach(k => {
         $(`tab-${k}`).classList.toggle('hidden', k !== id);
@@ -1694,7 +1597,6 @@
         }
       });
       if (id === 'clim') $('c-heure').value = localHHmm();
-      if (id === 'plants') checkTodayPlant();
       if (id === 'reports') {
         const s = $('global-serre').value;
         if (s && [...$('rep-serre-filter').options].some(o => o.value === s)) $('rep-serre-filter').value = s;
