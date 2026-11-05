@@ -46,6 +46,7 @@
         <div>
           <h1 class="text-sm md:text-base font-bold leading-none">Vitroplants Fruit à Pain</h1>
           <p class="text-[11px] text-emerald-300 mt-0.5" id="date-label">Chargement...</p>
+          <p class="text-[10px] text-emerald-200/80" id="offline-ready"></p>
         </div>
       </div>
       <button onclick="loadConfig()" title="Actualiser" class="p-2 hover:bg-emerald-800 rounded-lg transition active:scale-95">
@@ -606,6 +607,7 @@
         renderAdmin();
         checkTodayPlant();
         store.set('ardie_config', JSON.stringify({ state, at: Date.now() }));
+        checkOfflineReady();
       } catch (err) {
         console.error('Erreur chargement :', err);
         let cached = null;
@@ -1221,7 +1223,33 @@
       $('install-bar').classList.add('hidden');
     }
     if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(err => console.warn('SW :', err)));
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+          .then(() => navigator.serviceWorker.ready)
+          .then(() => { checkOfflineReady(); setTimeout(checkOfflineReady, 4000); setTimeout(checkOfflineReady, 12000); })
+          .catch(err => { console.warn('SW :', err); $('offline-ready').textContent = '⚠ Mode hors ligne indisponible'; });
+      });
+    }
+
+    // Indicateur : la page et les bibliothèques sont-elles bien en mémoire pour un usage sans réseau ?
+    const OFFLINE_ASSETS = [
+      'https://cdn.tailwindcss.com/3.4.17',
+      'https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+      'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'
+    ];
+    async function checkOfflineReady() {
+      const el = $('offline-ready');
+      if (!el || !window.caches) return;
+      try {
+        const checks = await Promise.all([caches.match('./index.html'), ...OFFLINE_ASSETS.map(u => caches.match(u))]);
+        const okPage = !!checks[0];
+        const okLibs = checks.slice(1).every(Boolean);
+        const okCfg = !!store.get('ardie_config');
+        if (okPage && okLibs && okCfg) el.textContent = '✔ Prêt hors ligne';
+        else if (okPage && okLibs) el.textContent = '⏳ Hors ligne : ouvrez une fois avec du réseau (listes serres/agents)';
+        else el.textContent = '⏳ Préparation hors ligne… gardez le réseau quelques secondes';
+      } catch (e) { /* ignoré */ }
     }
 
     /* ---------- Onglets ---------- */
