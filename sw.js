@@ -1,10 +1,5 @@
-/* Service worker ARDIE Serres : app installable + ouverture même sans réseau.
-   - Installation : on mémorise tout de suite la page ET les bibliothèques externes (Tailwind, Lucide, jsPDF).
-   - Fichiers du site : réseau d'abord (les mises à jour arrivent), cache en secours.
-   - Bibliothèques CDN : cache d'abord, rafraîchi en arrière-plan.
-   - Google Apps Script (données) : JAMAIS mis en cache.
-   Pour forcer une mise à jour du cache : changer VERSION ci-dessous. */
-const VERSION = 'ardie-serre-v2';
+/* Service worker ARDIE Serres V3 */
+const VERSION = 'ardie-serre-v3';
 const SHELL = ['./', './index.html', './manifest.json', './logo.png', './icon-192.png', './icon-512.png'];
 const CDN = [
   'https://cdn.tailwindcss.com/3.4.17',
@@ -37,10 +32,9 @@ self.addEventListener('fetch', (e) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Données : toujours le réseau, aucun cache
+  // Données Google Script : jamais en cache
   if (url.hostname.endsWith('script.google.com') || url.hostname.endsWith('googleusercontent.com')) return;
 
-  // Fichiers du site
   if (url.origin === self.location.origin) {
     e.respondWith(
       fetch(req).then(res => {
@@ -53,7 +47,6 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // Bibliothèques externes (Tailwind, Lucide, jsPDF...) : cache d'abord
   e.respondWith(
     caches.match(req).then(cached => {
       const net = fetch(req).then(res => {
