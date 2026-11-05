@@ -59,6 +59,11 @@
     <div id="banner-text" class="bg-amber-100 border border-amber-300 text-amber-900 text-xs font-semibold rounded-lg p-3"></div>
   </div>
 
+  <!-- File d'attente hors ligne -->
+  <div id="queue-bar" class="no-print hidden max-w-4xl w-full mx-auto px-4 pt-3">
+    <div id="queue-box" class="rounded-lg p-3 text-xs font-semibold border"></div>
+  </div>
+
   <!-- Installation PWA -->
   <div id="install-bar" class="no-print hidden max-w-4xl w-full mx-auto px-4 pt-3">
     <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center justify-between gap-3">
@@ -434,7 +439,7 @@
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
-    const EXPECTED_VERSION = "V10";
+    const EXPECTED_VERSION = "V11";
 
     // Logo : 1) logo.png hébergé dans le dépôt (recommandé), 2) lien Facebook en secours.
     const LOGO_FB = "https://scontent.frun1-1.fna.fbcdn.net/v/t39.30808-1/294737113_533509551750014_77347280882068389_n.png?stp=dst-png&cstp=mx1535x1535&ctp=s200x200&_nc_cat=102&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=GshwLzCRSKkQ7kNvwEGqleF&_nc_oc=AdoJ-dITzrKn9nnKCBmbmjyRdspNPGeI_C9TuqF-WcLYe2PnDowJiU4YsAPoWT3fHUQ&_nc_zt=24&_nc_ht=scontent.frun1-1.fna&_nc_gid=i3rs_GE-zo3m4cVjH4DBrQ&_nc_ss=7b2a8&oh=00_AQQKAmyMziEgAgyhZI9zWdTbB2MauPL4dfEQnVP-rmNASA&oe=6AF0F81C";
@@ -462,7 +467,7 @@
     function toast(msg, type = 'ok') {
       const t = $('toast');
       t.textContent = msg;
-      t.className = `fixed left-1/2 -translate-x-1/2 bottom-6 z-[60] max-w-[90vw] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white ${type === 'ok' ? 'bg-emerald-700' : 'bg-red-700'}`;
+      t.className = `fixed left-1/2 -translate-x-1/2 bottom-6 z-[60] max-w-[90vw] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white ${type === 'ok' ? 'bg-emerald-700' : (type === 'warn' ? 'bg-amber-600' : 'bg-red-700')}`;
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => t.classList.add('hidden'), 3500);
     }
@@ -495,6 +500,8 @@
       $('p-ecl-debut').value = store.get('ardie_ecl_debut') || '';
       $('p-ecl-fin').value = store.get('ardie_ecl_fin') || '';
       initLogo();
+      renderQueue();
+      flushQueue();
       loadConfig();
       icons();
     });
@@ -525,14 +532,24 @@
       const serre = $('global-serre').value;
       const box = $('plants-existing');
       if (!serre) { existingToday = null; box.classList.add('hidden'); return; }
+      let serverPlant = null;
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getReports&date=${localISODate()}&serre=${encodeURIComponent(serre)}`);
         const d = await res.json();
-        existingToday = (d && d.plant) ? d.plant : null;
-      } catch (e) { existingToday = null; }
+        serverPlant = (d && d.plant) ? d.plant : null;
+      } catch (e) { /* hors ligne : on regarde seulement la file d'attente locale */ }
+
+      let local = null;
+      if (!serverPlant) {
+        const it = qLoad().filter(i => i.payload.type === 'SUIVI_PLANTS' && i.payload.serre === serre && i.payload.date === localISODate()).pop();
+        if (it) local = { heure: it.payload.heure, intervenant: it.payload.intervenant, sains: it.payload.sains, initial: it.payload.initial, local: true };
+      }
+      existingToday = serverPlant || local;
+
       if (existingToday) {
         const who = (existingToday.intervenant && existingToday.intervenant !== '(non renseigné)') ? ` par ${existingToday.intervenant}` : '';
-        box.innerHTML = `⚠️ Une fiche journalière existe déjà aujourd'hui pour <b>${esc(serre)}</b> (enregistrée à ${esc(existingToday.heure)}${esc(who)} : ` +
+        box.innerHTML = `⚠️ Une fiche journalière existe déjà aujourd'hui pour <b>${esc(serre)}</b> ` +
+          `(${existingToday.local ? 'en attente d\'envoi sur cet appareil, ' : 'enregistrée '}à ${esc(existingToday.heure)}${esc(who)} : ` +
           `${esc(existingToday.sains)} plants sains sur ${esc(existingToday.initial)}). ` +
           `Si vous validez à nouveau, une nouvelle ligne sera ajoutée et la fiche affichera la plus récente.`;
         box.classList.remove('hidden');
@@ -588,9 +605,19 @@
         renderSelects();
         renderAdmin();
         checkTodayPlant();
+        store.set('ardie_config', JSON.stringify({ state, at: Date.now() }));
       } catch (err) {
         console.error('Erreur chargement :', err);
-        banner("Impossible de joindre le serveur Google. Vérifiez la connexion puis touchez ↻.");
+        let cached = null;
+        try { cached = JSON.parse(store.get('ardie_config') || 'null'); } catch (e) {}
+        if (cached && cached.state) {
+          state = cached.state;
+          renderSelects();
+          renderAdmin();
+          banner(`Mode hors ligne : listes des serres et des agents enregistrées le ${new Date(cached.at).toLocaleString('fr-FR')}. Les saisies seront envoyées au retour du réseau.`);
+        } else {
+          banner("Impossible de joindre le serveur Google. Ouvrez l'application une fois avec du réseau pour charger les listes, puis touchez ↻.");
+        }
       } finally {
         if (icon) icon.classList.remove('animate-spin');
       }
@@ -650,16 +677,135 @@
       if (del) return delLocation(del.dataset.delLoc);
       const tg = ev.target.closest('[data-toggle-agent]');
       if (tg) return toggleAgent(tg.dataset.toggleAgent, tg.dataset.name);
+      if (ev.target.closest('[data-q-send]')) return flushQueue(true);
+      if (ev.target.closest('[data-q-toggle]')) { queueOpen = !queueOpen; return renderQueue(); }
+      const qd = ev.target.closest('[data-q-del]');
+      if (qd) return delQueued(qd.dataset.qDel);
     });
 
     /* ---------- Envoi vers Apps Script ---------- */
-    // Pas d'en-tête personnalisé => "requête simple" (pas de preflight CORS) et la réponse reste lisible.
-    async function postData(payload) {
-      const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload) });
-      const out = await res.json();
+    /* ---------- Envoi vers Apps Script + file d'attente hors ligne ---------- */
+    class NetworkError extends Error {}
+    const QUEUE_KEY = 'ardie_queue_v1';
+    const QUEUED_MSG = "Hors ligne : saisie gardée sur l'appareil, envoi automatique dès le retour du réseau.";
+    let queueOpen = false;
+    let flushing = false;
+
+    const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('id' + Date.now() + Math.random().toString(16).slice(2));
+    function qLoad() { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch (e) { return []; } }
+    function qSave(q) { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); return true; } catch (e) { return false; } }
+
+    // Envoi réel. NetworkError = réseau absent / lent / réponse illisible (on pourra réessayer).
+    // Error simple = refus du serveur (saisie invalide) : inutile de réessayer tel quel.
+    async function postRaw(payload, ms = 25000) {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), ms);
+      let res;
+      try {
+        // Pas d'en-tête personnalisé => "requête simple" (pas de preflight CORS), réponse lisible.
+        res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), signal: ctrl.signal });
+      } catch (e) {
+        throw new NetworkError('Pas de réseau');
+      } finally {
+        clearTimeout(t);
+      }
+      let out;
+      try { out = await res.json(); } catch (e) { throw new NetworkError('Réponse illisible'); }
       if (out.status !== 'success') throw new Error(out.message || 'Erreur serveur');
       return out;
     }
+
+    // Administration (serres / agents) : nécessite le réseau
+    async function postData(payload) { return postRaw(payload); }
+
+    // Relevés et bilans : envoyés tout de suite, sinon gardés sur l'appareil
+    async function submitOrQueue(payload) {
+      payload.clientId = payload.clientId || uid();     // le serveur ignore un identifiant déjà reçu (anti-doublon)
+      if (!navigator.onLine) return queueItem(payload);
+      try {
+        await postRaw(payload);
+        return 'sent';
+      } catch (e) {
+        if (e instanceof NetworkError) return queueItem(payload);
+        throw e;
+      }
+    }
+
+    function queueItem(payload) {
+      const q = qLoad();
+      q.push({ id: payload.clientId, payload, createdAt: Date.now(), error: null });
+      if (!qSave(q)) throw new Error("Hors ligne et impossible de sauvegarder sur l'appareil");
+      renderQueue();
+      return 'queued';
+    }
+    function qRemove(id) { qSave(qLoad().filter(i => i.id !== id)); }
+    function qUpdate(id, patch) { qSave(qLoad().map(i => i.id === id ? Object.assign({}, i, patch) : i)); }
+
+    async function flushQueue(manual = false) {
+      if (flushing) return;
+      const q = qLoad();
+      if (!q.length) return;
+      if (!navigator.onLine && !manual) return;
+      flushing = true;
+      let sent = 0, failed = 0, offline = false;
+      try {
+        for (const item of q) {
+          if (item.error && !manual) continue;          // les saisies refusées par le serveur ne sont rejouées qu'à la demande
+          try {
+            await postRaw(item.payload);
+            qRemove(item.id); sent++;
+          } catch (e) {
+            if (e instanceof NetworkError) { offline = true; break; }
+            qUpdate(item.id, { error: e.message }); failed++;
+          }
+        }
+      } finally {
+        flushing = false;
+        renderQueue();
+      }
+      if (sent) { toast(`${sent} saisie(s) envoyée(s) ✔`); checkTodayPlant(); }
+      else if (manual && offline) toast('Toujours pas de réseau', 'err');
+      if (failed) toast(`${failed} saisie(s) refusée(s) par le serveur (voir Détails)`, 'err');
+    }
+
+    function renderQueue() {
+      const q = qLoad();
+      const off = !navigator.onLine;
+      const bar = $('queue-bar'), box = $('queue-box');
+      if (!q.length && !off) { bar.classList.add('hidden'); return; }
+      const errs = q.filter(i => i.error).length;
+      box.className = 'rounded-lg p-3 text-xs font-semibold border ' + (errs ? 'bg-red-50 border-red-300 text-red-900' : 'bg-amber-50 border-amber-300 text-amber-900');
+      let html = '';
+      if (off) html += `<div>📴 Hors ligne : vos saisies sont gardées sur l'appareil et partiront automatiquement au retour du réseau.</div>`;
+      if (q.length) {
+        html += `<div class="${off ? 'mt-2 ' : ''}flex items-center justify-between gap-2">
+          <span>📤 ${q.length} saisie(s) en attente d'envoi${errs ? ` (dont ${errs} refusée(s))` : ''}</span>
+          <span class="flex gap-2">
+            <button data-q-send class="bg-emerald-700 text-white px-3 py-1.5 rounded-lg">Envoyer</button>
+            <button data-q-toggle class="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg">${queueOpen ? 'Masquer' : 'Détails'}</button>
+          </span></div>`;
+        if (queueOpen) {
+          html += '<ul class="mt-2 divide-y divide-black/10 font-medium">' + q.map(i => {
+            const p = i.payload;
+            const label = (p.type === 'CLIMAT' ? 'Relevé climat' : 'Bilan plants') + ` • ${esc(p.serre)} • ${esc(isoToFR(p.date))} ${esc(p.heure)}`;
+            return `<li class="py-1.5 flex items-center justify-between gap-2">
+              <span class="min-w-0">${label}${i.error ? `<br><span class="text-red-700">⚠ ${esc(i.error)}</span>` : ''}</span>
+              <button data-q-del="${esc(i.id)}" class="shrink-0 text-red-700 border border-red-200 bg-white px-2 py-1 rounded">Supprimer</button></li>`;
+          }).join('') + '</ul>';
+        }
+      }
+      box.innerHTML = html;
+      bar.classList.remove('hidden');
+    }
+    function delQueued(id) {
+      if (!confirm('Supprimer cette saisie en attente ? Elle ne sera jamais envoyée.')) return;
+      qRemove(id); renderQueue();
+    }
+
+    window.addEventListener('online', () => { renderQueue(); flushQueue(); loadConfig(); });
+    window.addEventListener('offline', renderQueue);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') flushQueue(); });
+    setInterval(() => { if (qLoad().length) flushQueue(); }, 60000);
 
     function requireSerreAgent() {
       const serre = $('global-serre').value;
@@ -677,7 +823,7 @@
       const btn = $('btn-submit-clim');
       setBtn(btn, true);
       try {
-        await postData({
+        const r = await submitOrQueue({
           type: 'CLIMAT',
           date: localISODate(),
           heure: $('c-heure').value || localHHmm(),
@@ -692,7 +838,7 @@
           arrosage: $('c-arrosage').value || '-',
           remarque: $('c-remarque').value || '-'
         });
-        toast('Relevé climatique enregistré ✔');
+        toast(r === 'queued' ? QUEUED_MSG : 'Relevé climatique enregistré ✔', r === 'queued' ? 'warn' : 'ok');
         $('c-remarque').value = '';
         $('c-arrosage').value = '';
         $('c-heure').value = localHHmm();
@@ -711,7 +857,7 @@
       const btn = $('btn-submit-plants');
       setBtn(btn, true);
       try {
-        await postData({
+        const r = await submitOrQueue({
           type: 'SUIVI_PLANTS',
           date: localISODate(),
           heure: localHHmm(),
@@ -726,7 +872,7 @@
           eclairage_debut: $('p-ecl-debut').value,
           eclairage_fin: $('p-ecl-fin').value
         });
-        toast('Bilan vitroplants enregistré ✔');
+        toast(r === 'queued' ? QUEUED_MSG : 'Bilan vitroplants enregistré ✔', r === 'queued' ? 'warn' : 'ok');
         store.set('ardie_ecl_debut', $('p-ecl-debut').value);
         store.set('ardie_ecl_fin', $('p-ecl-fin').value);
         setTimeout(checkTodayPlant, 800);
