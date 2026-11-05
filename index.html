@@ -15,7 +15,6 @@
 
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
-  <!-- PDF vectoriel haute définition (jsPDF + AutoTable) -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 
@@ -40,7 +39,7 @@
 </head>
 <body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col pb-12">
 
-  <!-- ÉCRAN DE VERROUILLAGE SÉCURISÉ (MOT DE PASSE / PIN) -->
+  <!-- SÉCURITÉ : VERROUILLAGE PIN/MOT DE PASSE -->
   <div id="auth-overlay" class="fixed inset-0 z-[100] bg-emerald-950/95 backdrop-blur-md flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl text-center space-y-4 border border-emerald-800">
       <div class="w-16 h-16 bg-emerald-100 text-emerald-900 rounded-2xl mx-auto flex items-center justify-center font-black text-xl shadow-inner">
@@ -48,7 +47,7 @@
       </div>
       <div>
         <h2 class="text-lg font-bold text-slate-900">Accès Suivi Serres</h2>
-        <p class="text-xs text-slate-500 mt-0.5">Saisissez le mot de passe pour accéder aux fiches</p>
+        <p class="text-xs text-slate-500 mt-0.5">Application officielle de production FAP</p>
       </div>
       <form id="form-auth" onsubmit="checkAuth(event)" class="space-y-3">
         <input type="password" id="auth-pass" placeholder="Code d'accès..." required autofocus
@@ -58,7 +57,7 @@
           <span>Mémoriser cet appareil (30 jours)</span>
         </label>
         <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl transition shadow active:scale-95">
-          Déverrouiller l'application
+          Déverrouiller
         </button>
       </form>
       <p id="auth-error" class="text-xs font-semibold text-red-600 hidden">Mot de passe incorrect.</p>
@@ -97,7 +96,7 @@
     </div>
   </div>
 
-  <!-- Sélecteurs globaux Serre & Agent (SharePoint - ZÉRO saisie manuelle) -->
+  <!-- Sélecteurs globaux Serre & Agent (SharePoint - 100% verrouillés) -->
   <div class="no-print max-w-4xl w-full mx-auto px-4 pt-3">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div>
@@ -138,18 +137,18 @@
           <p class="text-xl md:text-2xl font-black font-mono text-amber-200" id="kpi-surv">--</p>
         </div>
         <div class="bg-black/20 p-2 rounded-lg">
-          <p class="text-[10px] uppercase text-red-300 font-semibold">Morts (Pertes)</p>
+          <p class="text-[10px] uppercase text-red-300 font-semibold">Pertes (Morts)</p>
           <p class="text-xl md:text-2xl font-black font-mono text-red-200" id="kpi-morts">--</p>
         </div>
         <div class="bg-black/20 p-2 rounded-lg">
-          <p class="text-[10px] uppercase text-teal-200 font-semibold">Viabilité</p>
-          <p class="text-xl md:text-2xl font-black font-mono text-white" id="kpi-rate">--%</p>
+          <p class="text-[10px] uppercase text-teal-200 font-semibold">Distribués</p>
+          <p class="text-xl md:text-2xl font-black font-mono text-white" id="kpi-distrib">0</p>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Barre d'onglets (Navigation rapide) -->
+  <!-- Barre d'onglets principale -->
   <div class="no-print max-w-4xl w-full mx-auto px-4 mt-3">
     <div class="flex flex-wrap bg-slate-200 p-1 rounded-xl gap-1">
       <button onclick="switchTab('clim')" id="btn-clim" class="flex-1 min-w-[70px] py-2 text-xs font-bold rounded-lg bg-white text-emerald-900 shadow-sm flex items-center justify-center gap-1 transition">
@@ -235,8 +234,9 @@
       </form>
     </div>
 
-    <!-- 2. PLANTS (SUIVI AVEC INITIAL DYNAMIQUE & GESTION DE LOT) -->
+    <!-- 2. PLANTS : BILAN + MODULE DE DISTRIBUTION & SORTIE -->
     <div id="tab-plants" class="space-y-4 hidden">
+      <!-- Bilan Journalier -->
       <form id="form-plants" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="flex items-center justify-between border-b pb-2">
           <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -247,10 +247,7 @@
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <div class="flex justify-between items-center mb-1">
-              <label class="block text-xs font-bold text-slate-700">Nombre au démarrage</label>
-              <button type="button" onclick="promptNewLot()" class="text-[10px] text-emerald-700 underline font-semibold">Nouveau lot ?</button>
-            </div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Nombre au démarrage</label>
             <input type="number" inputmode="numeric" id="p-initial" min="0" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 font-bold text-base">
           </div>
           <div>
@@ -282,7 +279,7 @@
         <div class="bg-gradient-to-r from-emerald-800 to-teal-800 text-white p-4 rounded-xl flex items-center justify-between shadow-inner">
           <div>
             <p class="text-xs uppercase font-bold tracking-wider text-emerald-200">Total restant en culture saine</p>
-            <p class="text-[11px] text-emerald-300">Calcul : Démarrage − (Isolés + Morts)</p>
+            <p class="text-[11px] text-emerald-300">Démarrage − (Isolés + Morts)</p>
           </div>
           <span class="text-3xl md:text-4xl font-mono font-black" id="p-sains-display">--</span>
         </div>
@@ -296,16 +293,57 @@
           <i data-lucide="check-circle-2" class="w-5 h-5"></i><span>Valider le bilan journalier</span>
         </button>
       </form>
+
+      <!-- MODULE TRAÇABILITÉ : DISTRIBUTION / SORTIE DES PLANTS SAINS -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <div class="flex items-center justify-between border-b pb-2">
+          <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i data-lucide="truck" class="w-4 h-4 text-emerald-700"></i>Distribution / Sortie de plants sains
+          </h3>
+          <span class="text-[11px] text-slate-500">Traçabilité des sorties de production</span>
+        </div>
+        <form id="form-distrib" onsubmit="submitDistribution(event)" class="space-y-3">
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Quantité distribuée (plants)</label>
+              <input type="number" id="dist-qte" min="1" required placeholder="ex: 50" class="w-full bg-slate-50 border rounded-lg p-2 text-sm font-bold">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Destinataire / Agriculteur</label>
+              <input type="text" id="dist-benef" required placeholder="ex: M. Payet (St-Benoît)" class="w-full bg-slate-50 border rounded-lg p-2 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Motif / N° Bon livraison</label>
+              <input type="text" id="dist-motif" placeholder="ex: Plantation plein champ" class="w-full bg-slate-50 border rounded-lg p-2 text-sm">
+            </div>
+          </div>
+          <button type="submit" class="w-full bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow">
+            <i data-lucide="send" class="w-4 h-4"></i><span>Enregistrer la distribution (décompte du stock)</span>
+          </button>
+        </form>
+      </div>
+
+      <!-- CLÔTURE DE PRODUCTION & NOUVEAU LOT -->
+      <div class="bg-slate-50 rounded-xl border border-slate-300 p-4 flex items-center justify-between">
+        <div>
+          <h4 class="font-bold text-slate-800 text-xs">Clôturer ce cycle de production</h4>
+          <p class="text-[11px] text-slate-500">Archive le lot actuel de la serre et réinitialise les compteurs pour une nouvelle série.</p>
+        </div>
+        <button onclick="promptNewLot()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1 shadow">
+          <i data-lucide="archive" class="w-3.5 h-3.5"></i><span>Nouveau Lot / Clôturer</span>
+        </button>
+      </div>
     </div>
 
-    <!-- 3. ANOMALIES & PERTES (AVEC OUI/NON DÉTAILLÉ & DÉCOMPTE SORTIES) -->
+    <!-- 3. ANOMALIES & SURVEILLANCE : GESTION COMPLETE DU CYCLE DE VIE -->
     <div id="tab-anom" class="space-y-4 hidden">
+      <!-- Formulaire d'entrée -->
       <form id="form-anom" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="border-b pb-2">
           <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
             <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i>Suivi anomalies / pertes – Vitroplants sous surveillance
           </h2>
-          <p class="text-[11px] text-slate-500 mt-0.5">Isolement d'un vitroplant détecté anormal. L'agent est automatiquement votre sélection active.</p>
+          <p class="text-[11px] text-slate-500 mt-0.5">Isolement d'un plant anormal ou faible. L'agent connecté est automatiquement enregistré.</p>
         </div>
 
         <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -323,7 +361,6 @@
           </div>
         </div>
 
-        <!-- Constats Pathologiques -->
         <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
           <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Constats pathologiques :</label>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
@@ -350,7 +387,6 @@
           </div>
         </div>
 
-        <!-- Mesures Sanitaires avec sélecteur Oui/Non -->
         <div class="bg-emerald-50/50 p-3 rounded-xl border border-emerald-100 space-y-2">
           <label class="block text-xs font-bold text-emerald-950 uppercase">Mesures sanitaires nécessaires ?</label>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -369,26 +405,24 @@
         </button>
       </form>
 
-      <!-- Clôture rapide de sortie (Sauvé ou Mort avec nombre) -->
+      <!-- LISTE ACTIVE EN DIRECT : RÉINTRODUCTION OU MORT EN 1 CLIC -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
-        <h3 class="font-bold text-slate-800 text-sm mb-1 border-b pb-1.5 flex items-center gap-2">
-          <i data-lucide="log-out" class="w-4 h-4 text-emerald-700"></i>Clôturer un plant sous surveillance (Sortie)
-        </h3>
-        <p class="text-xs text-slate-500 mb-3">Sortie d'observation. L'agent connecté sera automatiquement enregistré.</p>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 items-center">
-          <input type="text" id="out-godet" placeholder="N° Godet" class="w-full bg-slate-50 border rounded-lg p-2 text-xs font-bold">
-          <select id="out-statut" class="w-full bg-slate-50 border rounded-lg p-2 text-xs font-semibold">
-            <option value="Sauvé">🌱 Sauvé (retour sain)</option>
-            <option value="Mort">🥀 Mort (perte constatée)</option>
-          </select>
-          <button onclick="cloturerAnomalie()" class="w-full bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold p-2.5 rounded-lg shadow">
-            Valider la sortie
+        <div class="flex items-center justify-between border-b pb-2 mb-3">
+          <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i data-lucide="hourglass" class="w-4 h-4 text-amber-600"></i>Plants actuellement sous surveillance
+          </h3>
+          <button onclick="loadSurvList()" class="text-xs text-slate-500 hover:text-emerald-700 flex items-center gap-1 font-semibold">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i><span>Actualiser</span>
           </button>
         </div>
+        <p class="text-xs text-slate-500 mb-3">Dès qu'un godet quitte la surveillance, appuyez sur l'action correspondante :</p>
+        <ul id="surv-active-list" class="divide-y divide-slate-100 text-xs">
+          <li class="py-3 text-slate-400 text-center">Chargement des plants sous surveillance...</li>
+        </ul>
       </div>
     </div>
 
-    <!-- 4. PHASE D'ACCLIMATATION (10 PLANTS) -->
+    <!-- 4. PHASE D'ACCLIMATATION : CARTES RESPONSIVES (FORMAT CLAUDE INTERACTIF) -->
     <div id="tab-acclim" class="space-y-4 hidden">
       <form id="form-acclim" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
         <div class="flex items-center justify-between border-b pb-2">
@@ -400,8 +434,7 @@
           </div>
           <div class="flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
             <span class="text-xs font-bold text-blue-900">Lot N° :</span>
-            <!-- Nettoyage : valeur numérique simple (ex: 1) pour éviter le bug 1/12 / 12 -->
-            <select id="ac-lot-num" class="bg-white border border-blue-300 rounded px-2 py-0.5 text-xs font-bold text-center">
+            <select id="ac-lot-num" class="bg-white border border-blue-300 rounded px-2 py-0.5 text-xs font-bold">
               <option value="1">1 / 12</option><option value="2">2 / 12</option><option value="3">3 / 12</option>
               <option value="4">4 / 12</option><option value="5">5 / 12</option><option value="6">6 / 12</option>
               <option value="7">7 / 12</option><option value="8">8 / 12</option><option value="9">9 / 12</option>
@@ -421,33 +454,9 @@
           </div>
         </div>
 
-        <div class="sheet-scroll border rounded-xl overflow-hidden">
-          <table class="w-full border-collapse text-xs min-w-[750px]">
-            <thead class="bg-slate-100 text-slate-700 font-bold text-center border-b">
-              <tr>
-                <th class="p-2 border-r w-8">N°</th>
-                <th class="p-2 border-r" colspan="5">Suivi morphologique</th>
-                <th class="p-2 border-r bg-emerald-50/50" colspan="3">Suivi conditions</th>
-                <th class="p-2" colspan="4">Suivi sanitaire (Oui / Non)</th>
-              </tr>
-              <tr class="text-[10px] bg-slate-50 border-t">
-                <th class="p-1 border-r">VP</th>
-                <th class="p-1 border-r w-16">Taille (cm)</th>
-                <th class="p-1 border-r w-14">Nb feuilles</th>
-                <th class="p-1 border-r w-20">Couleur</th>
-                <th class="p-1 border-r w-20">Tige</th>
-                <th class="p-1 border-r w-16">Vigueur</th>
-                <th class="p-1 border-r w-14 bg-emerald-50/50">T° substrat</th>
-                <th class="p-1 border-r w-14 bg-emerald-50/50">Hum. %</th>
-                <th class="p-1 border-r w-12 bg-emerald-50/50">pH</th>
-                <th class="p-1 border-r">Foliaire</th>
-                <th class="p-1 border-r">Ravageurs</th>
-                <th class="p-1 border-r">Racine</th>
-                <th class="p-1">Fongique</th>
-              </tr>
-            </thead>
-            <tbody id="acclim-inputs-tbody" class="divide-y divide-slate-100"></tbody>
-          </table>
+        <!-- LISTE DES 10 PLANTES EN CARTES TACTILES ULTRA RESPONSIVES -->
+        <div id="acc-cards-container" class="space-y-3">
+          <!-- Rempli par JavaScript (10 fiches cartes avec bouton copier) -->
         </div>
 
         <button type="submit" id="btn-submit-acclim" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow">
@@ -488,7 +497,6 @@
           </button>
         </div>
 
-        <!-- 4 Téléchargements PDF Vectoriels Directs -->
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2">
           <button onclick="exportPDF('plants')" class="bg-red-700 hover:bg-red-800 text-white text-[11px] font-bold py-2 rounded-lg flex items-center justify-center gap-1 shadow">
             <i data-lucide="download" class="w-3.5 h-3.5"></i><span>PDF Fiche 1</span>
@@ -614,7 +622,7 @@
         </div>
       </div>
 
-      <!-- VUE FICHE 3 : ANOMALIES (AVEC DÉCOMPTE SORTIES & RESTE CONFORME FICHE MANUSCRITE) -->
+      <!-- VUE FICHE 3 : ANOMALIES -->
       <div class="sheet-scroll">
         <div id="view-sheet-anom" class="sheet p-6 rounded-xl border border-slate-300 shadow-sm space-y-4 hidden min-w-[900px]">
           <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
@@ -635,9 +643,8 @@
                 <th class="border border-slate-400 p-1 w-20" rowspan="2">Intervenant entrée</th>
                 <th class="border border-slate-400 p-1 w-16" rowspan="2">Godet N°</th>
                 <th class="border border-slate-400 p-1" colspan="5">Constats</th>
-                <th class="border border-slate-400 p-1 w-28" rowspan="2">Mesures sanitaires (Oui/Non - Lesquelles ?)</th>
+                <th class="border border-slate-400 p-1 w-28" rowspan="2">Mesures sanitaires</th>
                 <th class="border border-slate-400 p-1 w-20" rowspan="2">Date de sortie sauvé / mort</th>
-                <!-- Colonne adaptée : Sorties / Pertes constatées (ex: 3) -->
                 <th class="border border-slate-400 p-1 w-20 bg-amber-50" rowspan="2">Sortie (Morts / Pertes)</th>
               </tr>
               <tr class="bg-slate-50 text-[9px]">
@@ -649,7 +656,6 @@
               </tr>
             </thead>
             <tbody id="f3-tbody"></tbody>
-            <!-- Pied de tableau : récapitulation exacte du reste et des pertes -->
             <tfoot>
               <tr class="bg-slate-100 font-bold text-xs border-t-2 border-slate-500">
                 <td colspan="9" class="p-2 text-right">RÉCAPITULATION DE LA PRODUCTION :</td>
@@ -662,14 +668,13 @@
         </div>
       </div>
 
-      <!-- VUE FICHE 4 : PHASE D'ACCLIMATATION -->
+      <!-- VUE FICHE 4 : ACCLIMATATION -->
       <div class="sheet-scroll">
         <div id="view-sheet-acclim" class="sheet p-6 rounded-xl border border-slate-300 shadow-sm space-y-4 hidden min-w-[900px]">
           <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
             <div>
               <div class="flex items-center gap-3"><img class="logo-img hidden h-12 w-12 object-contain" alt=""><span class="text-xl font-black text-slate-900 tracking-wider">ARDIE</span></div>
               <h2 class="text-base font-black text-slate-900 uppercase mt-1">Tableau de suivi - Phase d'acclimatation</h2>
-              <!-- Libellé propre : Test effectué sur le lot numéro : X / 12 -->
               <div class="mt-1 border border-slate-400 px-2.5 py-0.5 inline-block text-xs font-bold">
                 Test effectué sur le lot numéro : <span id="f4-lot-num" class="underline">1</span> / 12
               </div>
@@ -712,17 +717,16 @@
       </div>
     </div>
 
-    <!-- 6. ADMIN (AVEC GESTION DU MOT DE PASSE ET SERRES) -->
+    <!-- 6. ADMIN -->
     <div id="tab-admin" class="space-y-4 hidden">
-      <!-- Sécurité App -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <h3 class="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
           <i data-lucide="lock" class="w-4 h-4 text-emerald-600"></i>Sécurité de l'application
         </h3>
-        <p class="text-xs text-slate-500 mb-3">Verrouillez l'écran ou modifiez le code PIN de l'application sur cet appareil.</p>
+        <p class="text-xs text-slate-500 mb-3">Verrouillez l'écran ou modifiez le code PIN de l'application.</p>
         <div class="flex flex-wrap gap-2">
           <button onclick="lockApp()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg flex items-center gap-1.5">
-            <i data-lucide="lock" class="w-3.5 h-3.5"></i><span>Verrouiller maintenant</span>
+            <i data-lucide="lock" class="w-3.5 h-3.5"></i><span>Verrouiller</span>
           </button>
           <button onclick="changePassword()" class="bg-slate-100 hover:bg-slate-200 border text-slate-700 text-xs font-bold px-3 py-2 rounded-lg">
             Modifier le mot de passe
@@ -730,7 +734,6 @@
         </div>
       </div>
 
-      <!-- Emplacements -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <h3 class="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
           <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600"></i>Gestion des Emplacements / Serres
@@ -744,7 +747,6 @@
         <ul id="list-loc" class="divide-y divide-slate-100 text-xs"></ul>
       </div>
 
-      <!-- Agents SharePoint -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <div class="flex items-center justify-between mb-3 border-b pb-2">
           <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
@@ -782,7 +784,7 @@
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
-    const EXPECTED_VERSION = "V13";
+    const EXPECTED_VERSION = "V14";
     const LOGO_FB = "https://scontent.frun1-1.fna.fbcdn.net/v/t39.30808-1/294737113_533509551750014_77347280882068389_n.png?stp=dst-png&cstp=mx1535x1535&ctp=s200x200&_nc_cat=102&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=GshwLzCRSKkQ7kNvwEGqleF&_nc_oc=AdoJ-dITzrKn9nnKCBmbmjyRdspNPGeI_C9TuqF-WcLYe2PnDowJiU4YsAPoWT3fHUQ&_nc_zt=24&_nc_ht=scontent.frun1-1.fna&_nc_gid=i3rs_GE-zo3m4cVjH4DBrQ&_nc_ss=7b2a8&oh=00_AQQKAmyMziEgAgyhZI9zWdTbB2MauPL4dfEQnVP-rmNASA&oe=6AF0F81C";
     const LOGO_CANDIDATES = ['logo.png', LOGO_FB];
     let LOGO = { src: null, data: null };
@@ -809,12 +811,6 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => t.classList.add('hidden'), 3500);
     }
-    function banner(msg) {
-      const b = $('banner');
-      if (!msg) { b.classList.add('hidden'); return; }
-      $('banner-text').textContent = msg;
-      b.classList.remove('hidden');
-    }
     function setBtn(btn, busy, label, iconName) {
       btn.disabled = busy;
       btn.innerHTML = busy
@@ -827,13 +823,11 @@
       set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
     };
 
-    /* ---------- GESTION DE LA SÉCURITÉ / MOT DE PASSE ---------- */
+    /* ---------- AUTHENTIFICATION SÉCURISÉE ---------- */
     function checkAuth(e) {
       e.preventDefault();
       const entered = $('auth-pass').value.trim();
       const savedPass = store.get('ardie_password') || 'ARDIE2026';
-      
-      // Accepte le mot de passe ARDIE2026 ou le code court 2026
       if (entered === savedPass || entered === '2026' || entered === 'ARDIE2026') {
         if ($('auth-remember').checked) {
           store.set('ardie_auth_token', 'AUTH_VALID_' + (Date.now() + 30 * 24 * 3600 * 1000));
@@ -864,19 +858,17 @@
     }
 
     function changePassword() {
-      const cur = prompt("Saisissez le mot de passe actuel :");
+      const cur = prompt("Mot de passe actuel :");
       const savedPass = store.get('ardie_password') || 'ARDIE2026';
-      if (cur !== savedPass && cur !== 'ARDIE2026' && cur !== '2026') {
-        return alert("Mot de passe actuel incorrect.");
-      }
-      const newP = prompt("Nouveau mot de passe (au moins 4 caractères) :");
+      if (cur !== savedPass && cur !== 'ARDIE2026' && cur !== '2026') return alert("Mot de passe incorrect.");
+      const newP = prompt("Nouveau mot de passe :");
       if (newP && newP.length >= 4) {
         store.set('ardie_password', newP);
-        toast("Nouveau mot de passe enregistré ✔");
+        toast("Mot de passe modifié ✔");
       }
     }
 
-    /* ---------- Démarrage ---------- */
+    /* ---------- DÉMARRAGE ---------- */
     window.addEventListener('DOMContentLoaded', () => {
       checkAuthToken();
       $('date-label').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
@@ -890,13 +882,14 @@
       $('global-serre').addEventListener('change', e => {
         store.set('ardie_serre', e.target.value);
         updateKpi(e.target.value);
+        loadSurvList();
       });
       $('global-intervenant').addEventListener('change', e => store.set('ardie_agent', e.target.value));
       ['p-initial', 'p-isoles', 'p-morts'].forEach(id => $(id).addEventListener('input', calcPlants));
       $('p-ecl-debut').value = store.get('ardie_ecl_debut') || '';
       $('p-ecl-fin').value = store.get('ardie_ecl_fin') || '';
 
-      renderAcclimInputs();
+      buildAccCards();
       initLogo();
       renderQueue();
       flushQueue();
@@ -904,7 +897,99 @@
       icons();
     });
 
-    /* ---------- Mesures Sanitaires : Toggle Oui/Non ---------- */
+    /* ---------- ONGLET ACCLIMATATION : CARTES TACTILES ULTRA RESPONSIVES ---------- */
+    function buildAccCards() {
+      const container = $('acc-cards-container');
+      let html = '';
+      for (let n = 1; n <= 10; n++) {
+        html += `
+          <div class="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2.5 shadow-sm" data-plant="${n}">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-1.5">
+              <span class="text-xs font-black text-emerald-900">Vitroplant testé ${n} / 10</span>
+              ${n > 1 ? `<button type="button" onclick="copyAccPrevious(${n})" class="text-[11px] font-semibold text-emerald-700 bg-white border border-emerald-300 px-2 py-0.5 rounded shadow-sm">Copier le n° ${n - 1}</button>` : ''}
+            </div>
+            
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Suivi morphologique</p>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+              <div>
+                <label class="block text-[10px] text-slate-600 mb-0.5">Taille (cm)</label>
+                <input type="number" step="0.1" id="ac-${n}-t" class="w-full bg-white border border-slate-300 rounded p-1.5 text-center font-bold">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-600 mb-0.5">Nb feuilles</label>
+                <input type="number" id="ac-${n}-f" class="w-full bg-white border border-slate-300 rounded p-1.5 text-center font-bold">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-600 mb-0.5">Couleur feuilles</label>
+                <input type="text" id="ac-${n}-c" placeholder="vert..." class="w-full bg-white border border-slate-300 rounded p-1.5">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-600 mb-0.5">Aspect tige</label>
+                <input type="text" id="ac-${n}-a" placeholder="ferme..." class="w-full bg-white border border-slate-300 rounded p-1.5">
+              </div>
+              <div>
+                <label class="block text-[10px] text-slate-600 mb-0.5">Vigueur</label>
+                <select id="ac-${n}-v" class="w-full bg-white border border-slate-300 rounded p-1.5 font-semibold">
+                  <option value="Bonne">Bonne</option>
+                  <option value="Moyenne">Moyenne</option>
+                  <option value="Faible">Faible</option>
+                </select>
+              </div>
+            </div>
+
+            <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-800">Suivi conditions substrat</p>
+            <div class="grid grid-cols-3 gap-2 text-xs bg-emerald-50/50 p-2 rounded-lg border border-emerald-100">
+              <div>
+                <label class="block text-[10px] text-emerald-950 mb-0.5">T° substrat</label>
+                <input type="number" step="0.1" id="ac-${n}-ts" placeholder="°C" class="w-full bg-white border border-emerald-200 rounded p-1.5 text-center font-bold">
+              </div>
+              <div>
+                <label class="block text-[10px] text-emerald-950 mb-0.5">Humidité %</label>
+                <input type="number" step="0.1" id="ac-${n}-hs" placeholder="%" class="w-full bg-white border border-emerald-200 rounded p-1.5 text-center font-bold">
+              </div>
+              <div>
+                <label class="block text-[10px] text-emerald-950 mb-0.5">pH</label>
+                <input type="number" step="0.1" id="ac-${n}-ph" placeholder="pH" class="w-full bg-white border border-emerald-200 rounded p-1.5 text-center font-bold">
+              </div>
+            </div>
+
+            <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Diagnostic sanitaire (Cocher si Présent)</p>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+              <label class="flex items-center gap-1.5 bg-white p-1.5 rounded border border-slate-200 cursor-pointer">
+                <input type="checkbox" id="ac-${n}-mf" class="rounded text-emerald-600">
+                <span>Maladies foliaires</span>
+              </label>
+              <label class="flex items-center gap-1.5 bg-white p-1.5 rounded border border-slate-200 cursor-pointer">
+                <input type="checkbox" id="ac-${n}-rav" class="rounded text-emerald-600">
+                <span>Ravageurs</span>
+              </label>
+              <label class="flex items-center gap-1.5 bg-white p-1.5 rounded border border-slate-200 cursor-pointer">
+                <input type="checkbox" id="ac-${n}-pr" class="rounded text-emerald-600">
+                <span>Pourriture racine</span>
+              </label>
+              <label class="flex items-center gap-1.5 bg-white p-1.5 rounded border border-slate-200 cursor-pointer">
+                <input type="checkbox" id="ac-${n}-fong" class="rounded text-emerald-600">
+                <span>Moisissures</span>
+              </label>
+            </div>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    function copyAccPrevious(targetN) {
+      const prev = targetN - 1;
+      ['t', 'f', 'c', 'a', 'v', 'ts', 'hs', 'ph'].forEach(k => {
+        $(`ac-${targetN}-${k}`).value = $(`ac-${prev}-${k}`).value;
+      });
+      ['mf', 'rav', 'pr', 'fong'].forEach(k => {
+        $(`ac-${targetN}-${k}`).checked = $(`ac-${prev}-${k}`).checked;
+      });
+      toast(`Données du plant ${prev} copiées vers le plant ${targetN} ✔`);
+    }
+
+    /* ---------- MESURES SANITAIRES : TOGGLE OUI/NON ---------- */
     function toggleMesuresDetail() {
       const choix = $('an-mesures-choix').value;
       const box = $('an-mesures-box');
@@ -917,10 +1002,10 @@
       }
     }
 
-    /* ---------- Démarrage d'un nouveau lot / clôture ---------- */
+    /* ---------- DÉMARRAGE NOUVEAU LOT / CLÔTURE ---------- */
     function promptNewLot() {
       const curSerre = $('global-serre').value || 'la serre active';
-      const newCount = prompt(`DÉMARRER UN NOUVEAU LOT POUR : ${curSerre}\n\nIndiquez le nombre initial de vitroplants démarrés pour cette nouvelle production :`, "605");
+      const newCount = prompt(`CLÔTURER LA PRODUCTION ACTUELLE & DÉMARRER UN NOUVEAU LOT : ${curSerre}\n\nIndiquez le nombre de vitroplants au démarrage :`, "605");
       if (newCount && !isNaN(Number(newCount)) && Number(newCount) > 0) {
         $('p-initial').value = Number(newCount);
         $('p-isoles').value = 0;
@@ -932,67 +1017,108 @@
       }
     }
 
-    /* ---------- Mise à jour dynamique du bandeau KPI en 1 coup d'œil ---------- */
+    /* ---------- MISE À JOUR DU BANDEAU EN 1 COUP D'ŒIL ---------- */
     async function updateKpi(serre) {
       $('kpi-serre-name').textContent = serre || '--';
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getKpi&serre=${encodeURIComponent(serre)}`);
         const kpi = await res.json();
         $('kpi-sains').textContent = kpi.sains;
-        $('kpi-surv').textContent = kpi.surveillance || kpi.isoles;
+        $('kpi-surv').textContent = kpi.surveillance;
         $('kpi-morts').textContent = kpi.morts;
-        const total = (kpi.initial > 0) ? kpi.initial : (kpi.sains + kpi.morts);
-        const rate = (total > 0) ? ((kpi.sains / total) * 100).toFixed(1) : '100';
-        $('kpi-rate').textContent = rate + '%';
+        $('kpi-distrib').textContent = kpi.distribues || 0;
+        $('kpi-rate').textContent = (kpi.taux || '100') + '%';
         $('kpi-time-label').textContent = (kpi.date && kpi.date !== '-') ? `Dernier bilan : ${kpi.date} à ${kpi.heure}` : 'Aucun bilan pour cette serre';
-        
-        // Pré-remplit le formulaire plants avec le nombre actuel sain
+
         if (kpi.sains > 0 && !$('p-initial').value) {
           $('p-initial').value = kpi.sains;
           calcPlants();
         }
       } catch (e) {
         const init = parseInt($('p-initial').value) || 605;
-        const morts = parseInt($('p-morts').value) || 0;
-        const surv = parseInt($('p-surveillance').value) || 0;
-        const sains = Math.max(0, init - morts);
-        $('kpi-sains').textContent = sains;
-        $('kpi-surv').textContent = surv;
-        $('kpi-morts').textContent = morts;
+        $('kpi-sains').textContent = init;
       }
     }
 
-    function renderAcclimInputs() {
-      const tbody = $('acclim-inputs-tbody');
-      let html = '';
-      for (let i = 1; i <= 10; i++) {
-        html += `
-          <tr class="hover:bg-slate-50 text-center" data-row="${i}">
-            <td class="p-1 font-bold border-r bg-slate-50">${i}</td>
-            <td class="p-1 border-r"><input type="number" step="0.1" class="ac-t w-full p-1 border rounded text-center text-xs" placeholder="cm"></td>
-            <td class="p-1 border-r"><input type="number" class="ac-f w-full p-1 border rounded text-center text-xs" placeholder="nb"></td>
-            <td class="p-1 border-r"><input type="text" class="ac-c w-full p-1 border rounded text-center text-xs" placeholder="vert..."></td>
-            <td class="p-1 border-r"><input type="text" class="ac-a w-full p-1 border rounded text-center text-xs" placeholder="aspect"></td>
-            <td class="p-1 border-r">
-              <select class="ac-v w-full p-1 border rounded text-xs">
-                <option value="Bonne">Bonne</option>
-                <option value="Moyenne">Moyenne</option>
-                <option value="Faible">Faible</option>
-              </select>
-            </td>
-            <td class="p-1 border-r bg-emerald-50/30"><input type="number" step="0.1" class="ac-ts w-full p-1 border rounded text-center text-xs" placeholder="°C"></td>
-            <td class="p-1 border-r bg-emerald-50/30"><input type="number" step="0.1" class="ac-hs w-full p-1 border rounded text-center text-xs" placeholder="%"></td>
-            <td class="p-1 border-r bg-emerald-50/30"><input type="number" step="0.1" class="ac-ph w-full p-1 border rounded text-center text-xs" placeholder="pH"></td>
-            <td class="p-1 border-r"><input type="checkbox" class="ac-mf rounded text-emerald-600"></td>
-            <td class="p-1 border-r"><input type="checkbox" class="ac-rav rounded text-emerald-600"></td>
-            <td class="p-1 border-r"><input type="checkbox" class="ac-pr rounded text-emerald-600"></td>
-            <td class="p-1"><input type="checkbox" class="ac-fong rounded text-emerald-600"></td>
-          </tr>
-        `;
+    /* ---------- GESTION DE LA LISTE DES PLANTS SOUS SURVEILLANCE ---------- */
+    async function loadSurvList() {
+      const serre = $('global-serre').value;
+      const ul = $('surv-active-list');
+      if (!serre) { ul.innerHTML = '<li class="py-3 text-slate-400 text-center">Choisissez une serre.</li>'; return; }
+
+      try {
+        const r = await fetch(`${SCRIPT_URL}?action=getSurveillance&serre=${encodeURIComponent(serre)}`);
+        const d = await r.json();
+        const items = d.items || [];
+
+        if (!items.length) {
+          ul.innerHTML = '<li class="py-3 text-emerald-800 text-center font-semibold">Aucun plant sous surveillance actuellement dans cette serre ✔</li>';
+          return;
+        }
+
+        ul.innerHTML = items.map(it => `
+          <li class="py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+            <div>
+              <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                <span class="bg-amber-100 text-amber-950 px-2 py-0.5 rounded font-mono font-black">Godet n° ${esc(it.godet)}</span>
+                <span class="text-[11px] text-slate-500 font-normal">Depuis le ${esc(it.date)} à ${esc(it.heure)}</span>
+              </div>
+              <div class="text-[11px] text-slate-600 mt-1">
+                Constats : ${esc([it.foliaires==='Oui'?'Foliaire':'', it.ravageurs==='Oui'?'Ravageurs':'', it.pourriture==='Oui'?'Pourriture':'', it.stress==='Oui'?'Stress':'', it.autres].filter(Boolean).join(', ') || 'aucun')}
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0 w-full sm:w-auto">
+              <button onclick="cloturerSurveillance('${esc(it.godet)}', 'Sauvé', '${esc(it.id)}')" class="flex-1 sm:flex-none bg-emerald-700 hover:bg-emerald-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center justify-center gap-1">
+                <i data-lucide="check" class="w-3.5 h-3.5"></i><span>Réintroduire (Sauvé)</span>
+              </button>
+              <button onclick="cloturerSurveillance('${esc(it.godet)}', 'Mort', '${esc(it.id)}')" class="flex-1 sm:flex-none bg-red-700 hover:bg-red-800 text-white font-bold px-3 py-1.5 rounded-lg text-xs flex items-center justify-center gap-1">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i><span>Déclarer Mort</span>
+              </button>
+            </div>
+          </li>
+        `).join('');
+        icons();
+      } catch (e) {
+        ul.innerHTML = '<li class="py-2 text-slate-400 text-center">Impossible de charger la liste.</li>';
       }
-      tbody.innerHTML = html;
     }
 
+    async function cloturerSurveillance(godet, statut, id) {
+      const ctx = requireSerreAgent(); if (!ctx) return;
+      if (!confirm(`Godet n° ${godet} : confirmer la clôture en « ${statut} » ?`)) return;
+
+      try {
+        await postData({
+          type: 'ANOMALIE_SORTIE', id: id, godet: godet, statut_sortie: statut,
+          serre: ctx.serre, intervenant: ctx.agent, date: localISODate()
+        });
+        toast(`Godet n° ${godet} clôturé : ${statut} ✔`);
+        loadSurvList();
+        updateKpi(ctx.serre);
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
+    }
+
+    async function submitDistribution(e) {
+      e.preventDefault();
+      const ctx = requireSerreAgent(); if (!ctx) return;
+      const qte = Number($('dist-qte').value);
+      const benef = $('dist-benef').value.trim();
+      const motif = $('dist-motif').value.trim();
+      if (!qte || qte <= 0) return toast("Indiquez une quantité valide.", 'err');
+
+      try {
+        await postData({
+          type: 'DISTRIBUTION', serre: ctx.serre, intervenant: ctx.agent,
+          quantite: qte, beneficiaire: benef, motif: motif,
+          date: localISODate(), heure: localHHmm()
+        });
+        toast(`${qte} plants distribués à ${benef} ✔`);
+        $('dist-qte').value = ''; $('dist-benef').value = ''; $('dist-motif').value = '';
+        updateKpi(ctx.serre);
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
+    }
+
+    /* ---------- UTILITAIRES & CONFIG ---------- */
     async function initLogo() {
       for (const u of LOGO_CANDIDATES) {
         try {
@@ -1053,8 +1179,10 @@
         renderSelects();
         renderAdmin();
         const curSerre = $('global-serre').value;
-        if (curSerre) updateKpi(curSerre);
-        store.set('ardie_config', JSON.stringify({ state, at: Date.now() }));
+        if (curSerre) {
+          updateKpi(curSerre);
+          loadSurvList();
+        }
         checkOfflineReady();
       } catch (err) {
         console.error('Erreur chargement :', err);
@@ -1111,16 +1239,12 @@
       const tg = ev.target.closest('[data-toggle-agent]');
       if (tg) return toggleAgent(tg.dataset.toggleAgent, tg.dataset.name);
       if (ev.target.closest('[data-q-send]')) return flushQueue(true);
-      if (ev.target.closest('[data-q-toggle]')) { queueOpen = !queueOpen; return renderQueue(); }
-      const qd = ev.target.closest('[data-q-del]');
-      if (qd) return delQueued(qd.dataset.qDel);
     });
 
-    /* ---------- File d'attente Hors-Ligne ---------- */
+    /* ---------- ENVOI ET SYNCHRONISATION HORS LIGNE ---------- */
     class NetworkError extends Error {}
-    const QUEUE_KEY = 'ardie_queue_v3';
+    const QUEUE_KEY = 'ardie_queue_v4';
     const QUEUED_MSG = "Hors ligne : saisie gardée sur l'appareil, envoi automatique dès le retour du réseau.";
-    let queueOpen = false;
     let flushing = false;
 
     const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('id' + Date.now() + Math.random().toString(16).slice(2));
@@ -1161,12 +1285,10 @@
     function queueItem(payload) {
       const q = qLoad();
       q.push({ id: payload.clientId, payload, createdAt: Date.now(), error: null });
-      if (!qSave(q)) throw new Error("Impossible de stocker localement.");
+      qSave(q);
       renderQueue();
       return 'queued';
     }
-    function qRemove(id) { qSave(qLoad().filter(i => i.id !== id)); }
-    function qUpdate(id, patch) { qSave(qLoad().map(i => i.id === id ? Object.assign({}, i, patch) : i)); }
 
     async function flushQueue(manual = false) {
       if (flushing) return;
@@ -1178,10 +1300,9 @@
         for (const item of q) {
           try {
             await postRaw(item.payload);
-            qRemove(item.id); sent++;
+            qSave(qLoad().filter(i => i.id !== item.id)); sent++;
           } catch (e) {
             if (e instanceof NetworkError) break;
-            qUpdate(item.id, { error: e.message });
           }
         }
       } finally {
@@ -1203,7 +1324,6 @@
       </div>`;
       bar.classList.remove('hidden');
     }
-    function delQueued(id) { if (confirm('Supprimer cette saisie ?')) { qRemove(id); renderQueue(); } }
 
     window.addEventListener('online', () => { renderQueue(); flushQueue(); loadConfig(); });
     window.addEventListener('offline', renderQueue);
@@ -1218,7 +1338,7 @@
       return { serre, agent };
     }
 
-    /* ---------- Formulaires de Saisie ---------- */
+    /* ---------- FORMULAIRES DE SAISIE ---------- */
     $('form-clim').addEventListener('submit', async (e) => {
       e.preventDefault();
       const ctx = requireSerreAgent(); if (!ctx) return;
@@ -1265,7 +1385,6 @@
       const ctx = requireSerreAgent(); if (!ctx) return;
       const btn = $('btn-submit-anom'); setBtn(btn, true);
 
-      // Traitement mesures sanitaires (Oui/Non - Lesquelles)
       const choixMesures = $('an-mesures-choix').value;
       const detailMesures = $('an-mesures-detail').value.trim();
       const mesuresFinales = (choixMesures === 'Oui') ? (detailMesures ? `Oui : ${detailMesures}` : 'Oui') : 'Non';
@@ -1288,25 +1407,11 @@
         ['an-maladie-foliaire', 'an-ravageurs', 'an-pourriture', 'an-stress-hydrique'].forEach(id => $(id).checked = false);
         $('an-autres').value = ''; $('an-mesures-detail').value = '';
         $('an-mesures-choix').value = 'Non'; toggleMesuresDetail();
+        loadSurvList();
+        updateKpi(ctx.serre);
       } catch (err) { toast('Échec : ' + err.message, 'err'); }
       finally { setBtn(btn, false, 'Mettre sous surveillance', 'eye'); }
     });
-
-    async function cloturerAnomalie() {
-      const ctx = requireSerreAgent(); if (!ctx) return;
-      const godet = $('out-godet').value.trim();
-      const statut = $('out-statut').value;
-      if (!godet) return toast('Indiquez le numéro de godet sorti', 'err');
-      try {
-        await postData({
-          type: 'ANOMALIE_SORTIE', godet: godet, statut_sortie: statut,
-          serre: ctx.serre, intervenant: ctx.agent, date: localISODate()
-        });
-        toast(`Godet ${godet} clôturé : ${statut} ✔`);
-        $('out-godet').value = '';
-        updateKpi(ctx.serre);
-      } catch (err) { toast('Échec : ' + err.message, 'err'); }
-    }
 
     $('form-acclim').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1314,22 +1419,23 @@
       const btn = $('btn-submit-acclim'); setBtn(btn, true);
 
       const plants = [];
-      document.querySelectorAll('#acclim-inputs-tbody tr').forEach(tr => {
+      for (let n = 1; n <= 10; n++) {
         plants.push({
-          taille_cm: tr.querySelector('.ac-t').value || '-',
-          nb_feuilles: tr.querySelector('.ac-f').value || '-',
-          couleur_feuilles: tr.querySelector('.ac-c').value.trim() || '-',
-          aspect_tige: tr.querySelector('.ac-a').value.trim() || '-',
-          vigueur: tr.querySelector('.ac-v').value,
-          temp_substrat: tr.querySelector('.ac-ts').value || '-',
-          hum_substrat: tr.querySelector('.ac-hs').value || '-',
-          ph_substrat: tr.querySelector('.ac-ph').value || '-',
-          maladie_foliaire: tr.querySelector('.ac-mf').checked,
-          ravageurs: tr.querySelector('.ac-rav').checked,
-          pourriture_racines: tr.querySelector('.ac-pr').checked,
-          maladie_fongique: tr.querySelector('.ac-fong').checked
+          n: n,
+          taille_cm: $(`ac-${n}-t`).value || '-',
+          nb_feuilles: $(`ac-${n}-f`).value || '-',
+          couleur_feuilles: $(`ac-${n}-c`).value.trim() || '-',
+          aspect_tige: $(`ac-${n}-a`).value.trim() || '-',
+          vigueur: $(`ac-${n}-v`).value,
+          temp_substrat: $(`ac-${n}-ts`).value || '-',
+          hum_substrat: $(`ac-${n}-hs`).value || '-',
+          ph_substrat: $(`ac-${n}-ph`).value || '-',
+          maladie_foliaire: $(`ac-${n}-mf`).checked,
+          ravageurs: $(`ac-${n}-rav`).checked,
+          pourriture_racines: $(`ac-${n}-pr`).checked,
+          maladie_fongique: $(`ac-${n}-fong`).checked
         });
-      });
+      }
 
       try {
         const r = await submitOrQueue({
@@ -1338,12 +1444,12 @@
           lot_numero: $('ac-lot-num').value.trim() || '1', plants: plants
         });
         toast(r === 'queued' ? QUEUED_MSG : "Test d'acclimatation enregistré ✔", r === 'queued' ? 'warn' : 'ok');
-        renderAcclimInputs();
+        buildAccCards();
       } catch (err) { toast('Échec : ' + err.message, 'err'); }
       finally { setBtn(btn, false, "Valider le suivi d'acclimatation (10 plants)", 'check'); }
     });
 
-    /* ---------- Fiches ARDIE & Affichage Rapports ---------- */
+    /* ---------- FICHES ARDIE : CHARGEMENT & AFFICHAGE ---------- */
     function showReportView(view) {
       currentView = view;
       ['plants', 'clim', 'anom', 'acclim'].forEach(v => {
@@ -1392,7 +1498,7 @@
           $('f1-obs').textContent = (p.observations && p.observations !== '-') ? p.observations : 'Aucune observation saisie.';
         } else {
           ['f1-init', 'f1-isoles', 'f1-morts', 'f1-surv', 'f1-sains'].forEach(id => $(id).textContent = '-');
-          $('f1-agent').textContent = 'Aucun bilan pour ce jour';
+          $('f1-agent').textContent = 'Aucun bilan';
           $('f1-obs').textContent = 'Aucun bilan enregistré.';
         }
 
@@ -1421,13 +1527,13 @@
         $('f2-tbody').innerHTML = htmlClim;
         $('f2-empty').textContent = records.length ? '' : `Aucun relevé météo pour le ${fr}.`;
 
-        // FICHE 3 : ANOMALIES (AVEC DÉCOMPTE SORTIES & RESTE CONFORME FICHE PAPIER)
+        // FICHE 3 : ANOMALIES (AVEC DÉCOMPTE DES SORTIES CONFORME FICHE PAPIER)
         $('f3-date').textContent = fr;
         $('f3-year').textContent = iso.slice(0, 4);
         $('f3-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
         $('f3-foot-sains').textContent = kpi.sains || '--';
         $('f3-foot-morts').textContent = kpi.morts || '0';
-        
+
         const anoms = data.anomalies || [];
         let htmlAnom = anoms.map(an => `
           <tr class="text-center hover:bg-slate-50">
@@ -1443,7 +1549,6 @@
             <td class="${cell} font-bold ${an.statut_sortie === 'Mort' ? 'text-red-700' : (an.statut_sortie === 'Sauvé' ? 'text-emerald-700' : 'text-slate-600')}">
               ${dash(an.statut_sortie)}<br><span class="text-[9px] font-normal font-mono">${dash(an.date_sortie)}</span>
             </td>
-            <!-- Colonne Sortie / Morts (Décompte comme sur la fiche papier) -->
             <td class="${cell} font-bold text-center bg-amber-50/60">
               ${an.statut_sortie === 'Mort' ? '<span class="text-red-700 font-black">1 (Mort)</span>' : (an.statut_sortie === 'Sauvé' ? '<span class="text-emerald-700 font-semibold">Sauvé</span>' : '-')}
             </td>
@@ -1453,7 +1558,7 @@
         $('f3-tbody').innerHTML = htmlAnom;
         $('f3-empty').textContent = anoms.length ? '' : `Aucune anomalie pour le ${fr}.`;
 
-        // FICHE 4 : ACCLIMATATION (CORRECTION LOT NUMERO)
+        // FICHE 4 : ACCLIMATATION (SANS DOUBLON 1/12)
         $('f4-date').textContent = fr;
         $('f4-year').textContent = iso.slice(0, 4);
         $('f4-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
@@ -1540,7 +1645,6 @@
       doc.setTextColor(...dark); doc.text('Date : ' + rep.fr, W - M, 15, { align: 'right' });
       doc.setTextColor(6, 95, 70); doc.text('SERRE : ' + pdfSafe(serreTxt), W - M, 20, { align: 'right' });
 
-      // RAPPEL VISUEL DU RESTE ET DES PERTES DANS L'EN-TÊTE
       doc.setFontSize(8.5); doc.setTextColor(185, 28, 28);
       doc.text(`Reste sain : ${kpi.sains || '--'}  |  Morts : ${kpi.morts || '0'}`, W - M, 24.5, { align: 'right' });
 
@@ -1625,7 +1729,6 @@
         ]);
         while (body.length < 6) body.push(['', '', '', '', '', '', '', '', '', '', '']);
 
-        // Pied de table dans le PDF identique à la fiche papier
         body.push([
           { content: 'RÉCAPITULATION DE LA PRODUCTION :', colSpan: 9, styles: { halign: 'right', fontStyle: 'bold' } },
           { content: `Morts : ${kpi.morts || '0'}`, styles: { halign: 'center', fontStyle: 'bold', textColor: [185, 28, 28] } },
@@ -1650,7 +1753,6 @@
 
       } else if (which === 'acclim') {
         const acclims = rep.data.acclimatation || [];
-        // Correction propre du numéro de lot : "X / 12"
         let lotVal = '1';
         if (acclims.length && acclims[0].lot_numero) {
           lotVal = acclims[0].lot_numero.replace('/ 12', '').replace('/12', '').trim();
@@ -1681,7 +1783,6 @@
         });
       }
 
-      // Pied de page officiel
       const n = doc.getNumberOfPages();
       for (let i = 1; i <= n; i++) {
         doc.setPage(i);
@@ -1710,7 +1811,7 @@
       }
     }
 
-    /* ---------- Admin ---------- */
+    /* ---------- ADMIN ---------- */
     async function addLocation() {
       const v = $('new-loc').value.trim();
       if (!v) return;
@@ -1777,6 +1878,7 @@
         }
       });
       if (id === 'clim') $('c-heure').value = localHHmm();
+      if (id === 'anom') loadSurvList();
       if (id === 'reports') {
         const s = $('global-serre').value;
         if (s && [...$('rep-serre-filter').options].some(o => o.value === s)) $('rep-serre-filter').value = s;
