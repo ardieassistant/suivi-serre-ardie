@@ -30,14 +30,16 @@
     body.sun .card { border: 2px solid #000 !important; }
 
     @media print {
-      .no-print, #toast, #auth-overlay { display: none !important; }
+      .no-print, #toast, #auth-overlay, #passport-modal { display: none !important; }
       body { background: #fff !important; padding: 0 !important; min-height: 0 !important; }
       main { padding: 0 !important; max-width: none !important; }
       .sheet-scroll { overflow: visible !important; }
       .sheet { min-width: 0 !important; width: 100% !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
-      .report-sheet { display: none !important; }
-      body.print-plants #view-sheet-plants, body.print-clim #view-sheet-clim,
-      body.print-surv #view-sheet-surv, body.print-acc #view-sheet-acc { display: block !important; }
+      body.print-plants #view-sheet-plants { display: block !important; }
+      body.print-clim #view-sheet-clim { display: block !important; }
+      body.print-anom #view-sheet-anom { display: block !important; }
+      body.print-acclim #view-sheet-acclim { display: block !important; }
+      body[class*="print-"] .sheet:not([style*="display: block"]) { display: none !important; }
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
@@ -45,7 +47,6 @@
   <style type="text/tailwindcss">
     @layer components {
       .inp  { @apply w-full min-h-[48px] bg-white border-2 border-slate-400 rounded-lg px-3 py-2 text-base font-semibold text-slate-900 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-300 outline-none; }
-      .inp[readonly] { @apply bg-slate-200 text-slate-700; }
       .lbl  { @apply block text-sm font-bold text-slate-800 mb-1; }
       .lbl-s{ @apply block text-xs font-bold text-slate-700 mb-0.5; }
       .card { @apply bg-white rounded-xl shadow-sm border border-slate-300 p-4 space-y-4; }
@@ -77,6 +78,32 @@
     </div>
   </div>
 
+  <!-- MODALE PASSEPORT & QR CODE DU LOT -->
+  <div id="passport-modal" class="hidden fixed inset-0 z-[95] bg-black/60 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl text-center border-2 border-emerald-700">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+          <i data-lucide="qr-code" class="w-5 h-5 text-emerald-700"></i>Passeport Traçabilité du Lot
+        </h3>
+        <button onclick="closePassportModal()" class="text-slate-400 hover:text-slate-600 text-lg font-black">✕</button>
+      </div>
+      <div class="space-y-3">
+        <img id="passport-qr" class="w-40 h-40 mx-auto rounded-lg border-2 border-slate-300 p-1 bg-white shadow-inner" alt="QR Code">
+        <div class="bg-slate-50 border rounded-lg p-3 text-xs text-left space-y-1">
+          <p><strong>Identifiant Lot :</strong> <span id="pass-id" class="font-mono font-bold text-emerald-950">--</span></p>
+          <p><strong>Emplacement :</strong> <span id="pass-serre" class="font-bold">--</span></p>
+          <p><strong>Date de démarrage :</strong> <span id="pass-debut">--</span></p>
+          <p><strong>Nombre initial :</strong> <span id="pass-initial" class="font-bold">--</span> plants</p>
+          <p><strong>Reste sain en serre :</strong> <span id="pass-sains" class="font-black text-emerald-700">--</span> plants</p>
+          <p><strong>Pertes (Morts) :</strong> <span id="pass-morts" class="font-bold text-red-700">--</span> plants</p>
+        </div>
+      </div>
+      <button onclick="window.print()" class="btn w-full bg-emerald-700 hover:bg-emerald-800 text-xs">
+        <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimer l'étiquette QR Code</span>
+      </button>
+    </div>
+  </div>
+
   <!-- MODALE LOT (DÉMARRAGE / CLÔTURE) -->
   <div id="lot-modal" class="hidden fixed inset-0 z-[90] bg-black/60 flex items-end sm:items-center justify-center p-3">
     <div class="bg-white rounded-2xl w-full max-w-md p-5 space-y-4 shadow-2xl">
@@ -94,7 +121,7 @@
     </div>
   </div>
 
-  <!-- EN-TÊTE OFFICIELLE ARDIE (AVEC BOUTON SOLEIL & LOGO) -->
+  <!-- EN-TÊTE OFFICIELLE ARDIE -->
   <header class="bg-emerald-900 text-white shadow-md sticky top-0 z-50">
     <div class="max-w-4xl mx-auto px-4 py-2 flex items-center justify-between gap-2">
       <div class="flex items-center space-x-3 min-w-0">
@@ -107,7 +134,6 @@
         </div>
       </div>
       <div class="flex items-center gap-1 shrink-0">
-        <!-- BOUTON MODE PLEIN SOLEIL RESTAURÉ -->
         <button onclick="toggleSun()" title="Mode plein soleil" class="w-11 h-11 hover:bg-emerald-800 rounded-lg flex items-center justify-center active:scale-95">
           <i data-lucide="sun" class="w-5 h-5 text-amber-300"></i>
         </button>
@@ -127,7 +153,6 @@
     </div>
   </div>
   <div id="queue-bar" class="hidden max-w-4xl w-full mx-auto px-4 pt-3"><div id="queue-box" class="rounded-lg p-3 text-sm font-bold border-2"></div></div>
-  <!-- BOUTON D'INSTALLATION PWA RESTAURÉ -->
   <div id="install-bar" class="hidden max-w-4xl w-full mx-auto px-4 pt-3">
     <div class="bg-emerald-50 border-2 border-emerald-300 rounded-lg p-3 flex items-center justify-between gap-3">
       <span class="text-sm font-bold text-emerald-900">Installer l'application sur cet appareil</span>
@@ -222,7 +247,7 @@
       </form>
     </div>
 
-    <!-- 2. PLANTS : BILAN DÉVERROUILLÉ & COMPLET -->
+    <!-- 2. PLANTS : BILAN 100% DÉVERROUILLÉ & ÉDITABLE -->
     <div id="tab-plants" class="space-y-4 hidden">
       <!-- Gestion du Lot -->
       <div class="card">
@@ -230,10 +255,14 @@
           <h3 class="font-bold text-slate-900 flex items-center gap-2"><i data-lucide="package" class="w-5 h-5 text-emerald-700"></i>Lot de production</h3>
           <span id="lot-status-pill" class="text-xs font-black px-2 py-1 rounded bg-slate-200 text-slate-800">--</span>
         </div>
-        <p id="lot-card-info" class="text-sm text-slate-800">--</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <!-- INFORMATIONS COMPLÈTES DU LOT INJECTÉES PAR JS -->
+        <p id="lot-card-info" class="text-sm font-semibold text-slate-800">Chargement des données du lot...</p>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <button id="btn-lot-start" onclick="openLotModal('start')" class="btn bg-emerald-700 hover:bg-emerald-800"><i data-lucide="play" class="w-5 h-5"></i><span>Démarrer un lot</span></button>
           <button id="btn-lot-close" onclick="openLotModal('close')" class="btn bg-amber-700 hover:bg-amber-800"><i data-lucide="archive" class="w-5 h-5"></i><span>Clôturer le lot</span></button>
+          <!-- NOUVEAU BOUTON : PASSEPORT & QR CODE -->
+          <button onclick="openPassportModal()" class="btn bg-teal-800 hover:bg-teal-900"><i data-lucide="qr-code" class="w-5 h-5"></i><span>Passeport QR</span></button>
         </div>
       </div>
 
@@ -247,20 +276,22 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label class="lbl" for="p-initial">Nombre au démarrage</label>
-            <input type="number" inputmode="numeric" id="p-initial" min="0" required class="inp">
+            <!-- DÉVERROUILLÉ & PRE-REMPLI PAR EFFECTIF RESTANT -->
+            <input type="number" inputmode="numeric" id="p-initial" min="0" required class="inp font-bold">
           </div>
           <div>
             <label class="lbl text-amber-900" for="p-isoles">Total isolés ce jour</label>
-            <!-- DÉVERROUILLÉ POUR COMPTAGE DU JOUR -->
+            <!-- 100% DÉVERROUILLÉ POUR COMPTAGE DU JOUR -->
             <input type="number" inputmode="numeric" id="p-isoles" value="0" min="0" required class="inp !border-amber-400 !bg-amber-50 text-amber-950 font-bold">
           </div>
           <div>
             <label class="lbl text-red-800" for="p-morts">Total morts ce jour</label>
+            <!-- 100% DÉVERROUILLÉ POUR COMPTAGE DU JOUR -->
             <input type="number" inputmode="numeric" id="p-morts" min="0" step="1" value="0" required class="inp !border-red-500 !bg-red-50 text-red-900 font-bold">
           </div>
           <div>
             <label class="lbl text-blue-900" for="p-surveillance">Mis sous surveillance ce jour</label>
-            <!-- DÉVERROUILLÉ POUR COMPTAGE DU JOUR -->
+            <!-- 100% DÉVERROUILLÉ POUR COMPTAGE DU JOUR -->
             <input type="number" inputmode="numeric" id="p-surveillance" value="0" min="0" required class="inp !border-blue-400 !bg-blue-50 text-blue-950 font-bold">
           </div>
         </div>
@@ -274,7 +305,7 @@
         <div class="bg-emerald-900 text-white p-4 rounded-xl flex items-center justify-between shadow-inner">
           <div>
             <p class="text-sm uppercase font-bold tracking-wider text-emerald-100">Total restant en culture saine</p>
-            <p class="text-xs text-emerald-200">Formule officielle : Démarrage − (Isolés + Morts)</p>
+            <p class="text-xs text-emerald-200">Démarrage − (Isolés + Morts)</p>
           </div>
           <span class="text-4xl font-mono font-black" id="p-sains-display">--</span>
         </div>
@@ -303,7 +334,7 @@
       </form>
     </div>
 
-    <!-- 3. ANOMALIES & SURVEILLANCE : QUANTITÉ EN NOMBRE & GODET FACULTATIF -->
+    <!-- 3. ANOMALIES : QUANTITÉ EN NOMBRE & GODET OPTIONNEL -->
     <div id="tab-anom" class="space-y-4 hidden">
       <form id="form-anom" class="card">
         <div class="border-b pb-2">
@@ -320,9 +351,9 @@
             <input type="number" inputmode="numeric" min="1" id="an-quantite" value="1" required class="inp !bg-amber-50 text-center font-black">
           </div>
           <div>
-            <!-- GODET DÉSORMAIS FACULTATIF -->
+            <!-- GODET FACULTATIF -->
             <label class="lbl" for="an-godet-num">Godet / Repère (Optionnel)</label>
-            <input type="text" id="an-godet-num" placeholder="ex: Bac B ou 12" class="inp">
+            <input type="text" id="an-godet-num" placeholder="Bac B ou 12" class="inp">
           </div>
         </div>
 
@@ -345,7 +376,10 @@
           </div>
         </div>
 
-        <button type="submit" id="btn-submit-anom" class="btn w-full bg-amber-700 hover:bg-amber-800"><i data-lucide="eye" class="w-5 h-5"></i><span>Mettre sous surveillance</span></button>
+        <!-- BOUTON CLAIREMENT INTITULÉ ISOLER & METTRE SOUS SURVEILLANCE -->
+        <button type="submit" id="btn-submit-anom" class="btn w-full bg-amber-700 hover:bg-amber-800">
+          <i data-lucide="eye" class="w-5 h-5"></i><span>Isoler & Mettre sous surveillance</span>
+        </button>
       </form>
 
       <div class="card">
@@ -402,6 +436,10 @@
           <button onclick="exportPDF('clim')" class="btn-sm bg-red-700 hover:bg-red-800"><i data-lucide="download" class="w-4 h-4"></i>PDF Fiche 2</button>
           <button onclick="exportPDF('anom')" class="btn-sm bg-red-700 hover:bg-red-800"><i data-lucide="download" class="w-4 h-4"></i>PDF Fiche 3</button>
           <button onclick="exportPDF('acclim')" class="btn-sm bg-red-700 hover:bg-red-800"><i data-lucide="download" class="w-4 h-4"></i>PDF Fiche 4</button>
+          <!-- BOUTON IMPRESSION PHYSIQUE RÉTABLI -->
+          <button onclick="printFiche()" class="col-span-2 md:col-span-4 btn bg-slate-800 hover:bg-slate-900 text-white">
+            <i data-lucide="printer" class="w-5 h-5"></i><span>Imprimer la fiche affichée</span>
+          </button>
         </div>
       </div>
 
@@ -605,6 +643,24 @@
     if (n && n.length >= 4) { store.set('ardie_password', n); toast("Mot de passe modifié ✔"); }
   }
 
+  /* ---------- PASSEPORT & QR CODE DU LOT ---------- */
+  function openPassportModal() {
+    const k = lastKpi;
+    if (!k || !k.hasLot) return toast('Aucun lot actif pour générer un passeport.', 'err');
+    $('pass-id').textContent = k.lot.id;
+    $('pass-serre').textContent = $('global-serre').value;
+    $('pass-debut').textContent = k.lot.debut;
+    $('pass-initial').textContent = k.initial;
+    $('pass-sains').textContent = k.sains;
+    $('pass-morts').textContent = k.morts;
+
+    // Génère le QR Code officiel en direct
+    const qrData = encodeURIComponent(`ARDIE|LOT:${k.lot.id}|SERRE:${$('global-serre').value}|INIT:${k.initial}|SAINS:${k.sains}`);
+    $('passport-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${qrData}`;
+    $('passport-modal').classList.remove('hidden');
+  }
+  function closePassportModal() { $('passport-modal').classList.add('hidden'); }
+
   window.addEventListener('DOMContentLoaded', () => {
     checkAuthToken();
     if (store.get('ardie_sun') === '1') document.body.classList.add('sun');
@@ -621,8 +677,8 @@
       refreshSerre();
     });
     $('global-intervenant').addEventListener('change', e => store.set('ardie_agent', e.target.value));
-    
-    // CALCUL DYNAMIQUE DU BILAN EN TEMPS RÉEL SUR TOUS LES CHAMPS DÉVERROUILLÉS
+
+    // DÉVERROUILLAGE TOTAL : Calcul dynamique sur tous les champs de comptage
     ['p-initial', 'p-isoles', 'p-morts', 'p-surveillance'].forEach(id => {
       $(id).addEventListener('input', calcPlants);
     });
@@ -647,12 +703,11 @@
       inp.classList.add('!border-red-600', '!bg-red-100');
     } else {
       el.className = 'rounded-lg p-3 text-sm font-black bg-amber-400 text-black';
-      el.textContent = `Attention : ${v} % proche du seuil minimal de 75 %.`;
+      el.textContent = `Attention : ${v} % proche du seuil de 75 %.`;
       inp.classList.add('!border-amber-500', '!bg-amber-100');
     }
   }
 
-  /* ---------- ACCLIMATATION EN CARTES RESPONSIVES (FORMAT CLAUDE) ---------- */
   function accCard(n) {
     const ni = (k, lbl, ph) => `<div><label class="lbl-s" for="ac-${n}-${k}">${lbl}</label><input type="number" inputmode="decimal" step="any" id="ac-${n}-${k}" placeholder="${ph}" class="inp text-center"></div>`;
     const ti = (k, lbl, ph, dl) => `<div><label class="lbl-s" for="ac-${n}-${k}">${lbl}</label><input type="text" list="${dl}" id="ac-${n}-${k}" placeholder="${ph}" class="inp"></div>`;
@@ -692,9 +747,8 @@
     if (oui) $('an-mesures-detail').focus(); else $('an-mesures-detail').value = '';
   }
 
-  /* ---------- RÉSEAU & SYNCHRONISATION ---------- */
   class NetworkError extends Error {}
-  const QUEUE_KEY = 'ardie_queue_v5';
+  const QUEUE_KEY = 'ardie_queue_v6';
   const QUEUED_MSG = "Hors ligne : saisie conservée sur l'appareil, envoi automatique dès le retour du réseau.";
   let flushing = false;
   const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('id' + Date.now() + Math.random().toString(16).slice(2));
@@ -719,13 +773,20 @@
     finally { clearTimeout(t); }
     let out;
     try { out = await res.json(); } catch (e) { throw new NetworkError('Réponse illisible'); }
-    if (out.status !== 'success') throw new Error(out.message || 'Erreur serveur');
+    if (out.status !== 'success') {
+      if (out.retry) throw new NetworkError(out.message || 'Serveur occupé');
+      throw new Error(out.message || 'Erreur serveur');
+    }
     return out;
   }
   const postData = (payload) => postRaw(payload);
 
   async function submitOrQueue(payload) {
     payload.clientId = payload.clientId || uid();
+    // ASSURE LA TRAÇABILITÉ : AJOUT DE L'ID DU LOT ACTIF SUR CHAQUE ÉCRITURE
+    if (lastKpi && lastKpi.hasLot && !payload.lot_id) {
+      payload.lot_id = lastKpi.lot.id;
+    }
     if (!navigator.onLine) return queueItem(payload);
     try { await postRaw(payload); return 'sent'; }
     catch (e) { if (e instanceof NetworkError) return queueItem(payload); throw e; }
@@ -749,6 +810,8 @@
           qSave(qLoad().filter(i => i.id !== item.id)); sent++;
         } catch (e) {
           if (e instanceof NetworkError) break;
+          const cur = qLoad(); const it = cur.find(i => i.id === item.id);
+          if (it) { it.error = e.message; qSave(cur); }
         }
       }
     } finally { flushing = false; renderQueue(); }
@@ -833,8 +896,7 @@
 
   function renderSelects() {
     const sSerre = $('global-serre'), sAgent = $('global-intervenant'), rSerre = $('rep-serre-filter');
-    const prevSerre = sSerre.value || store.get('ardie_serre') || '';
-    const prevAgent = sAgent.value || store.get('ardie_agent') || '';
+    const prevSerre = sSerre.value || store.get('ardie_serre') || '', prevAgent = sAgent.value || store.get('ardie_agent') || '';
 
     if (state.emplacements.length) {
       sSerre.innerHTML = '<option value="" disabled>Choisir une serre...</option>' + state.emplacements.map(e => `<option value="${esc(e)}">🌱 ${esc(e)}</option>`).join('');
@@ -892,7 +954,13 @@
       pill.textContent = has ? 'EN COURS' : 'AUCUN LOT';
       pill.className = 'text-xs font-black px-2 py-1 rounded ' + (has ? 'bg-emerald-200 text-emerald-950' : 'bg-red-200 text-red-950');
 
-      $('p-initial').value = has ? k.initial : '';
+      // INJECTION DES INFOS DU LOT DANS LA CARTE (FINI LE --)
+      $('lot-card-info').innerHTML = has
+        ? `<b>Lot : ${esc(k.lot.id)}</b> • Démarré le ${esc(k.lot.debut)} • Effectif initial : <b>${k.initial} plants</b><br><span class="text-xs text-slate-600">Culture saine restante : <b>${k.sains}</b> | Sous surveillance : <b>${k.surveillance}</b></span>`
+        : 'Aucun lot actif pour cette serre. Cliquez sur Démarrer un lot.';
+
+      // Pré-remplit automatiquement le nombre initial avec le reste sain !
+      $('p-initial').value = has ? (k.sains > 0 ? k.sains : k.initial) : '';
       $('btn-submit-plants').disabled = !has;
       $('dist-dispo').textContent = 'Dispo : ' + (has ? k.sains : '--');
       calcPlants();
@@ -910,7 +978,7 @@
     return sains;
   }
 
-  /* ---------- MODALE LOT ---------- */
+  /* ---------- GESTION DES LOTS ---------- */
   function openLotModal(mode) {
     const ctx = requireSerreAgent(); if (!ctx) return;
     lotMode = mode;
@@ -952,7 +1020,7 @@
     finally { btn.disabled = false; }
   }
 
-  /* ---------- SURVEILLANCE : GESTION DES GODETS & QUANTITÉS ---------- */
+  /* ---------- SURVEILLANCE ACTIVE & QUANTITÉS ---------- */
   async function loadSurvList() {
     const serre = $('global-serre').value, ul = $('surv-active-list');
     if (!serre) { ul.innerHTML = '<li class="py-3 text-slate-500 text-center">Choisissez une serre.</li>'; return; }
@@ -968,7 +1036,7 @@
           <div>
             <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
               <span class="bg-amber-200 text-amber-950 px-2 py-0.5 rounded font-black font-mono">Qté : ${esc(it.quantite)} plant(s)</span>
-              ${it.godet !== '-' ? `<span class="text-xs font-bold text-slate-700 font-mono">Repère/Godet : ${esc(it.godet)}</span>` : ''}
+              ${it.godet !== '-' ? `<span class="text-xs font-bold text-slate-700 font-mono">Repère : ${esc(it.godet)}</span>` : ''}
               <span class="text-xs text-slate-500">Depuis le ${esc(it.date)} à ${esc(it.heure)}</span>
             </div>
             <div class="text-xs text-slate-700 mt-1">Symptômes : ${esc([it.foliaires==='Oui'?'Foliaires':'', it.ravageurs==='Oui'?'Ravageurs':'', it.pourriture==='Oui'?'Pourriture':'', it.stress==='Oui'?'Stress':'', it.autres!=='-'?it.autres:''].filter(Boolean).join(', ') || 'aucun')}</div>
@@ -1006,7 +1074,8 @@
       type: 'CLIMAT', date: localISODate(), heure: $('c-heure').value || localHHmm(), serre: ctx.serre, intervenant: ctx.agent,
       temperature: $('c-temp').value, humidite_air: $('c-hygro').value, lumens: $('c-lumens').value || '-',
       humidite_terreau: $('c-hum-terreau').value || '-', ph: $('c-ph').value || '-', eclairage: $('c-eclairage').value,
-      arrosage: $('c-arrosage').value || '-', remarque: $('c-remarque').value || '-'
+      arrosage: $('c-arrosage').value || '-', remarque: $('c-remarque').value || '-',
+      lot_id: (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : ''
     }, 'Relevé climatique enregistré ✔');
     if (r) { $('c-remarque').value = ''; $('c-arrosage').value = ''; $('c-temp').value = ''; $('c-hygro').value = ''; hrAlert(); $('c-heure').value = localHHmm(); }
   });
@@ -1022,7 +1091,8 @@
       surveillance: parseInt($('p-surveillance').value) || 0,
       sains: calcPlants(),
       observations: $('p-observations').value || '-',
-      eclairage_debut: $('p-ecl-debut').value, eclairage_fin: $('p-ecl-fin').value
+      eclairage_debut: $('p-ecl-debut').value, eclairage_fin: $('p-ecl-fin').value,
+      lot_id: (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : ''
     }, 'Bilan vitroplants enregistré ✔');
     if (r) {
       store.set('ardie_ecl_debut', $('p-ecl-debut').value); store.set('ardie_ecl_fin', $('p-ecl-fin').value);
@@ -1035,13 +1105,14 @@
     const ctx = requireSerreAgent(); if (!ctx) return;
     const oui = $('an-mesures-choix').value === 'Oui', det = $('an-mesures-detail').value.trim();
     const qte = Number($('an-quantite').value) || 1;
-    const r = await sendWith($('btn-submit-anom'), 'Mettre sous surveillance', 'eye', {
+    const r = await sendWith($('btn-submit-anom'), 'Isoler & Mettre sous surveillance', 'eye', {
       type: 'ANOMALIE', date_entree: $('an-date-entree').value || localISODate(), heure_entree: $('an-heure-entree').value || localHHmm(),
       serre: ctx.serre, intervenant: ctx.agent, quantite: qte,
       godet_num: $('an-godet-num').value.trim() || 'Non spécifié',
       maladie_foliaire: $('an-maladie-foliaire').checked, ravageurs: $('an-ravageurs').checked,
       pourriture_racines: $('an-pourriture').checked, stress_hydrique: $('an-stress-hydrique').checked,
-      autres_constats: $('an-autres').value.trim() || '-', mesures_sanitaires: oui ? (det ? `Oui : ${det}` : 'Oui') : 'Non'
+      autres_constats: $('an-autres').value.trim() || '-', mesures_sanitaires: oui ? (det ? `Oui : ${det}` : 'Oui') : 'Non',
+      lot_id: (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : ''
     }, `${qte} plant(s) mis sous surveillance ✔`);
     if (r) {
       $('an-godet-num').value = ''; $('an-quantite').value = 1; $('an-autres').value = '';
@@ -1058,7 +1129,8 @@
     if (qte < 1) return toast('Indiquez une quantité valide.', 'err');
     const r = await sendWith($('btn-submit-distrib'), 'Enregistrer la distribution', 'send', {
       type: 'DISTRIBUTION', serre: ctx.serre, intervenant: ctx.agent, quantite: qte, beneficiaire: benef,
-      motif: `Bon ${bon}` + (motif ? ` | ${motif}` : ''), date: localISODate(), heure: localHHmm()
+      motif: `Bon ${bon}` + (motif ? ` | ${motif}` : ''), date: localISODate(), heure: localHHmm(),
+      lot_id: (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : ''
     }, `${qte} plants distribués à ${benef} ✔`);
     if (r) { ['dist-qte', 'dist-benef', 'dist-bon', 'dist-motif'].forEach(id => $(id).value = ''); updateKpi(ctx.serre); }
   }
@@ -1076,7 +1148,8 @@
     }
     const r = await sendWith($('btn-submit-acclim'), "Valider l'acclimatation (10 plants)", 'check', {
       type: 'ACCLIMATATION', date: $('ac-date').value || localISODate(), heure: $('ac-heure').value || localHHmm(),
-      serre: ctx.serre, intervenant: ctx.agent, lot_numero: $('ac-lot-num').value, plants
+      serre: ctx.serre, intervenant: ctx.agent, lot_numero: $('ac-lot-num').value, plants,
+      lot_id: (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : ''
     }, "Test d'acclimatation enregistré ✔");
     if (r) { buildAccCards(); $('ac-heure').value = localHHmm(); }
   });
@@ -1282,7 +1355,7 @@
 
     } else if (which === 'acclim') {
       const acc = rep.data.acclimatation || [];
-      const lotVal = acc.length && acc[0].lot_numero ? acc[0].lot_numero.replace('/ 12', '').replace('/12', '').trim() : '1';
+      let lotVal = acc.length && acc[0].lot_numero ? acc[0].lot_numero.replace('/ 12', '').replace('/12', '').trim() : '1';
       doc.setFontSize(9); doc.setFont('helvetica', 'bold');
       doc.text(`Test effectué sur le lot numéro : ${lotVal} / 12  |  Intervenant : ${acc.length ? pdfSafe(acc[0].intervenant) : '-'}`, M, 30);
       const body = acc.map(a => [
@@ -1303,7 +1376,7 @@
       }));
     }
 
-    // Bandeau récapitulatif
+    // Pied de page récapitulatif
     doc.setPage(doc.getNumberOfPages());
     const ry = H - 18;
     doc.setDrawColor(...GREEN); doc.setLineWidth(0.5); doc.setFillColor(236, 253, 245); doc.roundedRect(M, ry, W - 2 * M, 9, 1.5, 1.5, 'FD');
@@ -1312,7 +1385,7 @@
 
     const n = doc.getNumberOfPages();
     for (let i = 1; i <= n; i++) {
-      doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(100, 116, 139);
+      doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(148, 163, 184);
       doc.text('ARDIE - document officiel généré le ' + new Date().toLocaleDateString('fr-FR') + ' à ' + localHHmm() + (n > 1 ? `  -  page ${i}/${n}` : ''), W / 2, H - 4, { align: 'center' });
     }
     return doc;
