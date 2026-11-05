@@ -1350,6 +1350,16 @@
   /* ---------- IMPRESSION PHYSIQUE CORRIGÉE (FICHE ISOLE EXCLUSIVEMENT) ---------- */
   function printFiche() {
     const which = currentView;
+    const isLandscape = which !== 'plants'; // Fiche 1 en portrait, Fiches 2, 3, 4 en paysage
+    
+    let st = $('print-page-style');
+    if (!st) {
+      st = document.createElement('style');
+      st.id = 'print-page-style';
+      document.head.appendChild(st);
+    }
+    st.textContent = `@page { size: ${isLandscape ? 'landscape' : 'portrait'}; margin: 5mm; }`;
+    
     document.body.className = `print-${which}`;
     window.print();
     setTimeout(() => { document.body.className = ''; }, 1000);
