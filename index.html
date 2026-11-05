@@ -29,8 +29,11 @@
       main { padding: 0 !important; max-width: none !important; }
       .sheet-scroll { overflow: visible !important; }
       .sheet { min-width: 0 !important; width: 100% !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; }
-      body.print-plants #view-sheet-clim, body.print-clim #view-sheet-plants { display: none !important; }
-      body.print-plants #view-sheet-plants, body.print-clim #view-sheet-clim { display: block !important; }
+      body.print-plants #view-sheet-plants { display: block !important; }
+      body.print-clim #view-sheet-clim { display: block !important; }
+      body.print-anom #view-sheet-anom { display: block !important; }
+      body.print-acclim #view-sheet-acclim { display: block !important; }
+      body[class*="print-"] .sheet:not([style*="display: block"]) { display: none !important; }
       * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
   </style>
@@ -47,7 +50,6 @@
           <h1 class="text-sm md:text-base font-bold leading-none">Vitroplants Fruit à Pain</h1>
           <p class="text-[11px] text-emerald-300 mt-0.5" id="date-label">Chargement...</p>
           <p class="text-[10px] text-emerald-200/80" id="offline-ready"></p>
-          <button id="btn-install-help" onclick="showInstallHelp()" class="hidden text-[10px] underline text-emerald-200">Installer l'application ? (diagnostic)</button>
         </div>
       </div>
       <button onclick="loadConfig()" title="Actualiser" class="p-2 hover:bg-emerald-800 rounded-lg transition active:scale-95">
@@ -56,17 +58,13 @@
     </div>
   </header>
 
-  <!-- Bandeau d'alerte (déploiement obsolète / hors ligne) -->
+  <!-- Bandeaux Alerte / File d'attente / PWA -->
   <div id="banner" class="no-print hidden max-w-4xl w-full mx-auto px-4 pt-3">
     <div id="banner-text" class="bg-amber-100 border border-amber-300 text-amber-900 text-xs font-semibold rounded-lg p-3"></div>
   </div>
-
-  <!-- File d'attente hors ligne -->
   <div id="queue-bar" class="no-print hidden max-w-4xl w-full mx-auto px-4 pt-3">
     <div id="queue-box" class="rounded-lg p-3 text-xs font-semibold border"></div>
   </div>
-
-  <!-- Installation PWA -->
   <div id="install-bar" class="no-print hidden max-w-4xl w-full mx-auto px-4 pt-3">
     <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center justify-between gap-3">
       <span class="text-xs font-semibold text-emerald-900">Installer l'application sur cet appareil</span>
@@ -74,7 +72,7 @@
     </div>
   </div>
 
-  <!-- Sélecteurs globaux -->
+  <!-- Sélecteurs globaux Serre & Agent -->
   <div class="no-print max-w-4xl w-full mx-auto px-4 pt-3">
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-3 grid grid-cols-1 md:grid-cols-2 gap-3">
       <div>
@@ -95,20 +93,26 @@
     </div>
   </div>
 
-  <!-- Onglets -->
+  <!-- Navigation principale par Onglets (6 onglets) -->
   <div class="no-print max-w-4xl w-full mx-auto px-4 mt-3">
-    <div class="flex bg-slate-200 p-1 rounded-xl gap-1">
-      <button onclick="switchTab('clim')" id="btn-clim" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg bg-white text-emerald-900 shadow-sm flex items-center justify-center gap-1.5 transition">
-        <i data-lucide="thermometer" class="w-4 h-4"></i><span>Climat</span>
+    <div class="flex flex-wrap bg-slate-200 p-1 rounded-xl gap-1">
+      <button onclick="switchTab('clim')" id="btn-clim" class="flex-1 min-w-[70px] py-2 text-xs font-bold rounded-lg bg-white text-emerald-900 shadow-sm flex items-center justify-center gap-1 transition">
+        <i data-lucide="thermometer" class="w-3.5 h-3.5"></i><span>Climat</span>
       </button>
-      <button onclick="switchTab('plants')" id="btn-plants" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1.5 transition">
-        <i data-lucide="sprout" class="w-4 h-4"></i><span>Plants</span>
+      <button onclick="switchTab('plants')" id="btn-plants" class="flex-1 min-w-[70px] py-2 text-xs font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1 transition">
+        <i data-lucide="sprout" class="w-3.5 h-3.5"></i><span>Plants</span>
       </button>
-      <button onclick="switchTab('reports')" id="btn-reports" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1.5 transition">
-        <i data-lucide="files" class="w-4 h-4"></i><span>Fiches</span>
+      <button onclick="switchTab('anom')" id="btn-anom" class="flex-1 min-w-[85px] py-2 text-xs font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1 transition">
+        <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-amber-600"></i><span>Anomalies</span>
       </button>
-      <button onclick="switchTab('admin')" id="btn-admin" class="flex-1 py-2 text-xs md:text-sm font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1.5 transition">
-        <i data-lucide="settings" class="w-4 h-4"></i><span>Admin</span>
+      <button onclick="switchTab('acclim')" id="btn-acclim" class="flex-1 min-w-[95px] py-2 text-xs font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1 transition">
+        <i data-lucide="clipboard-list" class="w-3.5 h-3.5 text-blue-600"></i><span>Acclimatation</span>
+      </button>
+      <button onclick="switchTab('reports')" id="btn-reports" class="flex-1 min-w-[70px] py-2 text-xs font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1 transition">
+        <i data-lucide="files" class="w-3.5 h-3.5"></i><span>Fiches</span>
+      </button>
+      <button onclick="switchTab('admin')" id="btn-admin" class="flex-1 min-w-[70px] py-2 text-xs font-bold rounded-lg text-slate-600 flex items-center justify-center gap-1 transition">
+        <i data-lucide="settings" class="w-3.5 h-3.5"></i><span>Admin</span>
       </button>
     </div>
   </div>
@@ -124,7 +128,6 @@
           </h2>
           <span class="text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Objectif HR ≥ 75%</span>
         </div>
-
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Heure du relevé</label>
@@ -146,7 +149,6 @@
             </select>
           </div>
         </div>
-
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 bg-emerald-50/60 p-3 rounded-xl border border-emerald-100">
           <div>
             <label class="block text-xs font-bold text-emerald-950 mb-1">Luminosité (Lumens / Lux)</label>
@@ -161,7 +163,6 @@
             <input type="number" inputmode="decimal" step="0.1" id="c-ph" placeholder="ex: 6.2" class="w-full bg-white border border-emerald-200 rounded-lg p-2 text-sm">
           </div>
         </div>
-
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <label class="block text-xs font-semibold text-slate-600 mb-1">Arrosage manuel tuyau (7h30 et 16h30) / pulvérisateur</label>
@@ -172,8 +173,7 @@
             <input type="text" id="c-remarque" placeholder="Observation ponctuelle..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
           </div>
         </div>
-
-        <button type="submit" id="btn-submit-clim" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow transition active:scale-[0.99] disabled:opacity-60">
+        <button type="submit" id="btn-submit-clim" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow">
           <i data-lucide="check" class="w-5 h-5"></i><span>Valider le relevé</span>
         </button>
       </form>
@@ -189,7 +189,6 @@
           </h2>
           <span class="text-xs bg-slate-100 font-mono text-slate-600 px-2 py-0.5 rounded">FAP</span>
         </div>
-
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label class="block text-xs font-bold text-slate-700 mb-1">Nombre initial au démarrage</label>
@@ -208,7 +207,6 @@
             <input type="number" inputmode="numeric" id="p-surveillance" value="0" min="0" required class="w-full bg-blue-50 border border-blue-300 rounded-lg p-2 font-bold text-base text-blue-900">
           </div>
         </div>
-
         <div class="grid grid-cols-2 gap-3 bg-indigo-50 p-3 rounded-xl border border-indigo-100">
           <div class="col-span-2 text-xs font-bold text-indigo-900">Éclairage artificiel ambiant (nuit) : programmé</div>
           <div>
@@ -220,7 +218,6 @@
             <input type="time" id="p-ecl-fin" class="w-full bg-white border border-indigo-200 rounded-lg p-2 text-sm font-semibold">
           </div>
         </div>
-
         <div class="bg-gradient-to-r from-emerald-800 to-teal-800 text-white p-4 rounded-xl flex items-center justify-between shadow-inner">
           <div>
             <p class="text-xs uppercase font-bold tracking-wider text-emerald-200">Total restant en culture saine</p>
@@ -228,19 +225,164 @@
           </div>
           <span class="text-3xl md:text-4xl font-mono font-black" id="p-sains-display">605</span>
         </div>
-
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1">Remarques / Observations supplémentaires</label>
           <textarea id="p-observations" rows="2" placeholder="État du lot, enracinement..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm"></textarea>
         </div>
-
-        <button type="submit" id="btn-submit-plants" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow transition active:scale-[0.99] disabled:opacity-60">
+        <button type="submit" id="btn-submit-plants" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow">
           <i data-lucide="check-circle-2" class="w-5 h-5"></i><span>Valider le bilan journalier</span>
         </button>
       </form>
     </div>
 
-    <!-- 3. FICHES ARDIE -->
+    <!-- 3. ANOMALIES & PERTES (NOUVELLE FICHE 1) -->
+    <div id="tab-anom" class="space-y-4 hidden">
+      <form id="form-anom" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
+        <div class="border-b pb-2">
+          <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-600"></i>Suivi anomalies / pertes – Vitroplants sous surveillance
+          </h2>
+          <p class="text-[11px] text-slate-500 mt-0.5">Une fois un vitroplant détecté anormal ou faible, il est isolé, étiqueté et mis en observation.</p>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Date d'entrée</label>
+            <input type="date" id="an-date-entree" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Heure d'entrée</label>
+            <input type="time" id="an-heure-entree" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+          </div>
+          <div class="col-span-2 md:col-span-1">
+            <label class="block text-xs font-bold text-amber-900 mb-1">Vitroplants (VP) godet numéro :</label>
+            <input type="text" id="an-godet-num" required placeholder="ex: 84% ou Godet #12" class="w-full bg-amber-50 border border-amber-300 rounded-lg p-2 text-sm font-bold text-amber-950">
+          </div>
+        </div>
+
+        <!-- Constats Pathologiques (Cases à cocher) -->
+        <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-2.5">
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Constats pathologiques :</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+            <label class="flex items-start gap-2 bg-white p-2 rounded border border-slate-200 cursor-pointer">
+              <input type="checkbox" id="an-maladie-foliaire" class="mt-0.5 rounded text-emerald-600">
+              <span><strong>Maladies foliaires</strong> (taches, nécroses, feuilles marron/jaune/noire)</span>
+            </label>
+            <label class="flex items-start gap-2 bg-white p-2 rounded border border-slate-200 cursor-pointer">
+              <input type="checkbox" id="an-ravageurs" class="mt-0.5 rounded text-emerald-600">
+              <span><strong>Présence de ravageurs</strong> (pucerons, cochenilles, acariens...)</span>
+            </label>
+            <label class="flex items-start gap-2 bg-white p-2 rounded border border-slate-200 cursor-pointer">
+              <input type="checkbox" id="an-pourriture" class="mt-0.5 rounded text-emerald-600">
+              <span><strong>Pourriture racinaire / excès d'humidité</strong></span>
+            </label>
+            <label class="flex items-start gap-2 bg-white p-2 rounded border border-slate-200 cursor-pointer">
+              <input type="checkbox" id="an-stress-hydrique" class="mt-0.5 rounded text-emerald-600">
+              <span><strong>Stress hydrique</strong> (flétrissement persistant)</span>
+            </label>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Autres constats :</label>
+            <input type="text" id="an-autres" placeholder="Autres symptômes constatés..." class="w-full bg-white border border-slate-300 rounded-lg p-2 text-xs">
+          </div>
+        </div>
+
+        <!-- Mesures & Sortie -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Mesures sanitaires (Oui/Non - Lesquelles ?)</label>
+            <input type="text" id="an-mesures" placeholder="ex: Fongicide, diminution arrosage..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Statut d'observation</label>
+            <select id="an-statut-sortie" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+              <option value="En cours">⏳ En cours d'observation</option>
+              <option value="Sauvé">🌱 Sauvé (retour culture saine)</option>
+              <option value="Mort">🥀 Mort (perte définitive)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Date de sortie (si clos)</label>
+            <input type="date" id="an-date-sortie" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Intervenant sortie (si clos)</label>
+            <input type="text" id="an-agent-sortie" placeholder="Nom de l'agent..." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm">
+          </div>
+        </div>
+
+        <button type="submit" id="btn-submit-anom" class="w-full bg-amber-700 hover:bg-amber-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow">
+          <i data-lucide="save" class="w-5 h-5"></i><span>Enregistrer l'anomalie / observation</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- 4. PHASE D'ACCLIMATATION (NOUVELLE FICHE 2) -->
+    <div id="tab-acclim" class="space-y-4 hidden">
+      <form id="form-acclim" class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 md:p-5 space-y-4">
+        <div class="flex items-center justify-between border-b pb-2">
+          <div>
+            <h2 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+              <i data-lucide="clipboard-list" class="w-4 h-4 text-blue-600"></i>Tableau de suivi – Phase d'acclimatation
+            </h2>
+            <p class="text-[11px] text-slate-500 mt-0.5">Test d'échantillonnage 10% effectué sur 10 vitroplants du lot.</p>
+          </div>
+          <div class="flex items-center gap-1.5 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-lg">
+            <span class="text-xs font-bold text-blue-900">Lot N° :</span>
+            <input type="text" id="ac-lot-num" value="1/12" class="w-16 bg-white border border-blue-300 rounded px-1.5 py-0.5 text-xs font-bold text-center">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Date</label>
+            <input type="date" id="ac-date" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Heure</label>
+            <input type="time" id="ac-heure" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-semibold">
+          </div>
+        </div>
+
+        <!-- Tableau des 10 vitroplants -->
+        <div class="sheet-scroll border rounded-xl overflow-hidden">
+          <table class="w-full border-collapse text-xs min-w-[750px]">
+            <thead class="bg-slate-100 text-slate-700 font-bold text-center border-b">
+              <tr>
+                <th class="p-2 border-r w-8">N°</th>
+                <th class="p-2 border-r" colspan="5">Suivi morphologique</th>
+                <th class="p-2 border-r bg-emerald-50/50" colspan="3">Suivi conditions</th>
+                <th class="p-2" colspan="4">Suivi sanitaire (Cocher si Présent)</th>
+              </tr>
+              <tr class="text-[10px] bg-slate-50 border-t">
+                <th class="p-1 border-r">VP</th>
+                <th class="p-1 border-r w-16">Taille (cm)</th>
+                <th class="p-1 border-r w-14">Nb feuilles</th>
+                <th class="p-1 border-r w-20">Couleur</th>
+                <th class="p-1 border-r w-20">Tige</th>
+                <th class="p-1 border-r w-16">Vigueur</th>
+                <th class="p-1 border-r w-14 bg-emerald-50/50">T° substrat</th>
+                <th class="p-1 border-r w-14 bg-emerald-50/50">Hum. %</th>
+                <th class="p-1 border-r w-12 bg-emerald-50/50">pH</th>
+                <th class="p-1 border-r" title="Maladies foliaires">Maladies</th>
+                <th class="p-1 border-r" title="Ravageurs">Ravageurs</th>
+                <th class="p-1 border-r" title="Pourriture racinaire">Pourriture</th>
+                <th class="p-1" title="Maladies fongiques">Fongique</th>
+              </tr>
+            </thead>
+            <tbody id="acclim-inputs-tbody" class="divide-y divide-slate-100">
+              <!-- Rempli par JavaScript (10 lignes de saisie) -->
+            </tbody>
+          </table>
+        </div>
+
+        <button type="submit" id="btn-submit-acclim" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow">
+          <i data-lucide="check" class="w-5 h-5"></i><span>Valider le suivi d'acclimatation (10 plants)</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- 5. FICHES ARDIE (4 FICHES SÉPARÉES CONFORMES) -->
     <div id="tab-reports" class="space-y-4 hidden">
       <div class="no-print bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
@@ -257,31 +399,43 @@
           </button>
         </div>
 
-        <!-- Sous-onglets -->
-        <div class="flex gap-2 pt-2 border-t">
-          <button onclick="showReportView('plants')" id="btn-view-plants" class="flex-1 py-2 text-xs font-bold rounded-lg bg-emerald-800 text-white shadow-sm flex items-center justify-center gap-1.5">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i><span>Fiche 1 : Plants</span>
+        <!-- 4 Sous-onglets de sélection de fiche -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-1.5 pt-2 border-t">
+          <button onclick="showReportView('plants')" id="btn-view-plants" class="py-2 text-xs font-bold rounded-lg bg-emerald-800 text-white shadow-sm flex items-center justify-center gap-1">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i><span>Fiche 1 : Plants</span>
           </button>
-          <button onclick="showReportView('clim')" id="btn-view-clim" class="flex-1 py-2 text-xs font-bold rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center gap-1.5">
-            <i data-lucide="table-properties" class="w-4 h-4"></i><span>Fiche 2 : Climat</span>
+          <button onclick="showReportView('clim')" id="btn-view-clim" class="py-2 text-xs font-bold rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center gap-1">
+            <i data-lucide="table-properties" class="w-3.5 h-3.5"></i><span>Fiche 2 : Climat</span>
+          </button>
+          <button onclick="showReportView('anom')" id="btn-view-anom" class="py-2 text-xs font-bold rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center gap-1">
+            <i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i><span>Fiche 3 : Anomalies</span>
+          </button>
+          <button onclick="showReportView('acclim')" id="btn-view-acclim" class="py-2 text-xs font-bold rounded-lg bg-slate-200 text-slate-700 flex items-center justify-center gap-1">
+            <i data-lucide="clipboard-list" class="w-3.5 h-3.5"></i><span>Fiche 4 : Acclimatation</span>
           </button>
         </div>
 
-        <!-- Deux exports PDF distincts -->
-        <div class="grid grid-cols-2 gap-2">
-          <button onclick="exportPDF('plants')" class="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-3 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow disabled:opacity-60">
-            <i data-lucide="download" class="w-4 h-4"></i><span>PDF Fiche 1</span>
+        <!-- Boutons Téléchargement PDF Vectoriel Dédiés -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2">
+          <button onclick="exportPDF('plants')" class="bg-red-700 hover:bg-red-800 text-white text-[11px] font-bold py-2 rounded-lg flex items-center justify-center gap-1 shadow">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i><span>PDF Fiche 1</span>
           </button>
-          <button onclick="exportPDF('clim')" class="bg-red-700 hover:bg-red-800 text-white text-xs font-bold px-3 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow disabled:opacity-60">
-            <i data-lucide="download" class="w-4 h-4"></i><span>PDF Fiche 2</span>
+          <button onclick="exportPDF('clim')" class="bg-red-700 hover:bg-red-800 text-white text-[11px] font-bold py-2 rounded-lg flex items-center justify-center gap-1 shadow">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i><span>PDF Fiche 2</span>
           </button>
-          <button onclick="printFiche()" class="col-span-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold px-3 py-2.5 rounded-lg flex items-center justify-center gap-1.5 shadow">
+          <button onclick="exportPDF('anom')" class="bg-red-700 hover:bg-red-800 text-white text-[11px] font-bold py-2 rounded-lg flex items-center justify-center gap-1 shadow">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i><span>PDF Fiche 3</span>
+          </button>
+          <button onclick="exportPDF('acclim')" class="bg-red-700 hover:bg-red-800 text-white text-[11px] font-bold py-2 rounded-lg flex items-center justify-center gap-1 shadow">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i><span>PDF Fiche 4</span>
+          </button>
+          <button onclick="printFiche()" class="col-span-2 md:col-span-4 bg-slate-800 hover:bg-slate-900 text-white text-xs font-bold py-2 rounded-lg flex items-center justify-center gap-1.5 shadow">
             <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimer la fiche affichée</span>
           </button>
         </div>
       </div>
 
-      <!-- FICHE 1 -->
+      <!-- VUE FICHE 1 : PLANTS -->
       <div class="sheet-scroll">
         <div id="view-sheet-plants" class="sheet p-6 md:p-8 rounded-xl border border-slate-300 shadow-sm space-y-6 min-w-[560px]">
           <div class="flex justify-between items-start border-b-2 border-slate-900 pb-3">
@@ -296,13 +450,11 @@
               <p class="text-xs font-bold text-emerald-800 mt-1">Emplacement : <span id="f1-serre">--</span></p>
             </div>
           </div>
-
           <div class="border border-slate-300 rounded p-3 text-xs space-y-1">
             <p class="font-bold text-slate-900">Conditions climatiques intérieures :</p>
             <p class="text-slate-700 pt-1">BRUMISATEUR AMBIANT : Durée : <strong>h24</strong> / Fréquence : <strong>7/7</strong></p>
             <p class="text-slate-700">ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Programmé de <strong id="f1-ecl-debut">.......</strong> à <strong id="f1-ecl-fin">.......</strong> / Fréquence : <strong>7/7</strong></p>
           </div>
-
           <div>
             <h4 class="text-xs font-bold uppercase text-slate-800 mb-2">Quantité vitro plants Fruits à pain :</h4>
             <table class="w-full border-collapse border border-slate-500 text-xs">
@@ -338,7 +490,6 @@
               </tbody>
             </table>
           </div>
-
           <div class="pt-4 border-t border-slate-200 text-xs">
             <p class="font-bold text-slate-800">• Remarques / Observations supplémentaires :</p>
             <div id="f1-obs" class="mt-2 p-3 bg-slate-50 border border-slate-200 rounded min-h-[60px] text-slate-700 italic">-</div>
@@ -346,7 +497,7 @@
         </div>
       </div>
 
-      <!-- FICHE 2 -->
+      <!-- VUE FICHE 2 : CLIMAT -->
       <div class="sheet-scroll">
         <div id="view-sheet-clim" class="sheet p-5 rounded-xl border border-slate-300 shadow-sm space-y-4 hidden min-w-[900px]">
           <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
@@ -360,7 +511,6 @@
               <p class="text-xs font-bold text-emerald-800">SERRE : <span id="f2-serre">--</span></p>
             </div>
           </div>
-
           <table class="w-full border-collapse border border-slate-500 text-[10px]">
             <thead>
               <tr class="bg-slate-100 text-center font-bold">
@@ -378,16 +528,103 @@
             </thead>
             <tbody id="f2-tbody"></tbody>
           </table>
-
           <div class="pt-2 text-[11px] text-slate-700">
             <p class="font-bold">• Relevés réguliers toutes les 30 min à partir de 06h00.</p>
             <p id="f2-empty" class="mt-1 italic text-slate-500"></p>
           </div>
         </div>
       </div>
+
+      <!-- VUE FICHE 3 : ANOMALIES & PERTES -->
+      <div class="sheet-scroll">
+        <div id="view-sheet-anom" class="sheet p-6 rounded-xl border border-slate-300 shadow-sm space-y-4 hidden min-w-[900px]">
+          <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
+            <div>
+              <div class="flex items-center gap-3"><img class="logo-img hidden h-12 w-12 object-contain" alt=""><span class="text-xl font-black text-slate-900 tracking-wider">ARDIE</span></div>
+              <h2 class="text-base font-black text-slate-900 uppercase mt-1">Suivi journalier d'anomalies / pertes - Vitro plants sous surveillance</h2>
+              <p class="text-[10px] text-slate-500 italic mt-0.5">(Une fois un vitro plant détecté comme anormal ou faible, il est isolé, étiqueté, et mis en observation.)</p>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold text-slate-400 font-mono" id="f3-year">2026</span>
+              <p class="text-xs font-bold text-slate-800">Date : <span id="f3-date" class="underline font-mono">--/--/----</span></p>
+              <p class="text-xs font-bold text-emerald-800">SERRE : <span id="f3-serre">--</span></p>
+            </div>
+          </div>
+          <table class="w-full border-collapse border border-slate-500 text-[10px]">
+            <thead>
+              <tr class="bg-slate-100 text-center font-bold">
+                <th class="border border-slate-400 p-1 w-16" rowspan="2">Date d'entrée</th>
+                <th class="border border-slate-400 p-1 w-20" rowspan="2">Intervenant entrée</th>
+                <th class="border border-slate-400 p-1 w-16" rowspan="2">Godet N°</th>
+                <th class="border border-slate-400 p-1" colspan="5">Constats</th>
+                <th class="border border-slate-400 p-1 w-28" rowspan="2">Mesures sanitaires</th>
+                <th class="border border-slate-400 p-1 w-20" rowspan="2">Date sortie / Statut</th>
+                <th class="border border-slate-400 p-1 w-20" rowspan="2">Intervenant sortie</th>
+              </tr>
+              <tr class="bg-slate-50 text-[9px]">
+                <th class="border border-slate-400 p-1 w-16">Maladies foliaires</th>
+                <th class="border border-slate-400 p-1 w-16">Ravageurs</th>
+                <th class="border border-slate-400 p-1 w-16">Pourriture racinaire</th>
+                <th class="border border-slate-400 p-1 w-16">Stress hydrique</th>
+                <th class="border border-slate-400 p-1">Autres</th>
+              </tr>
+            </thead>
+            <tbody id="f3-tbody"></tbody>
+          </table>
+          <p id="f3-empty" class="text-xs italic text-slate-500 pt-2"></p>
+        </div>
+      </div>
+
+      <!-- VUE FICHE 4 : SUIVI PHASE ACCLIMATATION -->
+      <div class="sheet-scroll">
+        <div id="view-sheet-acclim" class="sheet p-6 rounded-xl border border-slate-300 shadow-sm space-y-4 hidden min-w-[900px]">
+          <div class="flex justify-between items-start border-b-2 border-slate-900 pb-2">
+            <div>
+              <div class="flex items-center gap-3"><img class="logo-img hidden h-12 w-12 object-contain" alt=""><span class="text-xl font-black text-slate-900 tracking-wider">ARDIE</span></div>
+              <h2 class="text-base font-black text-slate-900 uppercase mt-1">Tableau de suivi - Phase d'acclimatation</h2>
+              <div class="mt-1 border border-slate-400 px-2.5 py-0.5 inline-block text-xs font-bold">
+                Test effectué sur le lot numéro : <span id="f4-lot-num" class="underline">--</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <span class="text-xs font-bold text-slate-400 font-mono" id="f4-year">2026</span>
+              <p class="text-xs font-bold text-slate-800">Date : <span id="f4-date" class="underline font-mono">--/--/----</span></p>
+              <p class="text-xs font-bold text-slate-800">Heure : <span id="f4-heure">--h--</span></p>
+              <p class="text-xs font-bold text-emerald-800">SERRE : <span id="f4-serre">--</span></p>
+              <p class="text-[11px] text-slate-600">Intervenant(s) : <span id="f4-agent" class="font-semibold">--</span></p>
+            </div>
+          </div>
+          <table class="w-full border-collapse border border-slate-500 text-[10px]">
+            <thead>
+              <tr class="bg-slate-100 text-center font-bold">
+                <th class="border border-slate-400 p-1 w-16" rowspan="2">Vitroplants testés (10%)</th>
+                <th class="border border-slate-400 p-1" colspan="5">Suivi morphologique</th>
+                <th class="border border-slate-400 p-1 bg-emerald-50/50" colspan="3">Suivi conditions</th>
+                <th class="border border-slate-400 p-1" colspan="4">Suivi sanitaire (Oui / Non)</th>
+              </tr>
+              <tr class="bg-slate-50 text-[9px]">
+                <th class="border border-slate-400 p-1 w-14">Taille (cm)</th>
+                <th class="border border-slate-400 p-1 w-14">Nb feuilles</th>
+                <th class="border border-slate-400 p-1 w-16">Couleur feuilles</th>
+                <th class="border border-slate-400 p-1 w-16">Aspect tige</th>
+                <th class="border border-slate-400 p-1 w-14">Vigueur</th>
+                <th class="border border-slate-400 p-1 w-14 bg-emerald-50/50">T° substrat</th>
+                <th class="border border-slate-400 p-1 w-14 bg-emerald-50/50">Humidité substrat</th>
+                <th class="border border-slate-400 p-1 w-12 bg-emerald-50/50">pH substrat</th>
+                <th class="border border-slate-400 p-1 w-16">Maladies foliaires</th>
+                <th class="border border-slate-400 p-1 w-16">Ravageurs</th>
+                <th class="border border-slate-400 p-1 w-16">Pourriture racinaire</th>
+                <th class="border border-slate-400 p-1 w-16">Maladies fongiques</th>
+              </tr>
+            </thead>
+            <tbody id="f4-tbody"></tbody>
+          </table>
+          <p id="f4-empty" class="text-xs italic text-slate-500 pt-2"></p>
+        </div>
+      </div>
     </div>
 
-    <!-- 4. ADMIN -->
+    <!-- 6. ADMIN -->
     <div id="tab-admin" class="space-y-4 hidden">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
         <h3 class="font-bold text-slate-800 text-sm mb-2 flex items-center gap-2">
@@ -409,7 +646,6 @@
           </h3>
           <span class="text-[10px] text-slate-400">Touchez le statut pour activer / désactiver</span>
         </div>
-
         <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 grid grid-cols-2 md:grid-cols-5 gap-2">
           <select id="new-agent-civ" class="bg-white border rounded p-2 text-sm">
             <option value="M.">M.</option>
@@ -430,31 +666,17 @@
             <i data-lucide="user-plus" class="w-3.5 h-3.5"></i>Ajouter
           </button>
         </div>
-
         <ul id="list-agents" class="divide-y divide-slate-100 text-xs"></ul>
       </div>
     </div>
+
   </main>
 
-  <!-- Aide installation -->
-  <div id="help-modal" class="no-print hidden fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl max-w-md w-full p-4 max-h-[85vh] overflow-auto">
-      <div class="flex justify-between items-center mb-2">
-        <h3 class="font-bold text-sm text-slate-800">Installation de l'application</h3>
-        <button onclick="closeHelp()" class="text-slate-500 text-lg px-2">✕</button>
-      </div>
-      <div id="help-body" class="text-xs space-y-1.5 text-slate-700"></div>
-    </div>
-  </div>
-
-  <!-- Toast -->
   <div id="toast" class="hidden fixed left-1/2 -translate-x-1/2 bottom-6 z-[60] max-w-[90vw] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white"></div>
 
   <script>
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
-    const EXPECTED_VERSION = "V11";
-
-    // Logo : 1) logo.png hébergé dans le dépôt (recommandé), 2) lien Facebook en secours.
+    const EXPECTED_VERSION = "V12";
     const LOGO_FB = "https://scontent.frun1-1.fna.fbcdn.net/v/t39.30808-1/294737113_533509551750014_77347280882068389_n.png?stp=dst-png&cstp=mx1535x1535&ctp=s200x200&_nc_cat=102&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=2d3e12&_nc_ohc=GshwLzCRSKkQ7kNvwEGqleF&_nc_oc=AdoJ-dITzrKn9nnKCBmbmjyRdspNPGeI_C9TuqF-WcLYe2PnDowJiU4YsAPoWT3fHUQ&_nc_zt=24&_nc_ht=scontent.frun1-1.fna&_nc_gid=i3rs_GE-zo3m4cVjH4DBrQ&_nc_ss=7b2a8&oh=00_AQQKAmyMziEgAgyhZI9zWdTbB2MauPL4dfEQnVP-rmNASA&oe=6AF0F81C";
     const LOGO_CANDIDATES = ['logo.png', LOGO_FB];
     let LOGO = { src: null, data: null };
@@ -464,14 +686,12 @@
 
     let state = { emplacements: [], agentsActifs: [], tousLesAgents: [] };
 
-    /* ---------- Utilitaires ---------- */
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const pad = (n) => String(n).padStart(2, '0');
     const icons = () => { if (window.lucide) lucide.createIcons(); };
     const num = (v) => parseFloat(String(v ?? '').replace(',', '.'));
 
-    // Date / heure LOCALES (toISOString() donnerait la date UTC : faux la nuit à La Réunion, UTC+4)
     function localISODate(d = new Date()) { return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; }
     function localHHmm(d = new Date()) { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
     function isoToFR(iso) { const p = iso.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
@@ -507,11 +727,18 @@
       $('date-label').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
       $('c-heure').value = localHHmm();
       $('rep-date').value = localISODate();
+      $('an-date-entree').value = localISODate();
+      $('an-heure-entree').value = localHHmm();
+      $('ac-date').value = localISODate();
+      $('ac-heure').value = localHHmm();
+
       $('global-serre').addEventListener('change', e => { store.set('ardie_serre', e.target.value); checkTodayPlant(); });
       $('global-intervenant').addEventListener('change', e => store.set('ardie_agent', e.target.value));
       ['p-initial', 'p-isoles', 'p-morts'].forEach(id => $(id).addEventListener('input', calcPlants));
       $('p-ecl-debut').value = store.get('ardie_ecl_debut') || '';
       $('p-ecl-fin').value = store.get('ardie_ecl_fin') || '';
+
+      renderAcclimInputs();
       initLogo();
       renderQueue();
       flushQueue();
@@ -519,7 +746,38 @@
       icons();
     });
 
-    /* ---------- Logo (favicon + en-têtes + PDF) ---------- */
+    // Génère les 10 lignes du tableau d'acclimatation
+    function renderAcclimInputs() {
+      const tbody = $('acclim-inputs-tbody');
+      let html = '';
+      for (let i = 1; i <= 10; i++) {
+        html += `
+          <tr class="hover:bg-slate-50 text-center" data-row="${i}">
+            <td class="p-1 font-bold border-r bg-slate-50">${i}</td>
+            <td class="p-1 border-r"><input type="number" step="0.1" class="ac-t w-full p-1 border rounded text-center text-xs" placeholder="cm"></td>
+            <td class="p-1 border-r"><input type="number" class="ac-f w-full p-1 border rounded text-center text-xs" placeholder="nb"></td>
+            <td class="p-1 border-r"><input type="text" class="ac-c w-full p-1 border rounded text-center text-xs" placeholder="vert..."></td>
+            <td class="p-1 border-r"><input type="text" class="ac-a w-full p-1 border rounded text-center text-xs" placeholder="aspect"></td>
+            <td class="p-1 border-r">
+              <select class="ac-v w-full p-1 border rounded text-xs">
+                <option value="Bonne">Bonne</option>
+                <option value="Moyenne">Moyenne</option>
+                <option value="Faible">Faible</option>
+              </select>
+            </td>
+            <td class="p-1 border-r bg-emerald-50/30"><input type="number" step="0.1" class="ac-ts w-full p-1 border rounded text-center text-xs" placeholder="°C"></td>
+            <td class="p-1 border-r bg-emerald-50/30"><input type="number" step="0.1" class="ac-hs w-full p-1 border rounded text-center text-xs" placeholder="%"></td>
+            <td class="p-1 border-r bg-emerald-50/30"><input type="number" step="0.1" class="ac-ph w-full p-1 border rounded text-center text-xs" placeholder="pH"></td>
+            <td class="p-1 border-r"><input type="checkbox" class="ac-mf rounded text-emerald-600"></td>
+            <td class="p-1 border-r"><input type="checkbox" class="ac-rav rounded text-emerald-600"></td>
+            <td class="p-1 border-r"><input type="checkbox" class="ac-pr rounded text-emerald-600"></td>
+            <td class="p-1"><input type="checkbox" class="ac-fong rounded text-emerald-600"></td>
+          </tr>
+        `;
+      }
+      tbody.innerHTML = html;
+    }
+
     async function initLogo() {
       for (const u of LOGO_CANDIDATES) {
         try {
@@ -530,9 +788,8 @@
           const data = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(b); });
           LOGO = { src: u, data };
           break;
-        } catch (e) { /* source suivante */ }
+        } catch (e) {}
       }
-      // Si le téléchargement est bloqué (CORS), on affiche au moins l'image (sans l'inclure dans les PDF)
       const display = LOGO.data || LOGO_FB;
       document.querySelectorAll('.logo-img').forEach(img => { img.src = display; img.classList.remove('hidden'); });
       const badge = $('logo-badge'); if (badge && LOGO.data) badge.classList.add('hidden');
@@ -540,7 +797,6 @@
       $('touch-icon').href = display;
     }
 
-    /* ---------- Alerte : bilan déjà enregistré aujourd'hui ---------- */
     async function checkTodayPlant() {
       const serre = $('global-serre').value;
       const box = $('plants-existing');
@@ -550,7 +806,7 @@
         const res = await fetch(`${SCRIPT_URL}?action=getReports&date=${localISODate()}&serre=${encodeURIComponent(serre)}`);
         const d = await res.json();
         serverPlant = (d && d.plant) ? d.plant : null;
-      } catch (e) { /* hors ligne : on regarde seulement la file d'attente locale */ }
+      } catch (e) {}
 
       let local = null;
       if (!serverPlant) {
@@ -561,10 +817,7 @@
 
       if (existingToday) {
         const who = (existingToday.intervenant && existingToday.intervenant !== '(non renseigné)') ? ` par ${existingToday.intervenant}` : '';
-        box.innerHTML = `⚠️ Une fiche journalière existe déjà aujourd'hui pour <b>${esc(serre)}</b> ` +
-          `(${existingToday.local ? 'en attente d\'envoi sur cet appareil, ' : 'enregistrée '}à ${esc(existingToday.heure)}${esc(who)} : ` +
-          `${esc(existingToday.sains)} plants sains sur ${esc(existingToday.initial)}). ` +
-          `Si vous validez à nouveau, une nouvelle ligne sera ajoutée et la fiche affichera la plus récente.`;
+        box.innerHTML = `⚠️ Une fiche journalière existe déjà aujourd'hui pour <b>${esc(serre)}</b> à ${esc(existingToday.heure)}${esc(who)} (${esc(existingToday.sains)} sains / ${esc(existingToday.initial)}). Une nouvelle validation ajoutera une ligne.`;
         box.classList.remove('hidden');
       } else {
         box.classList.add('hidden');
@@ -580,7 +833,6 @@
       return sains;
     }
 
-    /* ---------- Configuration (serres + agents) ---------- */
     async function loadConfig() {
       const icon = $('sync-icon');
       if (icon) icon.classList.add('animate-spin');
@@ -589,7 +841,6 @@
         const raw = await res.json();
         if (raw.error) throw new Error(raw.message || 'Erreur serveur');
 
-        // Normalisation défensive : jamais de "undefined" à l'écran
         const agentsRaw = Array.isArray(raw.tousLesAgents) ? raw.tousLesAgents : [];
         const tous = agentsRaw.map(a => {
           const nom = String(a.nom ?? a.name ?? '').trim();
@@ -612,8 +863,7 @@
         };
 
         banner(raw.version === EXPECTED_VERSION ? '' :
-          `⚠️ Le script Google déployé est obsolète (version « ${raw.version || 'inconnue'} » au lieu de ${EXPECTED_VERSION}). ` +
-          `Dans Apps Script : Déployer → Gérer les déploiements → ✏️ → Version : Nouvelle version → Déployer.`);
+          `⚠️ Le script Google déployé est en version « ${raw.version || 'inconnue'} » au lieu de ${EXPECTED_VERSION}. Dans Apps Script : Déployer → Gérer les déploiements → ✏️ → Version : Nouvelle version → Déployer.`);
 
         renderSelects();
         renderAdmin();
@@ -628,9 +878,7 @@
           state = cached.state;
           renderSelects();
           renderAdmin();
-          banner(`Mode hors ligne : listes des serres et des agents enregistrées le ${new Date(cached.at).toLocaleString('fr-FR')}. Les saisies seront envoyées au retour du réseau.`);
-        } else {
-          banner("Impossible de joindre le serveur Google. Ouvrez l'application une fois avec du réseau pour charger les listes, puis touchez ↻.");
+          banner(`Mode hors ligne : listes enregistrées le ${new Date(cached.at).toLocaleString('fr-FR')}.`);
         }
       } finally {
         if (icon) icon.classList.remove('animate-spin');
@@ -649,9 +897,6 @@
         rSerre.innerHTML = state.emplacements.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
         sSerre.value = state.emplacements.includes(prevSerre) ? prevSerre : state.emplacements[0];
         rSerre.value = state.emplacements.includes(prevRep) ? prevRep : sSerre.value;
-      } else {
-        sSerre.innerHTML = '<option value="" disabled selected>Aucune serre configurée</option>';
-        rSerre.innerHTML = '';
       }
 
       if (state.agentsActifs.length) {
@@ -659,8 +904,6 @@
           state.agentsActifs.map(a => `<option value="${esc(a.displayName)}">👤 ${esc(a.label)}</option>`).join('');
         const ok = state.agentsActifs.some(a => a.displayName === prevAgent);
         sAgent.value = ok ? prevAgent : '';
-      } else {
-        sAgent.innerHTML = '<option value="" disabled selected>Aucun agent actif</option>';
       }
     }
 
@@ -685,7 +928,6 @@
       icons();
     }
 
-    // Délégation d'événements (évite les problèmes de guillemets dans les noms)
     document.addEventListener('click', (ev) => {
       const del = ev.target.closest('[data-del-loc]');
       if (del) return delLocation(del.dataset.delLoc);
@@ -697,11 +939,10 @@
       if (qd) return delQueued(qd.dataset.qDel);
     });
 
-    /* ---------- Envoi vers Apps Script ---------- */
-    /* ---------- Envoi vers Apps Script + file d'attente hors ligne ---------- */
+    /* ---------- File d'attente hors-ligne ---------- */
     class NetworkError extends Error {}
-    const QUEUE_KEY = 'ardie_queue_v1';
-    const QUEUED_MSG = "Hors ligne : saisie gardée sur l'appareil, envoi automatique dès le retour du réseau.";
+    const QUEUE_KEY = 'ardie_queue_v2';
+    const QUEUED_MSG = "Hors ligne : saisie conservée sur l'appareil, envoi automatique dès le retour du réseau.";
     let queueOpen = false;
     let flushing = false;
 
@@ -709,14 +950,11 @@
     function qLoad() { try { return JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch (e) { return []; } }
     function qSave(q) { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); return true; } catch (e) { return false; } }
 
-    // Envoi réel. NetworkError = réseau absent / lent / réponse illisible (on pourra réessayer).
-    // Error simple = refus du serveur (saisie invalide) : inutile de réessayer tel quel.
     async function postRaw(payload, ms = 25000) {
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), ms);
       let res;
       try {
-        // Pas d'en-tête personnalisé => "requête simple" (pas de preflight CORS), réponse lisible.
         res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify(payload), signal: ctrl.signal });
       } catch (e) {
         throw new NetworkError('Pas de réseau');
@@ -729,12 +967,10 @@
       return out;
     }
 
-    // Administration (serres / agents) : nécessite le réseau
     async function postData(payload) { return postRaw(payload); }
 
-    // Relevés et bilans : envoyés tout de suite, sinon gardés sur l'appareil
     async function submitOrQueue(payload) {
-      payload.clientId = payload.clientId || uid();     // le serveur ignore un identifiant déjà reçu (anti-doublon)
+      payload.clientId = payload.clientId || uid();
       if (!navigator.onLine) return queueItem(payload);
       try {
         await postRaw(payload);
@@ -764,7 +1000,7 @@
       let sent = 0, failed = 0, offline = false;
       try {
         for (const item of q) {
-          if (item.error && !manual) continue;          // les saisies refusées par le serveur ne sont rejouées qu'à la demande
+          if (item.error && !manual) continue;
           try {
             await postRaw(item.payload);
             qRemove(item.id); sent++;
@@ -779,7 +1015,7 @@
       }
       if (sent) { toast(`${sent} saisie(s) envoyée(s) ✔`); checkTodayPlant(); }
       else if (manual && offline) toast('Toujours pas de réseau', 'err');
-      if (failed) toast(`${failed} saisie(s) refusée(s) par le serveur (voir Détails)`, 'err');
+      if (failed) toast(`${failed} saisie(s) refusée(s) par le serveur`, 'err');
     }
 
     function renderQueue() {
@@ -790,10 +1026,10 @@
       const errs = q.filter(i => i.error).length;
       box.className = 'rounded-lg p-3 text-xs font-semibold border ' + (errs ? 'bg-red-50 border-red-300 text-red-900' : 'bg-amber-50 border-amber-300 text-amber-900');
       let html = '';
-      if (off) html += `<div>📴 Hors ligne : vos saisies sont gardées sur l'appareil et partiront automatiquement au retour du réseau.</div>`;
+      if (off) html += `<div>📴 Hors ligne : vos saisies sont gardées sur l'appareil.</div>`;
       if (q.length) {
         html += `<div class="${off ? 'mt-2 ' : ''}flex items-center justify-between gap-2">
-          <span>📤 ${q.length} saisie(s) en attente d'envoi${errs ? ` (dont ${errs} refusée(s))` : ''}</span>
+          <span>📤 ${q.length} saisie(s) en attente</span>
           <span class="flex gap-2">
             <button data-q-send class="bg-emerald-700 text-white px-3 py-1.5 rounded-lg">Envoyer</button>
             <button data-q-toggle class="bg-white border border-slate-300 text-slate-700 px-3 py-1.5 rounded-lg">${queueOpen ? 'Masquer' : 'Détails'}</button>
@@ -801,9 +1037,8 @@
         if (queueOpen) {
           html += '<ul class="mt-2 divide-y divide-black/10 font-medium">' + q.map(i => {
             const p = i.payload;
-            const label = (p.type === 'CLIMAT' ? 'Relevé climat' : 'Bilan plants') + ` • ${esc(p.serre)} • ${esc(isoToFR(p.date))} ${esc(p.heure)}`;
             return `<li class="py-1.5 flex items-center justify-between gap-2">
-              <span class="min-w-0">${label}${i.error ? `<br><span class="text-red-700">⚠ ${esc(i.error)}</span>` : ''}</span>
+              <span class="min-w-0">${esc(p.type)} • ${esc(p.serre)}</span>
               <button data-q-del="${esc(i.id)}" class="shrink-0 text-red-700 border border-red-200 bg-white px-2 py-1 rounded">Supprimer</button></li>`;
           }).join('') + '</ul>';
         }
@@ -812,13 +1047,12 @@
       bar.classList.remove('hidden');
     }
     function delQueued(id) {
-      if (!confirm('Supprimer cette saisie en attente ? Elle ne sera jamais envoyée.')) return;
+      if (!confirm('Supprimer cette saisie en attente ?')) return;
       qRemove(id); renderQueue();
     }
 
     window.addEventListener('online', () => { renderQueue(); flushQueue(); loadConfig(); });
     window.addEventListener('offline', renderQueue);
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') flushQueue(); });
     setInterval(() => { if (qLoad().length) flushQueue(); }, 60000);
 
     function requireSerreAgent() {
@@ -831,6 +1065,7 @@
       return { serre, agent };
     }
 
+    /* ---------- Formulaire 1 : Climat ---------- */
     $('form-clim').addEventListener('submit', async (e) => {
       e.preventDefault();
       const ctx = requireSerreAgent(); if (!ctx) return;
@@ -856,18 +1091,16 @@
         $('c-remarque').value = '';
         $('c-arrosage').value = '';
         $('c-heure').value = localHHmm();
-      } catch (err) {
-        toast('Échec : ' + err.message, 'err');
-      } finally {
-        setBtn(btn, false, 'Valider le relevé', 'check');
-      }
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
+      finally { setBtn(btn, false, 'Valider le relevé', 'check'); }
     });
 
+    /* ---------- Formulaire 2 : Plants ---------- */
     $('form-plants').addEventListener('submit', async (e) => {
       e.preventDefault();
       const ctx = requireSerreAgent(); if (!ctx) return;
       await checkTodayPlant();
-      if (existingToday && !confirm(`Une fiche journalière existe déjà aujourd'hui pour ${ctx.serre} (à ${existingToday.heure}).\n\nEnregistrer quand même une nouvelle ligne ?`)) return;
+      if (existingToday && !confirm(`Une fiche journalière existe déjà aujourd'hui pour ${ctx.serre}.\n\nEnregistrer quand même une nouvelle ligne ?`)) return;
       const btn = $('btn-submit-plants');
       setBtn(btn, true);
       try {
@@ -893,11 +1126,87 @@
         ['p-isoles', 'p-morts', 'p-surveillance'].forEach(id => $(id).value = 0);
         $('p-observations').value = '';
         calcPlants();
-      } catch (err) {
-        toast('Échec : ' + err.message, 'err');
-      } finally {
-        setBtn(btn, false, 'Valider le bilan journalier', 'check-circle-2');
-      }
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
+      finally { setBtn(btn, false, 'Valider le bilan journalier', 'check-circle-2'); }
+    });
+
+    /* ---------- Formulaire 3 : Anomalies & Pertes ---------- */
+    $('form-anom').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const ctx = requireSerreAgent(); if (!ctx) return;
+      const btn = $('btn-submit-anom');
+      setBtn(btn, true);
+      try {
+        const r = await submitOrQueue({
+          type: 'ANOMALIE',
+          date_entree: $('an-date-entree').value || localISODate(),
+          heure_entree: $('an-heure-entree').value || localHHmm(),
+          serre: ctx.serre,
+          intervenant: ctx.agent,
+          godet_num: $('an-godet-num').value.trim(),
+          maladie_foliaire: $('an-maladie-foliaire').checked,
+          ravageurs: $('an-ravageurs').checked,
+          pourriture_racines: $('an-pourriture').checked,
+          stress_hydrique: $('an-stress-hydrique').checked,
+          autres_constats: $('an-autres').value.trim() || '-',
+          mesures_sanitaires: $('an-mesures').value.trim() || '-',
+          date_sortie: $('an-date-sortie').value || '',
+          statut_sortie: $('an-statut-sortie').value,
+          intervenant_sortie: $('an-agent-sortie').value.trim() || '-'
+        });
+        toast(r === 'queued' ? QUEUED_MSG : 'Anomalie / observation enregistrée ✔', r === 'queued' ? 'warn' : 'ok');
+        $('an-godet-num').value = '';
+        ['an-maladie-foliaire', 'an-ravageurs', 'an-pourriture', 'an-stress-hydrique'].forEach(id => $(id).checked = false);
+        $('an-autres').value = '';
+        $('an-mesures').value = '';
+        $('an-date-sortie').value = '';
+        $('an-agent-sortie').value = '';
+        $('an-statut-sortie').value = 'En cours';
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
+      finally { setBtn(btn, false, "Enregistrer l'anomalie / observation", 'save'); }
+    });
+
+    /* ---------- Formulaire 4 : Suivi Acclimatation ---------- */
+    $('form-acclim').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const ctx = requireSerreAgent(); if (!ctx) return;
+      const btn = $('btn-submit-acclim');
+      setBtn(btn, true);
+
+      // Récupération des 10 plants saisis
+      const plants = [];
+      const rows = document.querySelectorAll('#acclim-inputs-tbody tr');
+      rows.forEach(tr => {
+        plants.push({
+          taille_cm: tr.querySelector('.ac-t').value || '-',
+          nb_feuilles: tr.querySelector('.ac-f').value || '-',
+          couleur_feuilles: tr.querySelector('.ac-c').value.trim() || '-',
+          aspect_tige: tr.querySelector('.ac-a').value.trim() || '-',
+          vigueur: tr.querySelector('.ac-v').value,
+          temp_substrat: tr.querySelector('.ac-ts').value || '-',
+          hum_substrat: tr.querySelector('.ac-hs').value || '-',
+          ph_substrat: tr.querySelector('.ac-ph').value || '-',
+          maladie_foliaire: tr.querySelector('.ac-mf').checked,
+          ravageurs: tr.querySelector('.ac-rav').checked,
+          pourriture_racines: tr.querySelector('.ac-pr').checked,
+          maladie_fongique: tr.querySelector('.ac-fong').checked
+        });
+      });
+
+      try {
+        const r = await submitOrQueue({
+          type: 'ACCLIMATATION',
+          date: $('ac-date').value || localISODate(),
+          heure: $('ac-heure').value || localHHmm(),
+          serre: ctx.serre,
+          intervenant: ctx.agent,
+          lot_numero: $('ac-lot-num').value.trim() || '1/12',
+          plants: plants
+        });
+        toast(r === 'queued' ? QUEUED_MSG : "Test d'acclimatation (10 plants) enregistré ✔", r === 'queued' ? 'warn' : 'ok');
+        renderAcclimInputs(); // Réinitialise les cases
+      } catch (err) { toast('Échec : ' + err.message, 'err'); }
+      finally { setBtn(btn, false, "Valider le suivi d'acclimatation (10 plants)", 'check'); }
     });
 
     /* ---------- Admin ---------- */
@@ -940,17 +1249,19 @@
       } catch (err) { toast('Échec : ' + err.message, 'err'); }
     }
 
-    /* ---------- Fiches ARDIE ---------- */
+    /* ---------- Fiches ARDIE (Affichage) ---------- */
     function showReportView(view) {
-      const on = ['bg-emerald-800', 'text-white', 'shadow-sm'];
-      const off = ['bg-slate-200', 'text-slate-700'];
-      const isP = view === 'plants';
       currentView = view;
-      $('view-sheet-plants').classList.toggle('hidden', !isP);
-      $('view-sheet-clim').classList.toggle('hidden', isP);
-      const bp = $('btn-view-plants'), bc = $('btn-view-clim');
-      bp.classList.remove(...(isP ? off : on)); bp.classList.add(...(isP ? on : off));
-      bc.classList.remove(...(isP ? on : off)); bc.classList.add(...(isP ? off : on));
+      ['plants', 'clim', 'anom', 'acclim'].forEach(v => {
+        $(`view-sheet-${v}`).classList.toggle('hidden', v !== view);
+        const b = $(`btn-view-${v}`);
+        if (b) {
+          b.classList.toggle('bg-emerald-800', v === view);
+          b.classList.toggle('text-white', v === view);
+          b.classList.toggle('bg-slate-200', v !== view);
+          b.classList.toggle('text-slate-700', v !== view);
+        }
+      });
     }
 
     const fmtH = (s) => String(s).replace(':', 'h');
@@ -972,7 +1283,7 @@
 
         lastReport = { iso, serre, fr, data };
 
-        // ----- Fiche 1
+        // ----- FICHE 1 : Plants
         $('f1-date').textContent = fr;
         $('f1-year').textContent = iso.slice(0, 4);
         $('f1-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
@@ -993,13 +1304,13 @@
           $('f1-obs').textContent = 'Aucun bilan enregistré.';
         }
 
-        // ----- Fiche 2
+        // ----- FICHE 2 : Climat
         $('f2-date').textContent = fr;
         $('f2-year').textContent = iso.slice(0, 4);
         $('f2-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
         const records = data.climats || [];
         const cell = 'border border-slate-400 p-1.5';
-        let html = records.map(c => {
+        let htmlClim = records.map(c => {
           const hy = num(c.hygro);
           const low = !isNaN(hy) && hy < 75;
           return `<tr class="text-center">
@@ -1015,104 +1326,159 @@
             <td class="${cell} font-medium text-slate-900">${dash(c.intervenant)}</td>
           </tr>`;
         }).join('');
-        // lignes vides pour un rendu "fiche papier"
-        for (let i = records.length; i < 10; i++) {
-          html += `<tr>${Array(10).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
+        for (let i = records.length; i < 8; i++) {
+          htmlClim += `<tr>${Array(10).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
         }
-        $('f2-tbody').innerHTML = html;
-        $('f2-empty').textContent = records.length ? '' : `Aucun relevé enregistré pour le ${fr}.`;
+        $('f2-tbody').innerHTML = htmlClim;
+        $('f2-empty').textContent = records.length ? '' : `Aucun relevé climatique pour le ${fr}.`;
 
-        toast(`${records.length} relevé(s) • ${p ? '1 bilan plants' : 'aucun bilan plants'}`);
+        // ----- FICHE 3 : Anomalies & Pertes
+        $('f3-date').textContent = fr;
+        $('f3-year').textContent = iso.slice(0, 4);
+        $('f3-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
+        const anoms = data.anomalies || [];
+        let htmlAnom = anoms.map(an => `
+          <tr class="text-center hover:bg-slate-50">
+            <td class="${cell} font-mono">${dash(an.date_entree)}<br><span class="text-slate-500 font-bold">${dash(an.heure_entree)}</span></td>
+            <td class="${cell} font-medium">${dash(an.intervenant_entree)}</td>
+            <td class="${cell} font-bold text-amber-900 bg-amber-50/50">${dash(an.godet_num)}</td>
+            <td class="${cell} ${an.maladie_foliaire === 'Oui' ? 'font-bold text-red-600 bg-red-50' : ''}">${dash(an.maladie_foliaire)}</td>
+            <td class="${cell} ${an.ravageurs === 'Oui' ? 'font-bold text-red-600 bg-red-50' : ''}">${dash(an.ravageurs)}</td>
+            <td class="${cell} ${an.pourriture_racines === 'Oui' ? 'font-bold text-red-600 bg-red-50' : ''}">${dash(an.pourriture_racines)}</td>
+            <td class="${cell} ${an.stress_hydrique === 'Oui' ? 'font-bold text-amber-600 bg-amber-50' : ''}">${dash(an.stress_hydrique)}</td>
+            <td class="${cell} text-left">${dash(an.autres_constats)}</td>
+            <td class="${cell} text-left">${dash(an.mesures_sanitaires)}</td>
+            <td class="${cell} font-bold ${an.statut_sortie === 'Mort' ? 'text-red-700' : (an.statut_sortie === 'Sauvé' ? 'text-emerald-700' : 'text-slate-600')}">
+              ${dash(an.statut_sortie)}<br><span class="text-[9px] font-normal font-mono">${dash(an.date_sortie)}</span>
+            </td>
+            <td class="${cell}">${dash(an.intervenant_sortie)}</td>
+          </tr>
+        `).join('');
+        for (let k = anoms.length; k < 6; k++) {
+          htmlAnom += `<tr>${Array(11).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
+        }
+        $('f3-tbody').innerHTML = htmlAnom;
+        $('f3-empty').textContent = anoms.length ? '' : `Aucune anomalie enregistrée pour le ${fr}.`;
+
+        // ----- FICHE 4 : Suivi Acclimatation
+        $('f4-date').textContent = fr;
+        $('f4-year').textContent = iso.slice(0, 4);
+        $('f4-serre').textContent = serre === 'ALL' ? 'Toutes les serres' : serre;
+        const acclims = data.acclimatation || [];
+        if (acclims.length) {
+          $('f4-lot-num').textContent = acclims[0].lot_numero || '1/12';
+          $('f4-heure').textContent = acclims[0].heure || '--h--';
+          $('f4-agent').textContent = acclims[0].intervenant || '--';
+        } else {
+          $('f4-lot-num').textContent = '--';
+          $('f4-heure').textContent = '--h--';
+          $('f4-agent').textContent = '--';
+        }
+        let htmlAcclim = acclims.map(ac => `
+          <tr class="text-center hover:bg-slate-50">
+            <td class="${cell} font-bold bg-slate-50">${dash(ac.num_plante)}</td>
+            <td class="${cell} font-semibold">${dash(ac.taille_cm)}</td>
+            <td class="${cell}">${dash(ac.nb_feuilles)}</td>
+            <td class="${cell}">${dash(ac.couleur_feuilles)}</td>
+            <td class="${cell}">${dash(ac.aspect_tige)}</td>
+            <td class="${cell} font-semibold">${dash(ac.vigueur)}</td>
+            <td class="${cell} bg-emerald-50/30">${dash(ac.temp_substrat)}</td>
+            <td class="${cell} bg-emerald-50/30">${dash(ac.hum_substrat)}</td>
+            <td class="${cell} bg-emerald-50/30">${dash(ac.ph_substrat)}</td>
+            <td class="${cell} ${ac.maladie_foliaire === 'Oui' ? 'font-bold text-red-600 bg-red-50' : ''}">${dash(ac.maladie_foliaire)}</td>
+            <td class="${cell} ${ac.ravageurs === 'Oui' ? 'font-bold text-red-600 bg-red-50' : ''}">${dash(ac.ravageurs)}</td>
+            <td class="${cell} ${ac.pourriture_racines === 'Oui' ? 'font-bold text-red-600 bg-red-50' : ''}">${dash(ac.pourriture_racines)}</td>
+            <td class="${cell} ${ac.maladie_fongique === 'Oui' ? 'font-bold text-red-600 bg-red-50' : ''}">${dash(ac.maladie_fongique)}</td>
+          </tr>
+        `).join('');
+        for (let m = acclims.length; m < 10; m++) {
+          htmlAcclim += `<tr>${Array(13).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
+        }
+        $('f4-tbody').innerHTML = htmlAcclim;
+        $('f4-empty').textContent = acclims.length ? '' : `Aucun test d'acclimatation enregistré pour le ${fr}.`;
+
+        toast(`Données chargées ✔ (${records.length} météo, ${anoms.length} anomalie, ${acclims.length} acclim)`);
       } catch (err) {
         console.error(err);
         toast('Chargement impossible : ' + err.message, 'err');
-      } finally {
-        btn.disabled = false;
-      }
+      } finally { btn.disabled = false; }
     }
 
-    /* ---------- Impression ---------- */
     function printFiche() {
       const which = currentView;
       let st = $('print-page-style');
       if (!st) { st = document.createElement('style'); st.id = 'print-page-style'; document.head.appendChild(st); }
-      st.textContent = `@page { size: A4 ${which === 'clim' ? 'landscape' : 'portrait'}; margin: 8mm; }`;
-      document.body.classList.add('print-' + which);
-      const done = () => { document.body.classList.remove('print-plants', 'print-clim'); window.removeEventListener('afterprint', done); };
+      const isLandscape = which !== 'plants';
+      st.textContent = `@page { size: A4 ${isLandscape ? 'landscape' : 'portrait'}; margin: 8mm; }`;
+      document.body.className = `print-${which}`;
+      const done = () => { document.body.className = ''; window.removeEventListener('afterprint', done); };
       window.addEventListener('afterprint', done);
       window.print();
     }
 
-    /* ---------- Export PDF vectoriel (texte sélectionnable) : jsPDF + AutoTable ---------- */
+    /* ---------- VRAIS EXPORTS PDF VECTORIELS DÉDIÉS (jsPDF + AutoTable) ---------- */
     const pdfSafe = (v) => String(v ?? '').replace(/\u00A0/g, ' ').replace(/[^\u0020-\u00FF\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026\u20AC]/g, '');
     const pdfDash = (v) => { const s = pdfSafe(v).trim(); return (s === '' || s === 'undefined') ? '-' : s; };
     const logoFormat = () => { const m = (LOGO.data || '').match(/^data:image\/(\w+)/); return m ? m[1].toUpperCase().replace('JPG', 'JPEG') : 'PNG'; };
 
-    function pdfHeader(doc, which, rep) {
-      const landscape = which === 'clim';
-      const W = doc.internal.pageSize.getWidth();
-      const M = 12;
-      const dark = [15, 23, 42];
-      const serreTxt = rep.serre === 'ALL' ? 'Toutes les serres' : rep.serre;
-
-      let tx = M;
-      if (LOGO.data) { try { doc.addImage(LOGO.data, logoFormat(), M, 8, 17, 17); tx = M + 21; } catch (e) { tx = M; } }
-      doc.setTextColor(...dark);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(20); doc.text('ARDIE', tx, 15);
-      doc.setFontSize(landscape ? 12 : 14);
-      doc.text(landscape ? 'RELEVÉS CLIMATIQUES SERRE ET IRRIGATION' : 'FICHE SUIVI JOURNALIER', tx, 22);
-      if (!landscape) {
-        doc.setFontSize(10); doc.setTextColor(51, 65, 85);
-        doc.text('VITROPLANTS FRUITS A PAIN', tx, 27.5);
-      }
-      doc.setFontSize(9);
-      doc.setTextColor(148, 163, 184); doc.text(rep.iso.slice(0, 4), W - M, 10, { align: 'right' });
-      doc.setTextColor(...dark);
-      doc.text((landscape ? 'Date : ' : 'Date du jour : ') + rep.fr, W - M, 16, { align: 'right' });
-      doc.setTextColor(6, 95, 70);
-      doc.text((landscape ? 'SERRE : ' : 'Emplacement : ') + pdfSafe(serreTxt), W - M, 21.5, { align: 'right' });
-      doc.setDrawColor(...dark); doc.setLineWidth(0.6); doc.line(M, 31, W - M, 31);
-    }
-
     function makePDF(which, rep) {
       const { jsPDF } = window.jspdf;
-      const landscape = which === 'clim';
+      const landscape = which !== 'plants';
       const doc = new jsPDF({ orientation: landscape ? 'landscape' : 'portrait', unit: 'mm', format: 'a4' });
       const W = doc.internal.pageSize.getWidth();
       const H = doc.internal.pageSize.getHeight();
-      const M = 12;
+      const M = 10;
       const dark = [15, 23, 42];
       const gridStyle = { lineColor: [148, 163, 184], lineWidth: 0.25, textColor: dark, font: 'helvetica' };
       const headStyle = { fillColor: [241, 245, 249], textColor: [30, 41, 59], fontStyle: 'bold', halign: 'center', valign: 'middle' };
+      const serreTxt = rep.serre === 'ALL' ? 'Toutes les serres' : rep.serre;
 
-      pdfHeader(doc, which, rep);
+      // En-tête générique
+      let tx = M;
+      if (LOGO.data) { try { doc.addImage(LOGO.data, logoFormat(), M, 8, 16, 16); tx = M + 20; } catch (e) { tx = M; } }
+      doc.setTextColor(...dark);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18); doc.text('ARDIE', tx, 15);
+      doc.setFontSize(landscape ? 11 : 13);
 
-      if (!landscape) {
-        /* ===== FICHE 1 : suivi journalier vitroplants ===== */
+      const titles = {
+        plants: 'FICHE SUIVI JOURNALIER - VITROPLANTS FRUITS A PAIN',
+        clim: 'RELEVÉS CLIMATIQUES SERRE ET IRRIGATION',
+        anom: "SUIVI JOURNALIER D'ANOMALIES / PERTES - VITRO PLANTS SOUS SURVEILLANCE",
+        acclim: "TABLEAU DE SUIVI - PHASE D'ACCLIMATATION"
+      };
+      doc.text(titles[which] || 'FICHE ARDIE', tx, 22);
+
+      doc.setFontSize(9);
+      doc.setTextColor(148, 163, 184); doc.text(rep.iso.slice(0, 4), W - M, 10, { align: 'right' });
+      doc.setTextColor(...dark);
+      doc.text('Date : ' + rep.fr, W - M, 16, { align: 'right' });
+      doc.setTextColor(6, 95, 70);
+      doc.text('SERRE : ' + pdfSafe(serreTxt), W - M, 21.5, { align: 'right' });
+      doc.setDrawColor(...dark); doc.setLineWidth(0.6); doc.line(M, 26, W - M, 26);
+
+      // CORPS SPÉCIFIQUE
+      if (which === 'plants') {
         const p = rep.data.plant;
         doc.setDrawColor(203, 213, 225); doc.setLineWidth(0.3);
-        doc.roundedRect(M, 36, W - 2 * M, 27, 1.5, 1.5);
-        doc.setTextColor(...dark); doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-        doc.text('Conditions climatiques intérieures :', M + 4, 43);
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(51, 65, 85);
-        doc.text('BRUMISATEUR AMBIANT : Durée : h24 / Fréquence : 7/7', M + 4, 50);
+        doc.roundedRect(M, 30, W - 2 * M, 22, 1.5, 1.5);
+        doc.setTextColor(...dark); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5);
+        doc.text('Conditions climatiques intérieures :', M + 4, 36);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(51, 65, 85);
+        doc.text('BRUMISATEUR AMBIANT : Durée : h24 / Fréquence : 7/7', M + 4, 42);
         const d = (p && p.eclairageDebut) ? fmtH(p.eclairageDebut) : '.......';
         const f = (p && p.eclairageFin) ? fmtH(p.eclairageFin) : '.......';
-        doc.text('ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Programmé de ' + d + ' à ' + f + ' / Fréquence : 7/7', M + 4, 56.5);
-
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...dark);
-        doc.text('QUANTITÉ VITRO PLANTS FRUITS À PAIN :', M, 71);
+        doc.text('ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Programmé de ' + d + ' à ' + f + ' / Fréquence : 7/7', M + 4, 48);
 
         const v = (k) => p ? pdfDash(p[k]) : '-';
         const agent = p ? ((p.intervenant && p.intervenant !== 'undefined') ? pdfSafe(p.intervenant) : '(non renseigné)') : 'Aucun bilan pour ce jour';
         doc.autoTable({
-          startY: 74,
+          startY: 56,
           margin: { left: M, right: M },
           theme: 'grid',
-          styles: Object.assign({ fontSize: 10, cellPadding: 3.2, valign: 'middle' }, gridStyle),
+          styles: Object.assign({ fontSize: 9.5, cellPadding: 3, valign: 'middle' }, gridStyle),
           headStyles: headStyle,
-          columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 28, halign: 'center', fontStyle: 'bold' }, 2: { cellWidth: 52 } },
+          columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 28, halign: 'center', fontStyle: 'bold' }, 2: { cellWidth: 55 } },
           head: [['Quantité', 'Nombre', 'Intervenant technicien']],
           body: [
             ['Nombre de vitro plants initial au démarrage', v('initial'), { content: agent, rowSpan: 5, styles: { valign: 'middle' } }],
@@ -1129,49 +1495,44 @@
               data.cell.styles.fillColor = [236, 253, 245];
               data.cell.styles.fontStyle = 'bold';
               data.cell.styles.textColor = [2, 44, 34];
-              if (data.column.index === 1) data.cell.styles.fontSize = 13;
             }
           }
         });
 
-        let y = doc.lastAutoTable.finalY + 12;
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...dark);
+        let y = doc.lastAutoTable.finalY + 10;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.setTextColor(...dark);
         doc.text('• Remarques / Observations supplémentaires :', M, y);
-        const obsRaw = p ? pdfSafe(p.observations).trim() : '';
-        const obs = (p && obsRaw && obsRaw !== '-') ? obsRaw : (p ? 'Aucune observation saisie.' : 'Aucun bilan enregistré.');
-        doc.setFont('helvetica', 'italic'); doc.setFontSize(10); doc.setTextColor(51, 65, 85);
+        const obs = (p && p.observations && p.observations !== '-') ? pdfSafe(p.observations) : 'Aucune observation saisie.';
+        doc.setFont('helvetica', 'italic'); doc.setFontSize(9); doc.setTextColor(51, 65, 85);
         const lines = doc.splitTextToSize(obs, W - 2 * M - 8);
-        const boxH = Math.max(28, lines.length * 5 + 10);
         doc.setDrawColor(203, 213, 225); doc.setFillColor(248, 250, 252);
-        doc.roundedRect(M, y + 3, W - 2 * M, boxH, 1.5, 1.5, 'FD');
-        doc.text(lines, M + 4, y + 10);
-      } else {
-        /* ===== FICHE 2 : relevés climatiques ===== */
+        doc.roundedRect(M, y + 3, W - 2 * M, Math.max(25, lines.length * 5 + 8), 1.5, 1.5, 'FD');
+        doc.text(lines, M + 4, y + 9);
+
+      } else if (which === 'clim') {
         const recs = rep.data.climats || [];
-        const nRows = Math.max(recs.length, 10);
-        const fs = nRows <= 16 ? 8 : (nRows <= 22 ? 7 : 6.5);
-        const pad = nRows <= 16 ? 2.2 : (nRows <= 22 ? 1.4 : 1);
-        const unit = (val, u) => { const s = pdfDash(val); return s === '-' ? s : s + u; };
         const body = recs.map(c => [
-          pdfDash(c.heure), unit(c.temp, '°C'), unit(c.hygro, '%'), pdfDash(c.lumens), unit(c.humTerreau, '%'),
+          pdfDash(c.heure), pdfDash(c.temp) + (c.temp && c.temp !== '-' ? '°C' : ''),
+          pdfDash(c.hygro) + (c.hygro && c.hygro !== '-' ? '%' : ''), pdfDash(c.lumens),
+          pdfDash(c.humTerreau) + (c.humTerreau && c.humTerreau !== '-' ? '%' : ''),
           pdfDash(c.ph), pdfDash(c.eclairage), pdfDash(c.arrosage), pdfDash(c.remarque),
           (c.intervenant && c.intervenant !== 'undefined') ? pdfSafe(c.intervenant) : '(non renseigné)'
         ]);
-        while (body.length < 10) body.push(['', '', '', '', '', '', '', '', '', '']);
+        while (body.length < 8) body.push(['', '', '', '', '', '', '', '', '', '']);
 
         doc.autoTable({
-          startY: 35,
-          margin: { left: M, right: M, bottom: 16 },
+          startY: 30,
+          margin: { left: M, right: M, bottom: 12 },
           theme: 'grid',
-          styles: Object.assign({ fontSize: fs, cellPadding: pad, valign: 'middle', halign: 'center', minCellHeight: 8 }, gridStyle),
-          headStyles: Object.assign({}, headStyle, { fontSize: fs }),
+          styles: Object.assign({ fontSize: 7.5, cellPadding: 2, valign: 'middle', halign: 'center', minCellHeight: 6 }, gridStyle),
+          headStyles: Object.assign({}, headStyle, { fontSize: 7.5 }),
           columnStyles: {
             0: { cellWidth: 14, fontStyle: 'bold' }, 1: { cellWidth: 18 }, 2: { cellWidth: 22 }, 3: { cellWidth: 16 },
             4: { cellWidth: 18 }, 5: { cellWidth: 12 }, 6: { cellWidth: 20 },
             7: { cellWidth: 55, halign: 'left' }, 8: { cellWidth: 52, halign: 'left' }, 9: { cellWidth: 46 }
           },
-          head: [['Heure', 'Température (°C)', 'Humidité ambiante (min 75%)', 'Lumens (Lux)', 'Humidité terreau', 'pH',
-                  'Éclairage artificiel (jour)', 'Arrosage manuel tuyau (7h30 et 16h30) / pulvérisateur', 'Remarques / Commentaires', 'Intervenant']],
+          head: [['Heure', 'Température', 'Humidité (min 75%)', 'Lumens', 'Hum. terreau', 'pH',
+                  'Éclairage jour', 'Arrosage tuyau (7h30 et 16h30) / pulvérisateur', 'Remarques / Commentaires', 'Intervenant']],
           body,
           didParseCell: (data) => {
             if (data.section === 'body' && data.column.index === 2) {
@@ -1181,9 +1542,65 @@
           }
         });
 
-        const yEnd = doc.lastAutoTable.finalY + 6;
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(8.5); doc.setTextColor(51, 65, 85);
-        if (yEnd < H - 8) doc.text('• Relevés réguliers toutes les 30 min à partir de 06h00.', M, yEnd);
+      } else if (which === 'anom') {
+        const anoms = rep.data.anomalies || [];
+        const body = anoms.map(an => [
+          pdfDash(an.date_entree) + '\n' + pdfDash(an.heure_entree),
+          pdfSafe(an.intervenant_entree), pdfDash(an.godet_num),
+          pdfDash(an.maladie_foliaire), pdfDash(an.ravageurs), pdfDash(an.pourriture_racines),
+          pdfDash(an.stress_hydrique), pdfSafe(an.autres_constats), pdfSafe(an.mesures_sanitaires),
+          pdfDash(an.statut_sortie) + (an.date_sortie && an.date_sortie !== '-' ? '\n' + pdfDash(an.date_sortie) : ''),
+          pdfSafe(an.intervenant_sortie)
+        ]);
+        while (body.length < 6) body.push(['', '', '', '', '', '', '', '', '', '', '']);
+
+        doc.autoTable({
+          startY: 30,
+          margin: { left: M, right: M, bottom: 12 },
+          theme: 'grid',
+          styles: Object.assign({ fontSize: 7, cellPadding: 1.8, valign: 'middle', halign: 'center', minCellHeight: 7 }, gridStyle),
+          headStyles: Object.assign({}, headStyle, { fontSize: 7 }),
+          columnStyles: {
+            0: { cellWidth: 18, fontStyle: 'bold' }, 1: { cellWidth: 26 }, 2: { cellWidth: 16, fontStyle: 'bold' },
+            3: { cellWidth: 18 }, 4: { cellWidth: 16 }, 5: { cellWidth: 18 }, 6: { cellWidth: 16 },
+            7: { cellWidth: 42, halign: 'left' }, 8: { cellWidth: 44, halign: 'left' }, 9: { cellWidth: 26, fontStyle: 'bold' }, 10: { cellWidth: 24 }
+          },
+          head: [
+            [{ content: 'Entrée', colSpan: 3 }, { content: 'Constats pathologiques', colSpan: 5 }, { content: 'Mesures', colSpan: 1 }, { content: 'Sortie', colSpan: 2 }],
+            ['Date / Heure', 'Intervenant', 'Godet N°', 'Foliaire', 'Ravageurs', 'Racines', 'Stress', 'Autres', 'Mesures sanitaires', 'Statut / Date', 'Intervenant']
+          ],
+          body
+        });
+
+      } else if (which === 'acclim') {
+        const acclims = rep.data.acclimatation || [];
+        const lotTxt = acclims.length ? (acclims[0].lot_numero || '1/12') : '1/12';
+        const agTxt = acclims.length ? (acclims[0].intervenant || '-') : '-';
+
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'bold');
+        doc.text(`Test échantillonnage 10% sur lot N° : ${lotTxt}  |  Intervenant(s) : ${agTxt}`, M, 30);
+
+        const body = acclims.map(ac => [
+          pdfDash(ac.num_plante), pdfDash(ac.taille_cm), pdfDash(ac.nb_feuilles), pdfSafe(ac.couleur_feuilles),
+          pdfSafe(ac.aspect_tige), pdfSafe(ac.vigueur), pdfDash(ac.temp_substrat), pdfDash(ac.hum_substrat),
+          pdfDash(ac.ph_substrat), pdfDash(ac.maladie_foliaire), pdfDash(ac.ravageurs),
+          pdfDash(ac.pourriture_racines), pdfDash(ac.maladie_fongique)
+        ]);
+        while (body.length < 10) body.push([body.length + 1, '', '', '', '', '', '', '', '', '', '', '', '']);
+
+        doc.autoTable({
+          startY: 33,
+          margin: { left: M, right: M, bottom: 12 },
+          theme: 'grid',
+          styles: Object.assign({ fontSize: 7.2, cellPadding: 1.8, valign: 'middle', halign: 'center', minCellHeight: 6 }, gridStyle),
+          headStyles: Object.assign({}, headStyle, { fontSize: 7 }),
+          columnStyles: { 0: { cellWidth: 10, fontStyle: 'bold' } },
+          head: [
+            [{ content: 'VP', rowSpan: 2 }, { content: 'Suivi morphologique', colSpan: 5 }, { content: 'Suivi conditions', colSpan: 3, styles: { fillColor: [236, 253, 245] } }, { content: 'Suivi sanitaire (Oui / Non)', colSpan: 4 }],
+            ['Taille (cm)', 'Feuilles', 'Couleur', 'Tige', 'Vigueur', 'T° substrat', 'Humidité', 'pH', 'Foliaire', 'Ravageurs', 'Racine', 'Fongique']
+          ],
+          body
+        });
       }
 
       // Pied de page
@@ -1192,13 +1609,13 @@
         doc.setPage(i);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(148, 163, 184);
         const now = new Date();
-        doc.text('ARDIE - document généré le ' + now.toLocaleDateString('fr-FR') + ' à ' + localHHmm(now) + (n > 1 ? '  -  page ' + i + '/' + n : ''), W / 2, H - 5, { align: 'center' });
+        doc.text('ARDIE - document officiel généré le ' + now.toLocaleDateString('fr-FR') + ' à ' + localHHmm(now) + (n > 1 ? '  -  page ' + i + '/' + n : ''), W / 2, H - 4, { align: 'center' });
       }
       return doc;
     }
 
     async function exportPDF(which) {
-      if (!window.jspdf || !window.jspdf.jsPDF) return toast('Moteur PDF non chargé (connexion ?)', 'err');
+      if (!window.jspdf || !window.jspdf.jsPDF) return toast('Moteur PDF non chargé (vérifiez le réseau)', 'err');
       const iso = $('rep-date').value;
       const serre = $('rep-serre-filter').value || 'ALL';
       if (!iso) return toast('Sélectionnez une date', 'err');
@@ -1206,16 +1623,17 @@
       if (!lastReport) return;
       try {
         const doc = makePDF(which, lastReport);
+        const fileNames = { plants: 'Fiche1_Plants', clim: 'Fiche2_Climat', anom: 'Fiche3_Anomalies', acclim: 'Fiche4_Acclimatation' };
         const sName = (lastReport.serre === 'ALL' ? 'toutes' : lastReport.serre).replace(/\s+/g, '-');
-        doc.save(`ARDIE_${which === 'plants' ? 'Fiche1_Plants' : 'Fiche2_Climat'}_${sName}_${iso}.pdf`);
+        doc.save(`ARDIE_${fileNames[which] || which}_${sName}_${iso}.pdf`);
         toast('PDF téléchargé ✔');
       } catch (err) {
         console.error(err);
-        toast('Échec du PDF : ' + err.message, 'err');
+        toast('Échec PDF : ' + err.message, 'err');
       }
     }
 
-    /* ---------- PWA : installation + service worker ---------- */
+    /* ---------- PWA : Installation & Service Worker ---------- */
     let deferredInstall = null;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -1238,12 +1656,11 @@
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
           .then(() => navigator.serviceWorker.ready)
-          .then(() => { checkOfflineReady(); setTimeout(checkOfflineReady, 4000); setTimeout(checkOfflineReady, 12000); })
-          .catch(err => { console.warn('SW :', err); $('offline-ready').textContent = '⚠ Mode hors ligne indisponible'; });
+          .then(() => { checkOfflineReady(); })
+          .catch(err => { console.warn('SW :', err); });
       });
     }
 
-    // Indicateur : la page et les bibliothèques sont-elles bien en mémoire pour un usage sans réseau ?
     const OFFLINE_ASSETS = [
       'https://cdn.tailwindcss.com/3.4.17',
       'https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js',
@@ -1259,59 +1676,22 @@
         const okLibs = checks.slice(1).every(Boolean);
         const okCfg = !!store.get('ardie_config');
         if (okPage && okLibs && okCfg) el.textContent = '✔ Prêt hors ligne';
-        else if (okPage && okLibs) el.textContent = '⏳ Hors ligne : ouvrez une fois avec du réseau (listes serres/agents)';
-        else el.textContent = '⏳ Préparation hors ligne… gardez le réseau quelques secondes';
-      } catch (e) { /* ignoré */ }
+        else if (okPage && okLibs) el.textContent = '⏳ Hors ligne : ouvrez avec du réseau pour synchroniser';
+        else el.textContent = '⏳ Préparation hors ligne…';
+      } catch (e) {}
     }
-
-    function closeHelp() { $('help-modal').classList.add('hidden'); }
-    async function showInstallHelp() {
-      const lines = [];
-      const add = (good, txt) => lines.push((good ? '✅ ' : '❌ ') + txt);
-      add(location.protocol === 'https:', 'Adresse sécurisée (https)');
-      let man = null;
-      try {
-        const r = await fetch('manifest.json', { cache: 'no-store' });
-        add(r.ok, r.ok ? 'manifest.json trouvé' : 'manifest.json introuvable : à déposer à côté de index.html');
-        if (r.ok) man = await r.json();
-      } catch (e) { add(false, 'manifest.json illisible ou introuvable'); }
-      if (man) {
-        for (const sz of [192, 512]) {
-          const ic = (man.icons || []).find(i => String(i.sizes).split(' ').includes(sz + 'x' + sz));
-          if (!ic) { add(false, `Icône ${sz}×${sz} absente du manifest`); continue; }
-          const dim = await new Promise(res => { const im = new Image(); im.onload = () => res([im.naturalWidth, im.naturalHeight]); im.onerror = () => res(null); im.src = ic.src + '?t=' + Date.now(); });
-          if (!dim) add(false, `${ic.src} introuvable dans le dépôt GitHub`);
-          else add(dim[0] === sz && dim[1] === sz, `${ic.src} : ${dim[0]}×${dim[1]} px` + ((dim[0] === sz && dim[1] === sz) ? '' : ` (doit faire exactement ${sz}×${sz})`));
-        }
-      }
-      add(!!(navigator.serviceWorker && navigator.serviceWorker.controller), 'Service worker actif (si ❌ : rechargez la page une fois)');
-      const standalone = window.matchMedia('(display-mode: standalone)').matches;
-      lines.push(standalone ? 'ℹ️ Vous êtes déjà dans l\'application installée.'
-        : (deferredInstall ? '✅ Le navigateur propose l\'installation : utilisez le bouton « Installer » en haut.'
-                           : '⏳ Le navigateur ne propose pas (encore) l\'installation automatique.'));
-      $('help-body').innerHTML =
-        lines.map(l => `<div>${esc(l)}</div>`).join('') +
-        `<div class="pt-2 mt-2 border-t font-bold text-slate-800">Installer à la main</div>
-         <div><b>Android (Chrome)</b> : menu ⋮ puis « Installer l'application ». Si vous ne voyez que « Ajouter à l'écran d'accueil », c'est un simple raccourci : corrigez les ❌ ci-dessus.</div>
-         <div><b>Windows (Edge / Chrome)</b> : icône d'installation à droite de la barre d'adresse, ou menu ⋯ puis Applications puis « Installer ce site en tant qu'application ».</div>
-         <div><b>iPhone / iPad (Safari)</b> : Partager puis « Sur l'écran d'accueil ».</div>
-         <div class="text-slate-500">Ouvrez bien l'adresse dans Chrome ou Edge, pas depuis Facebook, WhatsApp ou un lien intégré à une autre application.</div>`;
-      $('help-modal').classList.remove('hidden');
-    }
-    // Diagnostic masqué par défaut : ajoutez #diag à l'adresse de la page pour l'afficher
-    window.addEventListener('DOMContentLoaded', () => {
-      if (location.hash === '#diag') $('btn-install-help').classList.remove('hidden');
-    });
 
     /* ---------- Onglets ---------- */
     function switchTab(id) {
-      ['clim', 'plants', 'reports', 'admin'].forEach(k => {
+      ['clim', 'plants', 'anom', 'acclim', 'reports', 'admin'].forEach(k => {
         $(`tab-${k}`).classList.toggle('hidden', k !== id);
         const b = $(`btn-${k}`);
-        b.classList.toggle('bg-white', k === id);
-        b.classList.toggle('text-emerald-900', k === id);
-        b.classList.toggle('shadow-sm', k === id);
-        b.classList.toggle('text-slate-600', k !== id);
+        if (b) {
+          b.classList.toggle('bg-white', k === id);
+          b.classList.toggle('text-emerald-900', k === id);
+          b.classList.toggle('shadow-sm', k === id);
+          b.classList.toggle('text-slate-600', k !== id);
+        }
       });
       if (id === 'clim') $('c-heure').value = localHHmm();
       if (id === 'plants') checkTodayPlant();
