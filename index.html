@@ -29,7 +29,7 @@
     body.sun input, body.sun select, body.sun textarea { border: 2px solid #000 !important; background: #fff !important; color: #000 !important; }
     body.sun .card { border: 2px solid #000 !important; }
 
-    /* RÈGLE D'IMPRESSION PROPRE SANS ÉCRAN BLANC NI POLLUTION */
+    /* IMPRESSION STRICTEMENT LIMITÉE À LA FICHE */
     @media print {
       header, .no-print, #toast, #auth-overlay, #passport-modal, #admin-lock-modal { display: none !important; }
       body { background: #fff !important; padding: 0 !important; margin: 0 !important; min-height: 0 !important; }
@@ -113,7 +113,7 @@
           <p><strong>Pertes (Morts) :</strong> <span id="pass-morts" class="font-bold text-red-700">--</span> plants</p>
         </div>
       </div>
-      <button onclick="printFiche()" class="btn w-full bg-emerald-700 hover:bg-emerald-800 text-xs">
+      <button onclick="window.print()" class="btn w-full bg-emerald-700 hover:bg-emerald-800 text-xs">
         <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimer l'étiquette QR Code</span>
       </button>
     </div>
@@ -152,8 +152,8 @@
         <button onclick="toggleSun()" title="Mode plein soleil" class="w-11 h-11 hover:bg-emerald-800 rounded-lg flex items-center justify-center active:scale-95">
           <i data-lucide="sun" class="w-5 h-5 text-amber-300"></i>
         </button>
-        <!-- BOUTON ACTUALISER PLEINEMENT CONNECTÉ -->
-        <button onclick="manualRefresh()" title="Actualiser" class="w-11 h-11 hover:bg-emerald-800 rounded-lg flex items-center justify-center active:scale-95">
+        <!-- BOUTON ACTUALISER PLEINEMENT OPÉRATIONNEL -->
+        <button onclick="manualRefresh()" title="Actualiser les données" class="w-11 h-11 hover:bg-emerald-800 rounded-lg flex items-center justify-center active:scale-95">
           <i data-lucide="refresh-cw" id="sync-icon" class="w-5 h-5 text-emerald-100"></i>
         </button>
       </div>
@@ -274,12 +274,10 @@
           <div><label class="lbl" for="an-date-entree">Date d'entrée</label><input type="date" id="an-date-entree" required class="inp"></div>
           <div><label class="lbl" for="an-heure-entree">Heure d'entrée</label><input type="time" id="an-heure-entree" required class="inp"></div>
           <div>
-            <!-- QUANTITÉ PRISE EN COMPTE EXACTE -->
             <label class="lbl text-amber-950" for="an-quantite">Quantité (plants)</label>
             <input type="number" inputmode="numeric" min="1" id="an-quantite" value="1" required class="inp !bg-amber-50 text-center font-black">
           </div>
           <div>
-            <!-- GODET FACULTATIF -->
             <label class="lbl" for="an-godet-num">Godet / Repère (Optionnel)</label>
             <input type="text" id="an-godet-num" placeholder="ex: Bac B ou 12" class="inp">
           </div>
@@ -304,7 +302,7 @@
           </div>
         </div>
 
-        <!-- 2 BOUTONS DISTINCTS CLAIRS -->
+        <!-- 2 BOUTONS DISTINCTS BIEN SÉPARÉS -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
           <button type="button" onclick="submitAnomAction('Isolement')" class="btn bg-slate-700 hover:bg-slate-800">
             <i data-lucide="shield" class="w-5 h-5 text-amber-400"></i><span>1. Isoler uniquement</span>
@@ -430,15 +428,17 @@
       </form>
     </div>
 
-    <!-- 5. FICHES & PDF VECTORIELS -->
+    <!-- 5. FICHES & PDF VECTORIELS (AVEC FILTRE PAR LOT) -->
     <div id="tab-reports" class="space-y-4 hidden">
       <div class="card">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
           <div><label class="lbl" for="rep-date">Date</label><input type="date" id="rep-date" class="inp"></div>
-          <div><label class="lbl" for="rep-serre-filter">Serre</label><select id="rep-serre-filter" class="inp"></select></div>
-          <button onclick="loadDailySheet()" id="btn-load" class="btn col-span-2 bg-emerald-700 hover:bg-emerald-800"><i data-lucide="search" class="w-5 h-5"></i><span>Charger les données</span></button>
+          <div><label class="lbl" for="rep-serre-filter">Serre</label><select id="rep-serre-filter" class="inp" onchange="loadLotsForReport(this.value)"></select></div>
+          <!-- FILTRE LOT INTÉGRÉ DIRECTEMENT DANS LES RAPPORTS -->
+          <div><label class="lbl" for="rep-lot-filter">Lot rattaché</label><select id="rep-lot-filter" class="inp"></select></div>
         </div>
-        <div id="rep-test-wrap" class="hidden"><label class="lbl" for="rep-test">Test d'acclimatation affiché</label><select id="rep-test" class="inp" onchange="loadDailySheet(this.value)"></select></div>
+        <button onclick="loadDailySheet()" id="btn-load" class="btn w-full bg-emerald-700 hover:bg-emerald-800"><i data-lucide="search" class="w-5 h-5"></i><span>Charger les données du lot</span></button>
+        
         <div class="grid grid-cols-2 md:grid-cols-4 gap-2 pt-2 border-t">
           <button onclick="showReportView('plants')" id="btn-view-plants" class="min-h-[44px] text-xs font-bold rounded-lg bg-emerald-800 text-white">Fiche 1 : Plants</button>
           <button onclick="showReportView('clim')" id="btn-view-clim" class="min-h-[44px] text-xs font-bold rounded-lg bg-slate-300 text-slate-900">Fiche 2 : Climat</button>
@@ -450,7 +450,7 @@
           <button onclick="exportPDF('clim')" class="btn-sm bg-red-700 hover:bg-red-800"><i data-lucide="download" class="w-4 h-4"></i>PDF Fiche 2</button>
           <button onclick="exportPDF('anom')" class="btn-sm bg-red-700 hover:bg-red-800"><i data-lucide="download" class="w-4 h-4"></i>PDF Fiche 3</button>
           <button onclick="exportPDF('acclim')" class="btn-sm bg-red-700 hover:bg-red-800"><i data-lucide="download" class="w-4 h-4"></i>PDF Fiche 4</button>
-          <!-- BOUTON IMPRESSION PHYSIQUE RÉPARÉ -->
+          <!-- IMPRESSION PHYSIQUE PARFAITEMENT DÉLIMITÉE -->
           <button onclick="printFiche()" class="col-span-2 md:col-span-4 btn bg-slate-800 hover:bg-slate-900 text-white">
             <i data-lucide="printer" class="w-5 h-5"></i><span>Imprimer la fiche affichée</span>
           </button>
@@ -562,10 +562,11 @@
       </div></div>
     </div>
 
-    <!-- 6. ADMIN (ACCÈS SÉCURISÉ) -->
+    <!-- 6. ADMIN -->
     <div id="tab-admin" class="space-y-4 hidden">
       <div class="card">
         <h3 class="font-bold text-slate-900 flex items-center gap-2"><i data-lucide="lock" class="w-5 h-5 text-emerald-700"></i>Sécurité de l'application</h3>
+        <p class="text-xs text-slate-500 mb-3">Verrouillez l'écran ou modifiez les codes d'accès.</p>
         <div class="flex flex-wrap gap-2">
           <button onclick="lockApp()" class="btn-sm bg-slate-700"><i data-lucide="lock" class="w-4 h-4"></i>Verrouiller l'écran</button>
           <button onclick="changePassword()" class="btn-sm !text-slate-900 bg-slate-200 border-2 border-slate-400">Modifier le code d'accès</button>
@@ -658,7 +659,6 @@
     if (n && n.length >= 4) { store.set('ardie_password', n); toast("Mot de passe modifié ✔"); }
   }
 
-  /* ---------- CONTRÔLE D'ACCÈS SPÉCIFIQUE ONGLET ADMIN ---------- */
   function openAdminTab() {
     if (adminUnlocked) {
       switchTab('admin');
@@ -681,7 +681,6 @@
     }
   }
 
-  /* ---------- PASSEPORT & QR CODE DU LOT ---------- */
   function openPassportModal() {
     const k = lastKpi;
     if (!k || !k.hasLot) return toast('Aucun lot actif pour générer un passeport.', 'err');
@@ -698,13 +697,13 @@
   }
   function closePassportModal() { $('passport-modal').classList.add('hidden'); }
 
-  // FONCTION ACTUALISER MANUELLE TOTALEMENT CONNECTÉE
-  function manualRefresh() {
+  // ACTUALISATION MANUELLE COMPLÈTE
+  async function manualRefresh() {
     const icon = $('sync-icon');
     if (icon) icon.classList.add('animate-spin');
-    loadConfig();
+    await loadConfig();
     refreshSerre();
-    toast("Données et inventaire actualisés ✔");
+    toast("Données synchronisées ✔");
     setTimeout(() => { if (icon) icon.classList.remove('animate-spin'); }, 800);
   }
 
@@ -720,7 +719,10 @@
 
     $('global-serre').addEventListener('change', e => {
       store.set('ardie_serre', e.target.value);
-      if ([...$('rep-serre-filter').options].some(o => o.value === e.target.value)) $('rep-serre-filter').value = e.target.value;
+      if ([...$('rep-serre-filter').options].some(o => o.value === e.target.value)) {
+        $('rep-serre-filter').value = e.target.value;
+        loadLotsForReport(e.target.value);
+      }
       refreshSerre();
     });
     $('global-intervenant').addEventListener('change', e => store.set('ardie_agent', e.target.value));
@@ -794,7 +796,7 @@
   }
 
   class NetworkError extends Error {}
-  const QUEUE_KEY = 'ardie_queue_v8';
+  const QUEUE_KEY = 'ardie_queue_v9';
   const QUEUED_MSG = "Hors ligne : saisie conservée sur l'appareil, envoi automatique dès le retour du réseau.";
   let flushing = false;
   const uid = () => (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : ('id' + Date.now() + Math.random().toString(16).slice(2));
@@ -829,6 +831,7 @@
 
   async function submitOrQueue(payload) {
     payload.clientId = payload.clientId || uid();
+    // TAMPONNE OBLIGATOIREMENT L'ID DU LOT EN COURS
     if (lastKpi && lastKpi.hasLot && !payload.lot_id) {
       payload.lot_id = lastKpi.lot.id;
     }
@@ -932,12 +935,12 @@
     const s = $('global-serre').value;
     updateKpi(s);
     loadSurvList();
+    loadLotsForReport(s);
   }
 
   function renderSelects() {
     const sSerre = $('global-serre'), sAgent = $('global-intervenant'), rSerre = $('rep-serre-filter');
-    const prevSerre = sSerre.value || store.get('ardie_serre') || '';
-    const prevAgent = sAgent.value || store.get('ardie_agent') || '';
+    const prevSerre = sSerre.value || store.get('ardie_serre') || '', prevAgent = sAgent.value || store.get('ardie_agent') || '';
 
     if (state.emplacements.length) {
       sSerre.innerHTML = '<option value="" disabled>Choisir une serre...</option>' + state.emplacements.map(e => `<option value="${esc(e)}">🌱 ${esc(e)}</option>`).join('');
@@ -973,7 +976,7 @@
     if ((el = t('[data-sortie]'))) return cloturerSurveillance(el.dataset.godet, el.dataset.sortie, el.dataset.id);
   });
 
-  /* ---------- HUD / INVENTAIRE EN TEMPS RÉEL (AVEC AFFICHAGE DU LOT COMPLET) ---------- */
+  /* ---------- HUD / INVENTAIRE EN TEMPS RÉEL PAR LOT ---------- */
   async function updateKpi(serre) {
     $('kpi-serre-name').textContent = serre || '--';
     if (!serre) return;
@@ -989,21 +992,20 @@
       $('kpi-formula').textContent = has ? `${k.initial} initial − ${k.morts} morts − ${k.surveillance} surveillance − ${k.distribues} distribués = ${k.sainsRaw} sains` : '';
       $('kpi-time-label').textContent = 'Mis à jour ' + localHHmm();
 
-      // CONTRÔLE VISUEL STRICT DE DÉMARRAGE DE LOT
+      // CONTRÔLE VISUEL DU LOT
       const pill = $('lot-status-pill');
       pill.textContent = has ? 'EN COURS' : 'AUCUN LOT';
       pill.className = 'text-xs font-black px-2 py-1 rounded ' + (has ? 'bg-emerald-200 text-emerald-950' : 'bg-red-200 text-red-950');
 
-      // CONTRÔLE DE SÉCURITÉ : DÉSACTIVE LE BOUTON DÉMARRER SI DÉJÀ ACTIF
       $('btn-lot-start').disabled = has;
       $('btn-lot-close').disabled = !has;
 
-      // INJECTION DES INFOS DU LOT (PLUS JAMAIS DE --)
+      // INFOS DU LOT AFFICHÉES SANS AUCUN DÉFAUT
       $('lot-card-info').innerHTML = has
         ? `<b>Lot actif : ${esc(k.lot.id)}</b> • Démarré le ${esc(k.lot.debut)} • Effectif initial : <b>${k.initial} plants</b><br><span class="text-xs text-slate-600">Culture saine en serre : <b>${k.sains}</b> | Sous surveillance : <b>${k.surveillance}</b> | Pertes cumulées : <b>${k.morts}</b></span>`
         : 'Aucun lot actif pour cette serre. Cliquez sur Démarrer un lot.';
 
-      // Pré-remplit automatiquement le nombre initial avec le reste sain !
+      // Met à jour automatiquement le nombre de départ avec les plants sains restants !
       $('p-initial').value = has ? (k.sains > 0 ? k.sains : k.initial) : '';
       $('btn-submit-plants').disabled = !has;
       $('dist-dispo').textContent = 'Dispo : ' + (has ? k.sains : '--');
@@ -1029,7 +1031,7 @@
     $('lot-modal-initial').value = (lastKpi && lastKpi.hasLot) ? lastKpi.initial : '800';
     if (mode === 'start') {
       if (lastKpi && lastKpi.hasLot) {
-        return alert("Un lot est déjà en cours d'exploitation sur cette serre. Vous devez d'abord le clôturer avant d'en démarrer un nouveau.");
+        return alert("Un lot est déjà en cours sur cette serre. Vous devez d'abord le clôturer avant d'en démarrer un nouveau.");
       }
       $('lot-modal-title').textContent = `Démarrer un lot : ${ctx.serre}`;
       $('lot-modal-label').textContent = 'Nombre de vitroplants au démarrage';
@@ -1147,7 +1149,6 @@
     }
   });
 
-  // 2 BOUTONS DISTINCTS BIEN SÉPARÉS
   async function submitAnomAction(actionType) {
     const ctx = requireSerreAgent(); if (!ctx) return;
     const oui = $('an-mesures-choix').value === 'Oui', det = $('an-mesures-detail').value.trim();
@@ -1155,7 +1156,7 @@
 
     const payload = {
       type: 'ANOMALIE',
-      action_type: actionType, // 'Isolement' ou 'Surveillance'
+      action_type: actionType,
       date_entree: $('an-date-entree').value || localISODate(),
       heure_entree: $('an-heure-entree').value || localHHmm(),
       serre: ctx.serre,
@@ -1213,7 +1214,20 @@
     if (r) { buildAccCards(); $('ac-heure').value = localHHmm(); }
   });
 
-  /* ---------- FICHES & RAPPORTS PDF ---------- */
+  /* ---------- GESTION DES RAPPORTS & SÉLECTION DU LOT ---------- */
+  async function loadLotsForReport(serre) {
+    const sel = $('rep-lot-filter');
+    if (!serre) { sel.innerHTML = '<option value="">Tous les lots</option>'; return; }
+    try {
+      const d = await getJSON({ action: 'getLots', serre });
+      const items = d.items || [];
+      sel.innerHTML = '<option value="">Lot actif (en cours)</option>' +
+        items.map(l => `<option value="${esc(l.id)}">${esc(l.id)} (${esc(l.statut)})</option>`).join('');
+    } catch (e) {
+      sel.innerHTML = '<option value="">Lot actif</option>';
+    }
+  }
+
   function showReportView(view) {
     currentView = view;
     ['plants', 'clim', 'anom', 'acclim'].forEach(v => {
@@ -1227,6 +1241,7 @@
       }
     });
   }
+
   const dash = (v) => (v === undefined || v === null || String(v).trim() === '' || String(v) === 'undefined') ? '-' : esc(v);
   const T = (id, v) => { const el = $(id); if (el) el.textContent = v; };
 
@@ -1234,10 +1249,12 @@
     const iso = $('rep-date').value;
     if (!iso) return toast('Sélectionnez une date', 'err');
     const serre = $('rep-serre-filter').value || 'ALL';
+    const lotId = $('rep-lot-filter').value || '';
     const fr = isoToFR(iso), btn = $('btn-load'); btn.disabled = true;
 
     try {
-      const params = { action: 'getReports', date: iso, serre };
+      const params = { action: 'getReports', date: iso, serre: serre };
+      if (lotId) params.lot_id = lotId;
       if (testKey) params.test = testKey;
       const data = await getJSON(params, 30000);
       lastReport = { iso, serre, fr, data };
@@ -1293,17 +1310,13 @@
       for (let i = acc.length; i < 10; i++) h4 += `<tr><td class="${cell} text-center font-bold bg-slate-100">${i + 1}</td>${Array(12).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
       $('f4-tbody').innerHTML = h4; T('f4-empty', acc.length ? '' : `Aucun test pour le ${fr}.`);
 
-      const tests = data.acclimTests || [], wrap = $('rep-test-wrap');
-      wrap.classList.toggle('hidden', tests.length < 2);
-      $('rep-test').innerHTML = tests.map(t => `<option value="${esc(t.key)}" ${t.key === data.acclimChosen ? 'selected' : ''}>${esc(t.label)}</option>`).join('');
-
       showReportView(currentView);
       toast(`Données chargées ✔`);
     } catch (err) { lastReport = null; toast('Chargement impossible : ' + err.message, 'err'); }
     finally { btn.disabled = false; }
   }
 
-  /* ---------- IMPRESSION PHYSIQUE RÉPARÉE (AUCUN ÉCRAN BLANC) ---------- */
+  // IMPRESSION PROPRE RÉPARÉE (AUCUN ÉLÉMENT PARASITE)
   function printFiche() {
     const which = currentView;
     document.body.className = `print-${which}`;
@@ -1464,8 +1477,9 @@
   async function exportPDF(which) {
     if (!window.jspdf || !window.jspdf.jsPDF) return toast('Moteur PDF non chargé (vérifiez le réseau)', 'err');
     const iso = $('rep-date').value, serre = $('rep-serre-filter').value || 'ALL';
+    const lotId = $('rep-lot-filter').value || '';
     if (!iso) return toast('Sélectionnez une date', 'err');
-    if (!lastReport || lastReport.iso !== iso || lastReport.serre !== serre) await loadDailySheet();
+    await loadDailySheet();
     if (!lastReport) return;
     try {
       const doc = makePDF(which, lastReport);
@@ -1550,7 +1564,10 @@
     if (id === 'plants') updateKpi($('global-serre').value);
     if (id === 'reports') {
       const s = $('global-serre').value;
-      if (s && [...$('rep-serre-filter').options].some(o => o.value === s)) $('rep-serre-filter').value = s;
+      if (s && [...$('rep-serre-filter').options].some(o => o.value === s)) {
+        $('rep-serre-filter').value = s;
+        loadLotsForReport(s);
+      }
       loadDailySheet();
     }
     icons();
