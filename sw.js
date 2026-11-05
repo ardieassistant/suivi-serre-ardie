@@ -1,17 +1,27 @@
 /* Service worker ARDIE Serres : app installable + ouverture même sans réseau.
+   - Installation : on mémorise tout de suite la page ET les bibliothèques externes (Tailwind, Lucide, jsPDF).
    - Fichiers du site : réseau d'abord (les mises à jour arrivent), cache en secours.
    - Bibliothèques CDN : cache d'abord, rafraîchi en arrière-plan.
    - Google Apps Script (données) : JAMAIS mis en cache.
    Pour forcer une mise à jour du cache : changer VERSION ci-dessous. */
-const VERSION = 'ardie-serre-v1';
+const VERSION = 'ardie-serre-v2';
 const SHELL = ['./', './index.html', './manifest.json', './logo.png', './icon-192.png', './icon-512.png'];
+const CDN = [
+  'https://cdn.tailwindcss.com/3.4.17',
+  'https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'
+];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(VERSION)
-      .then(c => Promise.all(SHELL.map(u => c.add(u).catch(() => {}))))
-      .then(() => self.skipWaiting())
-  );
+  e.waitUntil((async () => {
+    const c = await caches.open(VERSION);
+    await Promise.all(SHELL.map(u => c.add(u).catch(() => {})));
+    await Promise.all(CDN.map(u =>
+      fetch(new Request(u, { mode: 'no-cors' })).then(r => c.put(u, r)).catch(() => {})
+    ));
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', (e) => {
@@ -36,12 +46,14 @@ self.addEventListener('fetch', (e) => {
       fetch(req).then(res => {
         if (res && res.ok) { const copy = res.clone(); caches.open(VERSION).then(c => c.put(req, copy)); }
         return res;
-      }).catch(() => caches.match(req).then(r => r || caches.match('./index.html')))
+      }).catch(() =>
+        caches.match(req, { ignoreSearch: true }).then(r => r || caches.match('./index.html') || caches.match('./'))
+      )
     );
     return;
   }
 
-  // Bibliothèques externes (Tailwind, Lucide, jsPDF...)
+  // Bibliothèques externes (Tailwind, Lucide, jsPDF...) : cache d'abord
   e.respondWith(
     caches.match(req).then(cached => {
       const net = fetch(req).then(res => {
