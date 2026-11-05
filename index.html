@@ -1028,7 +1028,7 @@
   function openLotModal(mode) {
     const ctx = requireSerreAgent(); if (!ctx) return;
     lotMode = mode;
-    $('lot-modal-initial').value = (lastKpi && lastKpi.hasLot) ? lastKpi.initial : '800';
+    $('lot-modal-initial').value = (lastKpi && lastKpi.hasLot) ? lastKpi.initial : '650';
     if (mode === 'start') {
       if (lastKpi && lastKpi.hasLot) {
         return alert("Un lot est déjà en cours sur cette serre. Vous devez d'abord le clôturer avant d'en démarrer un nouveau.");
