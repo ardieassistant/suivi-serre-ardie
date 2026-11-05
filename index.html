@@ -47,7 +47,7 @@
           <h1 class="text-sm md:text-base font-bold leading-none">Vitroplants Fruit à Pain</h1>
           <p class="text-[11px] text-emerald-300 mt-0.5" id="date-label">Chargement...</p>
           <p class="text-[10px] text-emerald-200/80" id="offline-ready"></p>
-          <button id="btn-install-help" onclick="showInstallHelp()" class="text-[10px] underline text-emerald-200">Installer l'application ? (diagnostic)</button>
+          <button id="btn-install-help" onclick="showInstallHelp()" class="hidden text-[10px] underline text-emerald-200">Installer l'application ? (diagnostic)</button>
         </div>
       </div>
       <button onclick="loadConfig()" title="Actualiser" class="p-2 hover:bg-emerald-800 rounded-lg transition active:scale-95">
@@ -1298,9 +1298,10 @@
          <div class="text-slate-500">Ouvrez bien l'adresse dans Chrome ou Edge, pas depuis Facebook, WhatsApp ou un lien intégré à une autre application.</div>`;
       $('help-modal').classList.remove('hidden');
     }
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      window.addEventListener('DOMContentLoaded', () => $('btn-install-help').classList.add('hidden'));
-    }
+    // Diagnostic masqué par défaut : ajoutez #diag à l'adresse de la page pour l'afficher
+    window.addEventListener('DOMContentLoaded', () => {
+      if (location.hash === '#diag') $('btn-install-help').classList.remove('hidden');
+    });
 
     /* ---------- Onglets ---------- */
     function switchTab(id) {
