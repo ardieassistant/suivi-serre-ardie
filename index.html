@@ -31,6 +31,23 @@
 
     /* RÈGLE D'ISOLATION D'IMPRESSION ABSOLUE (AUCUN ÉLÉMENT PARASITE) */
     @media print {
+      @page {
+        margin: 5mm;
+      }
+      html, body {
+        background: #fff !important;
+        color: #000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      header, footer, nav, .no-print, #toast, #auth-overlay, #passport-modal, #admin-lock-modal, #banner, #queue-bar, #install-bar, .card {
+        display: none !important;
+      }
       body * {
         visibility: hidden !important;
       }
@@ -45,9 +62,13 @@
         min-width: 0 !important;
         max-width: 100% !important;
         margin: 0 !important;
-        padding: 5mm !important;
+        padding: 0 !important;
         border: none !important;
         box-shadow: none !important;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
     }
   </style>
