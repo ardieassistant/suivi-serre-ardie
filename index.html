@@ -47,6 +47,7 @@
           <h1 class="text-sm md:text-base font-bold leading-none">Vitroplants Fruit à Pain</h1>
           <p class="text-[11px] text-emerald-300 mt-0.5" id="date-label">Chargement...</p>
           <p class="text-[10px] text-emerald-200/80" id="offline-ready"></p>
+          <button id="btn-install-help" onclick="showInstallHelp()" class="text-[10px] underline text-emerald-200">Installer l'application ? (diagnostic)</button>
         </div>
       </div>
       <button onclick="loadConfig()" title="Actualiser" class="p-2 hover:bg-emerald-800 rounded-lg transition active:scale-95">
@@ -434,6 +435,17 @@
       </div>
     </div>
   </main>
+
+  <!-- Aide installation -->
+  <div id="help-modal" class="no-print hidden fixed inset-0 z-[70] bg-black/50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl max-w-md w-full p-4 max-h-[85vh] overflow-auto">
+      <div class="flex justify-between items-center mb-2">
+        <h3 class="font-bold text-sm text-slate-800">Installation de l'application</h3>
+        <button onclick="closeHelp()" class="text-slate-500 text-lg px-2">✕</button>
+      </div>
+      <div id="help-body" class="text-xs space-y-1.5 text-slate-700"></div>
+    </div>
+  </div>
 
   <!-- Toast -->
   <div id="toast" class="hidden fixed left-1/2 -translate-x-1/2 bottom-6 z-[60] max-w-[90vw] px-4 py-3 rounded-xl shadow-lg text-sm font-semibold text-white"></div>
@@ -1250,6 +1262,44 @@
         else if (okPage && okLibs) el.textContent = '⏳ Hors ligne : ouvrez une fois avec du réseau (listes serres/agents)';
         else el.textContent = '⏳ Préparation hors ligne… gardez le réseau quelques secondes';
       } catch (e) { /* ignoré */ }
+    }
+
+    function closeHelp() { $('help-modal').classList.add('hidden'); }
+    async function showInstallHelp() {
+      const lines = [];
+      const add = (good, txt) => lines.push((good ? '✅ ' : '❌ ') + txt);
+      add(location.protocol === 'https:', 'Adresse sécurisée (https)');
+      let man = null;
+      try {
+        const r = await fetch('manifest.json', { cache: 'no-store' });
+        add(r.ok, r.ok ? 'manifest.json trouvé' : 'manifest.json introuvable : à déposer à côté de index.html');
+        if (r.ok) man = await r.json();
+      } catch (e) { add(false, 'manifest.json illisible ou introuvable'); }
+      if (man) {
+        for (const sz of [192, 512]) {
+          const ic = (man.icons || []).find(i => String(i.sizes).split(' ').includes(sz + 'x' + sz));
+          if (!ic) { add(false, `Icône ${sz}×${sz} absente du manifest`); continue; }
+          const dim = await new Promise(res => { const im = new Image(); im.onload = () => res([im.naturalWidth, im.naturalHeight]); im.onerror = () => res(null); im.src = ic.src + '?t=' + Date.now(); });
+          if (!dim) add(false, `${ic.src} introuvable dans le dépôt GitHub`);
+          else add(dim[0] === sz && dim[1] === sz, `${ic.src} : ${dim[0]}×${dim[1]} px` + ((dim[0] === sz && dim[1] === sz) ? '' : ` (doit faire exactement ${sz}×${sz})`));
+        }
+      }
+      add(!!(navigator.serviceWorker && navigator.serviceWorker.controller), 'Service worker actif (si ❌ : rechargez la page une fois)');
+      const standalone = window.matchMedia('(display-mode: standalone)').matches;
+      lines.push(standalone ? 'ℹ️ Vous êtes déjà dans l\'application installée.'
+        : (deferredInstall ? '✅ Le navigateur propose l\'installation : utilisez le bouton « Installer » en haut.'
+                           : '⏳ Le navigateur ne propose pas (encore) l\'installation automatique.'));
+      $('help-body').innerHTML =
+        lines.map(l => `<div>${esc(l)}</div>`).join('') +
+        `<div class="pt-2 mt-2 border-t font-bold text-slate-800">Installer à la main</div>
+         <div><b>Android (Chrome)</b> : menu ⋮ puis « Installer l'application ». Si vous ne voyez que « Ajouter à l'écran d'accueil », c'est un simple raccourci : corrigez les ❌ ci-dessus.</div>
+         <div><b>Windows (Edge / Chrome)</b> : icône d'installation à droite de la barre d'adresse, ou menu ⋯ puis Applications puis « Installer ce site en tant qu'application ».</div>
+         <div><b>iPhone / iPad (Safari)</b> : Partager puis « Sur l'écran d'accueil ».</div>
+         <div class="text-slate-500">Ouvrez bien l'adresse dans Chrome ou Edge, pas depuis Facebook, WhatsApp ou un lien intégré à une autre application.</div>`;
+      $('help-modal').classList.remove('hidden');
+    }
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      window.addEventListener('DOMContentLoaded', () => $('btn-install-help').classList.add('hidden'));
     }
 
     /* ---------- Onglets ---------- */
