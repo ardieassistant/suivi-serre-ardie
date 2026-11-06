@@ -13,7 +13,7 @@
 
   <div class="max-w-3xl w-full mx-auto space-y-5">
 
-    <!-- En-tête -->
+    <!-- En-tête officiel ARDIE -->
     <header class="bg-emerald-900 text-white rounded-2xl p-5 shadow-lg flex items-center gap-4">
       <img id="logo" src="logo.png" alt="ARDIE" class="w-16 h-16 rounded-xl bg-white object-contain p-1 shrink-0">
       <span id="logo-fallback" class="hidden bg-white text-emerald-900 font-black px-3 py-2 rounded-lg text-sm tracking-wider shadow shrink-0">ARDIE</span>
@@ -51,7 +51,7 @@
       </section>
 
       <section class="bg-gradient-to-r from-emerald-900 to-teal-900 text-white rounded-2xl p-5 shadow-sm">
-        <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-200 mb-3">Situation du lot</h2>
+        <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-200 mb-3">Situation du lot en direct</h2>
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
           <div class="bg-black/20 p-3 rounded-xl"><p class="text-[11px] uppercase text-emerald-300 font-bold">Culture saine</p><p class="text-2xl font-black font-mono" id="kpi-sains">--</p></div>
           <div class="bg-black/20 p-3 rounded-xl"><p class="text-[11px] uppercase text-amber-300 font-bold">Surveillance</p><p class="text-2xl font-black font-mono text-amber-200" id="kpi-surv">--</p></div>
@@ -63,7 +63,7 @@
       </section>
 
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-        <h2 class="font-bold text-slate-900 text-sm border-b pb-2 mb-3">Historique du lot</h2>
+        <h2 class="font-bold text-slate-900 text-sm border-b pb-2 mb-3">Historique chronologique du lot</h2>
         <ol id="events" class="space-y-2"></ol>
         <p id="events-empty" class="hidden text-xs italic text-slate-500">Aucun événement détaillé n'est disponible pour ce lot.</p>
       </section>
@@ -77,25 +77,24 @@
     </div>
 
     <footer class="text-center text-xs text-slate-500 pt-2">
-      <p>ARDIE • Traçabilité des vitroplants de Fruits à Pain</p>
+      <p>ARDIE • Traçabilité officielle des vitroplants de Fruits à Pain</p>
       <p id="generated" class="mt-0.5"></p>
     </footer>
   </div>
 
   <script>
-    // Adresse du script Google Apps Script (la même que l'application)
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
 
     const $ = (id) => document.getElementById(id);
     const setText = (id, v) => { const el = $(id); if (el) el.textContent = (v === undefined || v === null || v === '') ? '--' : v; };
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-    // Logo : si logo.png est introuvable, on affiche le badge texte
     $('logo').addEventListener('error', () => { $('logo').classList.add('hidden'); $('logo-fallback').classList.remove('hidden'); });
 
     const TYPES = {
       DEBUT:        { icon: '🌱', cls: 'bg-emerald-50 border-emerald-300' },
       BILAN:        { icon: '📋', cls: 'bg-slate-50 border-slate-300' },
+      CLIMAT:       { icon: '🌡️', cls: 'bg-sky-50 border-sky-300' },
       ANOMALIE:     { icon: '⚠️', cls: 'bg-amber-50 border-amber-300' },
       ACCLIM:       { icon: '📏', cls: 'bg-blue-50 border-blue-300' },
       DISTRIBUTION: { icon: '🚚', cls: 'bg-teal-50 border-teal-300' },
@@ -177,12 +176,12 @@
       if (stats.releves !== undefined) bits.push(`${stats.releves} relevé(s) climatique(s)`);
       if (stats.anomalies !== undefined) bits.push(`${stats.anomalies} anomalie(s)`);
       if (stats.acclimatations !== undefined) bits.push(`${stats.acclimatations} test(s) d'acclimatation`);
+      if (stats.distributions !== undefined) bits.push(`${stats.distributions} livraison(s)`);
       setText('stats-line', bits.join(' • '));
       if (closed && lot.bilanFinal && lot.bilanFinal !== '-') {
         setText('stats-line', ($('stats-line').textContent + ' • Bilan final : ' + lot.bilanFinal).replace(/^--\s*•\s*/, ''));
       }
 
-      // Historique : du plus récent au plus ancien, regroupé par date
       const events = Array.isArray(data.events) ? data.events.slice().reverse() : [];
       $('events-empty').classList.toggle('hidden', events.length > 0);
       let lastDate = '', html = '';
