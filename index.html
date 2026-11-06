@@ -1348,7 +1348,16 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     const ctx = requireSerreAgent(); if (!ctx) return;
     if (!confirm(`Confirmer la clôture de cette observation en « ${statut} » ?`)) return;
     try {
-      await postData({ type: 'ANOMALIE_SORTIE', id, godet, statut_sortie: statut, serre: ctx.serre, intervenant: ctx.agent, date: localISODate() });
+await postData({ 
+  type: 'ANOMALIE_SORTIE', 
+  id, 
+  godet, 
+  statut_sortie: statut, 
+  serre: ctx.serre, 
+  intervenant: ctx.agent, 
+  date: localISODate(),
+  heure: localHHmm()
+});
       toast(`Statut enregistré : ${statut} ✔`);
       await loadSurvList();
       await updateKpi(ctx.serre);
