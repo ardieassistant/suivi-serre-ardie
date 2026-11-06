@@ -1309,12 +1309,14 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
         ul.innerHTML = '<li class="py-3 text-emerald-900 text-center font-bold">Aucun plant sous surveillance active pour ce lot ✔</li>';
         return;
       }
-      ul.innerHTML = items.map(it => `
+    ul.innerHTML = items.map(it => {
+        const itemEnc = encodeURIComponent(JSON.stringify(it));
+        return `
         <li class="py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div>
             <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
               <span class="bg-amber-200 text-amber-950 px-2 py-0.5 rounded font-black font-mono">Qté : ${esc(it.quantite)} plant(s)</span>
-              ${it.godet !== '-' ? `<span class="text-xs font-bold text-slate-700 font-mono">Repère : ${esc(it.godet)}</span>` : ''}
+              ${it.godet !== '-' ? `<span class="text-xs font-bold text-slate-700 font-mono">Pot/Repère : ${esc(it.godet)}</span>` : ''}
               <span class="text-xs text-slate-500">Depuis le ${esc(it.date)} à ${esc(it.heure)}</span>
             </div>
             <div class="text-xs text-slate-700 mt-1">
@@ -1323,6 +1325,9 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
             </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0 w-full sm:w-auto">
+            <button onclick="openPotLabelModal('${itemEnc}')" title="Imprimer mini-étiquette pour le pot" class="btn-sm bg-amber-600 hover:bg-amber-700">
+              <i data-lucide="tag" class="w-4 h-4"></i><span>Étiquette pot</span>
+            </button>
             <button data-sortie="Sauvé" data-godet="${esc(it.godet)}" data-id="${esc(it.id)}" class="btn-sm bg-emerald-700 flex-1 sm:flex-none">
               <i data-lucide="check" class="w-4 h-4"></i><span>Sauvé</span>
             </button>
@@ -1330,7 +1335,8 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
               <i data-lucide="x" class="w-4 h-4"></i><span>Mort</span>
             </button>
           </div>
-        </li>`).join('');
+        </li>`;
+      }).join('');
       icons();
     } catch (e) {
       ul.innerHTML = '<li class="py-3 text-slate-400 text-center">Impossible de charger la liste.</li>';
