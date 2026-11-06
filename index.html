@@ -712,8 +712,9 @@
     $('pass-sains').textContent = k.sains;
     $('pass-morts').textContent = k.morts;
 
-    const appUrl = `${window.location.origin}${window.location.pathname}#lot=${encodeURIComponent(k.lot.id)}`;
-    $('passport-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(appUrl)}`;
+    // POINTE VERS LA PAGE PUBLIQUE lot.html POUR LES TIERS (DIRECTION, FINANCEURS, VISITEURS)
+    const publicUrl = `${window.location.origin}${window.location.pathname.replace('index.html', '')}lot.html#lot=${encodeURIComponent(k.lot.id)}`;
+    $('passport-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(publicUrl)}`;
     $('passport-modal').classList.remove('hidden');
   }
   function closePassportModal() { $('passport-modal').classList.add('hidden'); }
