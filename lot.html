@@ -3,197 +3,206 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ARDIE - Passeport de Traçabilité du Lot</title>
+  <title>ARDIE - Passeport de traçabilité du lot</title>
+  <link rel="icon" href="logo.png">
+  <link rel="apple-touch-icon" href="logo.png">
+  <meta name="theme-color" content="#064e3b">
   <script src="https://cdn.tailwindcss.com/3.4.17"></script>
-  <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
 </head>
-<body class="bg-slate-100 text-slate-900 font-sans min-h-screen flex flex-col p-4 md:p-8">
+<body class="bg-slate-100 text-slate-900 font-sans min-h-screen p-4 md:p-8">
 
-  <div class="max-w-3xl w-full mx-auto space-y-6">
-    
-    <!-- En-tête Passeport -->
-    <div class="bg-emerald-900 text-white rounded-2xl p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-      <div class="flex items-center space-x-4">
-        <span class="bg-white text-emerald-900 font-black px-3 py-1.5 rounded-lg text-sm tracking-wider shadow">ARDIE</span>
-        <div>
-          <h1 class="text-lg md:text-xl font-bold">Passeport de Traçabilité - FAP</h1>
-          <p class="text-xs text-emerald-200">Association Régionale de Développement d'Intégration et d'Insertion</p>
-        </div>
-      </div>
-      <div class="bg-emerald-800/80 px-3 py-1.5 rounded-xl border border-emerald-600 text-xs font-mono">
-        📄 Passeport Officiel Lot
-      </div>
-    </div>
+  <div class="max-w-3xl w-full mx-auto space-y-5">
 
-    <!-- État du chargement -->
+    <!-- En-tête -->
+    <header class="bg-emerald-900 text-white rounded-2xl p-5 shadow-lg flex items-center gap-4">
+      <img id="logo" src="logo.png" alt="ARDIE" class="w-16 h-16 rounded-xl bg-white object-contain p-1 shrink-0">
+      <span id="logo-fallback" class="hidden bg-white text-emerald-900 font-black px-3 py-2 rounded-lg text-sm tracking-wider shadow shrink-0">ARDIE</span>
+      <div class="min-w-0">
+        <h1 class="text-lg md:text-xl font-bold leading-tight">Passeport de traçabilité</h1>
+        <p class="text-sm text-emerald-200">Vitroplants de Fruits à Pain (FAP)</p>
+        <p class="text-xs text-emerald-300 mt-0.5">Association Réunionnaise pour le Développement de l'Insertion et de l'Emploi</p>
+      </div>
+    </header>
+
+    <!-- Chargement -->
     <div id="loading-box" class="bg-white rounded-2xl p-8 text-center shadow-sm border border-slate-200 space-y-3">
       <div class="animate-spin w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full mx-auto"></div>
-      <p class="text-sm font-bold text-slate-600">Chargement de la traçabilité du lot depuis la base sécurisée...</p>
+      <p class="text-sm font-bold text-slate-600">Chargement de la traçabilité du lot...</p>
     </div>
 
-    <!-- Contenu du Passeport (Masqué par défaut) -->
-    <div id="passport-content" class="hidden space-y-6">
-      
-      <!-- Carte d'identité du lot -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
-        <div class="flex justify-between items-center border-b pb-3">
-          <h2 class="font-black text-slate-900 text-base flex items-center gap-2">
-            <i data-lucide="package" class="w-5 h-5 text-emerald-700"></i>Fiche d'identité du Lot
-          </h2>
+    <!-- Contenu -->
+    <div id="passport-content" class="hidden space-y-5">
+
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+        <div class="flex justify-between items-center border-b pb-3 gap-2">
+          <h2 class="font-black text-slate-900 text-base">Identité du lot</h2>
           <span id="lot-status-badge" class="px-2.5 py-1 rounded-full text-xs font-black">--</span>
         </div>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
-          <div class="bg-slate-50 p-3 rounded-xl border">
-            <p class="text-slate-500 font-bold uppercase text-[10px]">Identifiant Lot</p>
-            <p class="text-sm font-mono font-black text-emerald-950 mt-0.5" id="val-id">--</p>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div class="bg-slate-50 p-3 rounded-xl border col-span-2 md:col-span-4">
+            <p class="text-slate-500 font-bold uppercase text-[10px]">Numéro de lot</p>
+            <p class="text-base font-mono font-black text-emerald-950 mt-0.5 break-all" id="val-id">--</p>
           </div>
-          <div class="bg-slate-50 p-3 rounded-xl border">
-            <p class="text-slate-500 font-bold uppercase text-[10px]">Emplacement</p>
-            <p class="text-sm font-bold text-slate-800 mt-0.5" id="val-serre">--</p>
-          </div>
-          <div class="bg-slate-50 p-3 rounded-xl border">
-            <p class="text-slate-500 font-bold uppercase text-[10px]">Date de démarrage</p>
-            <p class="text-sm font-bold text-slate-800 mt-0.5" id="val-debut">--</p>
-          </div>
-          <div class="bg-slate-50 p-3 rounded-xl border">
-            <p class="text-slate-500 font-bold uppercase text-[10px]">Effectif initial</p>
-            <p class="text-sm font-black text-slate-900 mt-0.5" id="val-initial">-- plants</p>
-          </div>
+          <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-500 font-bold uppercase text-[10px]">Emplacement</p><p class="text-sm font-bold mt-0.5" id="val-serre">--</p></div>
+          <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-500 font-bold uppercase text-[10px]">Date de démarrage</p><p class="text-sm font-bold mt-0.5" id="val-debut">--</p></div>
+          <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-500 font-bold uppercase text-[10px]">Effectif initial</p><p class="text-sm font-black mt-0.5" id="val-initial">--</p></div>
+          <div class="bg-slate-50 p-3 rounded-xl border"><p class="text-slate-500 font-bold uppercase text-[10px]" id="lbl-fin">Clôture</p><p class="text-sm font-bold mt-0.5" id="val-fin">--</p></div>
         </div>
-      </div>
+      </section>
 
-      <!-- Indicateurs en direct -->
-      <div class="bg-gradient-to-r from-emerald-900 to-teal-900 text-white rounded-2xl p-5 shadow-sm">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-emerald-200 mb-3 flex items-center gap-1.5">
-          <i data-lucide="activity" class="w-4 h-4"></i>Bilan phytosanitaire et commercial actuel
-        </h3>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
-          <div class="bg-black/20 p-3 rounded-xl">
-            <p class="text-[11px] uppercase text-emerald-300 font-bold">Culture saine</p>
-            <p class="text-2xl font-black font-mono text-emerald-100" id="kpi-sains">--</p>
-          </div>
-          <div class="bg-black/20 p-3 rounded-xl">
-            <p class="text-[11px] uppercase text-amber-300 font-bold">Surveillance</p>
-            <p class="text-2xl font-black font-mono text-amber-200" id="kpi-surv">--</p>
-          </div>
-          <div class="bg-black/20 p-3 rounded-xl">
-            <p class="text-[11px] uppercase text-red-300 font-bold">Pertes (Morts)</p>
-            <p class="text-2xl font-black font-mono text-red-200" id="kpi-morts">--</p>
-          </div>
-          <div class="bg-black/20 p-3 rounded-xl">
-            <p class="text-[11px] uppercase text-teal-200 font-bold">Distribués</p>
-            <p class="text-2xl font-black font-mono text-white" id="kpi-distrib">--</p>
-          </div>
+      <section class="bg-gradient-to-r from-emerald-900 to-teal-900 text-white rounded-2xl p-5 shadow-sm">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-200 mb-3">Situation du lot</h2>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 text-center">
+          <div class="bg-black/20 p-3 rounded-xl"><p class="text-[11px] uppercase text-emerald-300 font-bold">Culture saine</p><p class="text-2xl font-black font-mono" id="kpi-sains">--</p></div>
+          <div class="bg-black/20 p-3 rounded-xl"><p class="text-[11px] uppercase text-amber-300 font-bold">Surveillance</p><p class="text-2xl font-black font-mono text-amber-200" id="kpi-surv">--</p></div>
+          <div class="bg-black/20 p-3 rounded-xl"><p class="text-[11px] uppercase text-red-300 font-bold">Pertes</p><p class="text-2xl font-black font-mono text-red-200" id="kpi-morts">--</p></div>
+          <div class="bg-black/20 p-3 rounded-xl"><p class="text-[11px] uppercase text-teal-200 font-bold">Distribués</p><p class="text-2xl font-black font-mono" id="kpi-distrib">--</p></div>
+          <div class="bg-black/20 p-3 rounded-xl col-span-2 md:col-span-1"><p class="text-[11px] uppercase text-emerald-300 font-bold">Viabilité</p><p class="text-2xl font-black font-mono" id="kpi-rate">--</p></div>
         </div>
-      </div>
+        <p class="text-[11px] text-emerald-200 mt-3 text-center" id="stats-line"></p>
+      </section>
 
-      <!-- Historique des événements du lot -->
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
-        <h3 class="font-bold text-slate-900 text-sm flex items-center gap-2 border-b pb-2">
-          <i data-lucide="history" class="w-4 h-4 text-emerald-700"></i>Historique des interventions et anomalies enregistrées
-        </h3>
-        <div id="lot-events-container" class="text-xs text-slate-600 italic">
-          Chargement de l'historique...
-        </div>
-      </div>
-
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+        <h2 class="font-bold text-slate-900 text-sm border-b pb-2 mb-3">Historique du lot</h2>
+        <ol id="events" class="space-y-2"></ol>
+        <p id="events-empty" class="hidden text-xs italic text-slate-500">Aucun événement détaillé n'est disponible pour ce lot.</p>
+      </section>
     </div>
 
-    <!-- Erreur si lot introuvable -->
-    <div id="error-box" class="hidden bg-red-50 border-2 border-red-300 text-red-900 rounded-2xl p-6 text-center space-y-2">
-      <i data-lucide="alert-octagon" class="w-10 h-10 text-red-600 mx-auto"></i>
-      <h3 class="font-bold text-base">Lot introuvable ou archive expirée</h3>
-      <p class="text-xs">L'identifiant du lot scanné ne correspond à aucun enregistrement actif dans la base de données de l'ARDIE.</p>
+    <!-- Erreur -->
+    <div id="error-box" class="hidden bg-red-50 border-2 border-red-300 text-red-900 rounded-2xl p-6 text-center space-y-3">
+      <h2 class="font-bold text-base" id="error-title">Traçabilité indisponible</h2>
+      <p class="text-sm" id="error-msg"></p>
+      <button id="btn-retry" class="px-4 py-2 rounded-lg bg-red-700 text-white text-sm font-bold">Réessayer</button>
     </div>
 
-    <!-- Pied de page informatif -->
-    <footer class="text-center text-xs text-slate-500 pt-4">
-      <p>ARDIE • Traçabilité certifiée des Vitroplants de Fruits à Pain (FAP)</p>
-      <a href="index.html" class="text-emerald-700 font-bold underline mt-1 inline-block">Accéder à l'application de saisie terrain</a>
+    <footer class="text-center text-xs text-slate-500 pt-2">
+      <p>ARDIE • Traçabilité des vitroplants de Fruits à Pain</p>
+      <p id="generated" class="mt-0.5"></p>
     </footer>
-
   </div>
 
   <script>
-    // URL DE VOTRE SCRIPT GOOGLE APPS SCRIPT
+    // Adresse du script Google Apps Script (la même que l'application)
     const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
 
-    window.addEventListener('DOMContentLoaded', async () => {
-      // Récupère l'ID du lot depuis l'URL (ex: lot.html#lot=LOT-SERRE1-20261105-105045)
-      const hash = window.location.hash;
-      let lotId = "";
-      if (hash.includes('lot=')) {
-        lotId = decodeURIComponent(hash.split('lot=')[1]);
-      }
+    const $ = (id) => document.getElementById(id);
+    const setText = (id, v) => { const el = $(id); if (el) el.textContent = (v === undefined || v === null || v === '') ? '--' : v; };
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-      if (!lotId) {
-        // Paramètre GET classique éventuel ?lot_id=...
-        const urlParams = new URLSearchParams(window.location.search);
-        lotId = urlParams.get('lot_id') || "";
-      }
+    // Logo : si logo.png est introuvable, on affiche le badge texte
+    $('logo').addEventListener('error', () => { $('logo').classList.add('hidden'); $('logo-fallback').classList.remove('hidden'); });
 
-      if (!lotId) {
-        showError("Aucun identifiant de lot n'a été fourni dans le lien scanné.");
-        return;
-      }
+    const TYPES = {
+      DEBUT:        { icon: '🌱', cls: 'bg-emerald-50 border-emerald-300' },
+      BILAN:        { icon: '📋', cls: 'bg-slate-50 border-slate-300' },
+      ANOMALIE:     { icon: '⚠️', cls: 'bg-amber-50 border-amber-300' },
+      ACCLIM:       { icon: '📏', cls: 'bg-blue-50 border-blue-300' },
+      DISTRIBUTION: { icon: '🚚', cls: 'bg-teal-50 border-teal-300' },
+      FIN:          { icon: '📦', cls: 'bg-slate-100 border-slate-400' }
+    };
 
+    function getLotId() {
+      const h = decodeURIComponent(window.location.hash || '');
+      let m = h.match(/lot=([^&]+)/);
+      if (m) return m[1].trim();
+      const q = new URLSearchParams(window.location.search);
+      return (q.get('lot') || q.get('lot_id') || '').trim();
+    }
+
+    function showError(title, msg) {
+      $('loading-box').classList.add('hidden');
+      $('passport-content').classList.add('hidden');
+      $('error-box').classList.remove('hidden');
+      setText('error-title', title);
+      setText('error-msg', msg);
+    }
+
+    async function load() {
+      $('error-box').classList.add('hidden');
+      $('passport-content').classList.add('hidden');
+      $('loading-box').classList.remove('hidden');
+
+      const lotId = getLotId();
+      if (!lotId) return showError('Lien incomplet', "Aucun numéro de lot n'a été trouvé dans l'adresse scannée.");
+
+      let data;
       try {
         const res = await fetch(`${SCRIPT_URL}?action=getlotdetails&lot_id=${encodeURIComponent(lotId)}`);
-        const data = await res.json();
-        
-        if (!data.ok || !data.lot) {
-          showError(data.message || "Lot introuvable.");
-          return;
-        }
-
-        renderPassport(data.lot, data.kpi);
+        data = await res.json();
       } catch (err) {
-        showError("Impossible de contacter le serveur de l'ARDIE : " + err.message);
+        return showError('Serveur injoignable', 'Vérifiez votre connexion internet puis réessayez.');
       }
-    });
-
-    function renderPassport(lot, kpi) {
-      document.getElementById('loading-box').classList.add('hidden');
-      document.getElementById('passport-content').classList.remove('hidden');
-
-      document.getElementById('val-id').textContent = lot.id;
-      document.getElementById('val-serre').textContent = lot.serre;
-      document.getElementById('val-debut').textContent = lot.debut;
-      document.getElementById('val-initial').textContent = lot.initial + ' plants';
-
-      const badge = document.getElementById('lot-status-badge');
-      const isClosed = lot.statut === 'CLOS';
-      badge.textContent = isClosed ? 'CLÔTURÉ' : 'EN COURS';
-      badge.className = `px-2.5 py-1 rounded-full text-xs font-black ${isClosed ? 'bg-slate-200 text-slate-800' : 'bg-emerald-100 text-emerald-900'}`;
-
-      document.getElementById('kpi-sains').textContent = kpi.sains ?? '--';
-      document.getElementById('kpi-surv').textContent = kpi.surveillance ?? '--';
-      document.getElementById('kpi-morts').textContent = kpi.morts ?? '--';
-      document.getElementById('kpi-distrib').textContent = kpi.distribues ?? '0';
-      
-      const total = (kpi.initial > 0) ? kpi.initial : ((kpi.sains || 0) + (kpi.morts || 0));
-      const rate = (total > 0) ? (((kpi.sains || 0) / total) * 100).toFixed(1) : '100';
-      document.getElementById('kpi-rate').textContent = rate + '%';
-
-      // Résumé textuel
-      document.getElementById('lot-events-container').innerHTML = `
-        <div class="bg-slate-50 p-3 rounded-xl border space-y-1 font-medium text-slate-700">
-          <p>• Démarré le ${lot.debut} par <b>${lot.agent || 'Technicien ARDIE'}</b>.</p>
-          <p>• Bilan sanitaire : ${kpi.morts} perte(s) constatée(s) sur ${kpi.initial} plant(s) initial(aux).</p>
-          <p>• Sorties commerciales / distributions : ${kpi.distribues} plant(s) distribué(s).</p>
-          ${isClosed ? `<p class="text-slate-900 font-bold mt-2 pt-2 border-t">Clôture du lot : ${lot.fin} — Bilan final : ${lot.bilan}</p>` : ''}
-        </div>
-      `;
-
-      lucide.createIcons();
+      if (!data || !data.ok || !data.lot) {
+        return showError('Lot introuvable', (data && data.message) || `Aucun lot « ${lotId} » dans la base de l'ARDIE.`);
+      }
+      try {
+        render(data);
+      } catch (err) {
+        console.error(err);
+        showError("Affichage impossible", "Les données du lot ont été reçues mais n'ont pas pu être affichées (" + err.message + ").");
+      }
     }
 
-    function showError(msg) {
-      document.getElementById('loading-box').classList.add('hidden');
-      const errBox = document.getElementById('error-box');
-      errBox.classList.remove('hidden');
-      errBox.querySelector('p').textContent = msg;
+    function render(data) {
+      const lot = data.lot, kpi = data.kpi || {}, stats = data.stats || {};
+      $('loading-box').classList.add('hidden');
+      $('passport-content').classList.remove('hidden');
+
+      setText('val-id', lot.id);
+      setText('val-serre', lot.serre);
+      setText('val-debut', lot.debut);
+      setText('val-initial', (lot.initial ?? kpi.initial ?? '--') + ' plants');
+
+      const closed = String(lot.statut).toUpperCase() === 'CLOS';
+      const badge = $('lot-status-badge');
+      badge.textContent = closed ? 'CLÔTURÉ' : 'EN COURS';
+      badge.className = 'px-2.5 py-1 rounded-full text-xs font-black ' + (closed ? 'bg-slate-200 text-slate-800' : 'bg-emerald-100 text-emerald-900');
+      setText('lbl-fin', closed ? 'Date de clôture' : 'Statut');
+      setText('val-fin', closed ? lot.fin : 'Lot en production');
+
+      setText('kpi-sains', kpi.sains);
+      setText('kpi-surv', kpi.surveillance);
+      setText('kpi-morts', kpi.morts);
+      setText('kpi-distrib', kpi.distribues ?? 0);
+      let rate = kpi.taux;
+      if (rate === undefined || rate === null || rate === '') {
+        const init = Number(kpi.initial || lot.initial) || 0;
+        rate = init > 0 ? (((init - (Number(kpi.morts) || 0)) / init) * 100).toFixed(1) : '--';
+      }
+      setText('kpi-rate', rate === '--' ? '--' : rate + ' %');
+
+      const bits = [];
+      if (stats.bilans !== undefined) bits.push(`${stats.bilans} bilan(s) journalier(s)`);
+      if (stats.releves !== undefined) bits.push(`${stats.releves} relevé(s) climatique(s)`);
+      if (stats.anomalies !== undefined) bits.push(`${stats.anomalies} anomalie(s)`);
+      if (stats.acclimatations !== undefined) bits.push(`${stats.acclimatations} test(s) d'acclimatation`);
+      setText('stats-line', bits.join(' • '));
+      if (closed && lot.bilanFinal && lot.bilanFinal !== '-') {
+        setText('stats-line', ($('stats-line').textContent + ' • Bilan final : ' + lot.bilanFinal).replace(/^--\s*•\s*/, ''));
+      }
+
+      // Historique : du plus récent au plus ancien, regroupé par date
+      const events = Array.isArray(data.events) ? data.events.slice().reverse() : [];
+      $('events-empty').classList.toggle('hidden', events.length > 0);
+      let lastDate = '', html = '';
+      events.forEach(e => {
+        const t = TYPES[e.type] || { icon: '•', cls: 'bg-slate-50 border-slate-300' };
+        if (e.date !== lastDate) {
+          html += `<li class="pt-2 text-[11px] font-black uppercase tracking-wide text-slate-500">${esc(e.date)}</li>`;
+          lastDate = e.date;
+        }
+        const h = (e.heure && e.heure !== '00:00' && e.heure !== '23:59') ? `<span class="font-mono text-slate-500 mr-1">${esc(String(e.heure).replace(':', 'h'))}</span>` : '';
+        html += `<li class="flex gap-2 items-start border rounded-xl px-3 py-2 text-xs ${t.cls}"><span class="shrink-0">${t.icon}</span><span class="min-w-0">${h}${esc(e.label)}</span></li>`;
+      });
+      $('events').innerHTML = html;
+
+      setText('generated', 'Données consultées le ' + new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
     }
+
+    $('btn-retry').addEventListener('click', load);
+    window.addEventListener('hashchange', load);
+    window.addEventListener('DOMContentLoaded', load);
   </script>
 </body>
 </html>
