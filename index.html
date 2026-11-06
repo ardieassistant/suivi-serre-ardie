@@ -17,6 +17,7 @@
   <script src="https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 
   <style>
     input, select, textarea { font-size: 16px !important; }
@@ -28,6 +29,8 @@
     body.sun { background: #fff !important; color: #000 !important; }
     body.sun input, body.sun select, body.sun textarea { border: 2px solid #000 !important; background: #fff !important; color: #000 !important; }
     body.sun .card { border: 2px solid #000 !important; }
+
+    #qr-print { display: none; }
 
     /* RÈGLE D'ISOLATION D'IMPRESSION ABSOLUE (AUCUN ÉLÉMENT PARASITE) */
     @media print {
@@ -70,6 +73,15 @@
         page-break-inside: avoid !important;
         break-inside: avoid !important;
       }
+
+      /* Étiquette QR code */
+      body.print-qr .sheet { display: none !important; }
+      body.print-qr { overflow: visible !important; }
+      body.print-qr #qr-print {
+        display: grid !important; grid-template-columns: repeat(2, 98mm); gap: 3mm;
+        position: absolute; left: 0; top: 0;
+      }
+      body.print-qr #qr-print, body.print-qr #qr-print * { visibility: visible !important; }
     }
   </style>
 
@@ -141,7 +153,13 @@
           <p><strong>Pertes (Morts) :</strong> <span id="pass-morts" class="font-bold text-red-700">--</span> plants</p>
         </div>
       </div>
-      <button onclick="printFiche()" class="btn w-full bg-emerald-700 hover:bg-emerald-800 text-xs">
+      <div class="flex items-center justify-center gap-2 text-sm">
+        <label for="qr-copies" class="font-bold text-slate-700">Exemplaires :</label>
+        <select id="qr-copies" class="inp !min-h-[40px] !py-1 !w-auto">
+          <option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="6">6</option>
+        </select>
+      </div>
+      <button onclick="printQrLabel()" class="btn w-full bg-emerald-700 hover:bg-emerald-800 text-xs">
         <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimer l'étiquette QR Code</span>
       </button>
     </div>
@@ -324,7 +342,7 @@
         <div class="bg-emerald-50 p-3 rounded-xl border-2 border-emerald-200 space-y-2">
           <label class="lbl uppercase" for="an-mesures-choix">Mesures sanitaires nécessaires ?</label>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
-            <select id="an-mesures-choix" onchange="toggleMesuresDetail()" class="inp"><option value="Non">Non</option><option value="Oui">Oui (préciser)</option></select>
+            <select id="an-mesures-choix" onchange="toggleMesuresDetail()" class="inp"><option value="Non">Non</option><option value="Oui (préciser)">Oui (préciser)</option></select>
             <div id="an-mesures-box" class="hidden md:col-span-2"><input type="text" id="an-mesures-detail" placeholder="Fongicide, baisse d'arrosage, taille..." class="inp"></div>
           </div>
         </div>
@@ -618,6 +636,8 @@
     </div>
   </main>
 
+  <div id="qr-print"></div>
+
   <div id="toast" class="hidden fixed left-1/2 -translate-x-1/2 bottom-6 z-[120] max-w-[92vw] px-4 py-3 rounded-xl shadow-lg text-base font-bold text-white"></div>
 
   <script>
@@ -702,22 +722,105 @@
     }
   }
 
+  /* ---------- PASSEPORT & ÉTIQUETTE QR CODE ---------- */
+  let passportCtx = null;
+
+  // Adresse publique de lot.html (même dossier que l'application, quel que soit le nom du fichier ouvert)
+  function lotPublicUrl(lotId) {
+    const base = window.location.href.split('#')[0].split('?')[0].replace(/[^/]*$/, '');
+    return `${base}lot.html#lot=${encodeURIComponent(lotId)}`;
+  }
+
+  // QR généré dans l'appareil (aucun service externe : fonctionne hors ligne et s'imprime à coup sûr)
+  function makeQrDataUrl(text) {
+    try {
+      if (window.qrcode) {
+        const qr = window.qrcode(0, 'M');
+        qr.addData(text); qr.make();
+        return qr.createDataURL(8, 2);
+      }
+    } catch (e) { console.warn('QR local indisponible', e); }
+    return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=8&data=${encodeURIComponent(text)}`;
+  }
+
   function openPassportModal() {
     const k = lastKpi;
     if (!k || !k.hasLot) return toast('Aucun lot actif pour générer un passeport.', 'err');
-    $('pass-id').textContent = k.lot.id;
-    $('pass-serre').textContent = $('global-serre').value;
-    $('pass-debut').textContent = k.lot.debut;
-    $('pass-initial').textContent = k.initial;
-    $('pass-sains').textContent = k.sains;
-    $('pass-morts').textContent = k.morts;
-
-    // POINTE VERS LA PAGE PUBLIQUE lot.html POUR LES TIERS (DIRECTION, FINANCEURS, VISITEURS)
-    const publicUrl = `${window.location.origin}${window.location.pathname.replace('index.html', '')}lot.html#lot=${encodeURIComponent(k.lot.id)}`;
-    $('passport-qr').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(publicUrl)}`;
+    const url = lotPublicUrl(k.lot.id);
+    passportCtx = {
+      id: k.lot.id, serre: $('global-serre').value, debut: k.lot.debut, initial: k.initial,
+      sains: k.sains, morts: k.morts, surveillance: k.surveillance, distribues: k.distribues,
+      url, qr: makeQrDataUrl(url)
+    };
+    $('pass-id').textContent = passportCtx.id;
+    $('pass-serre').textContent = passportCtx.serre;
+    $('pass-debut').textContent = passportCtx.debut;
+    $('pass-initial').textContent = passportCtx.initial;
+    $('pass-sains').textContent = passportCtx.sains;
+    $('pass-morts').textContent = passportCtx.morts;
+    $('passport-qr').src = passportCtx.qr;
     $('passport-modal').classList.remove('hidden');
   }
   function closePassportModal() { $('passport-modal').classList.add('hidden'); }
+
+  // Étiquette imprimable : styles en ligne (indépendants de Tailwind), format 98 mm de large
+  function qrLabelHTML(c) {
+    const logo = LOGO.data ? `<img src="${LOGO.data}" alt="" style="height:16mm;width:16mm;object-fit:contain">` : '';
+    const row = (l, v) => `<tr><td style="padding:1.1mm 0;color:#475569;font-size:9pt">${l}</td><td style="padding:1.1mm 0;text-align:right;font-weight:700;font-size:10.5pt">${esc(v)}</td></tr>`;
+    const now = new Date();
+    return `<div style="box-sizing:border-box;width:98mm;border:0.4mm dashed #64748b;padding:5mm;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#fff;break-inside:avoid;page-break-inside:avoid">
+      <div style="display:flex;align-items:center;gap:3mm;border-bottom:0.6mm solid #064e3b;padding-bottom:3mm">
+        ${logo}
+        <div><div style="font-size:17pt;font-weight:900;letter-spacing:1px;line-height:1">ARDIE</div>
+        <div style="font-size:8.5pt;color:#334155;margin-top:1mm">Vitroplants Fruits à Pain (FAP)</div></div>
+      </div>
+      <div style="text-align:center;margin:4mm 0 2mm">
+        <div style="font-size:7.5pt;color:#475569;text-transform:uppercase;letter-spacing:.5px">Numéro de lot</div>
+        <div style="font-family:'Courier New',monospace;font-size:15pt;font-weight:900;word-break:break-all">${esc(c.id)}</div>
+      </div>
+      <div style="text-align:center"><img src="${c.qr}" alt="QR Code" style="width:48mm;height:48mm;image-rendering:pixelated"></div>
+      <div style="text-align:center;font-size:8pt;color:#475569;margin:1mm 0 3mm">Scannez pour consulter la traçabilité du lot</div>
+      <table style="width:100%;border-collapse:collapse;border-top:0.3mm solid #cbd5e1">
+        ${row('Emplacement', c.serre)}
+        ${row('Date de démarrage', c.debut)}
+        ${row('Effectif initial', c.initial + ' plants')}
+        ${row('Culture saine à ce jour', c.sains + ' plants')}
+        ${row('Pertes constatées', c.morts + ' plants')}
+      </table>
+      <div style="font-size:7pt;color:#64748b;text-align:center;margin-top:2mm">Étiquette éditée le ${now.toLocaleDateString('fr-FR')} à ${localHHmm(now)}</div>
+    </div>`;
+  }
+
+  function setPrintPage(orientation) {
+    let st = $('print-page-style');
+    if (!st) { st = document.createElement('style'); st.id = 'print-page-style'; document.head.appendChild(st); }
+    st.textContent = `@page { size: A4 ${orientation}; margin: 5mm; }`;
+  }
+
+  async function printQrLabel() {
+    if (!passportCtx) return toast('Ouvrez d\'abord le passeport du lot.', 'err');
+    const n = Math.max(1, Number($('qr-copies').value) || 1);
+    const box = $('qr-print');
+    box.innerHTML = Array.from({ length: n }, () => qrLabelHTML(passportCtx)).join('');
+    // Attendre que le logo et le QR soient chargés avant d'ouvrir l'impression (sinon page blanche)
+    await Promise.all([...box.querySelectorAll('img')].map(img =>
+      img.complete ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; })));
+    setPrintPage('portrait');
+    document.body.classList.add('print-qr');
+    const done = () => { document.body.classList.remove('print-qr'); box.innerHTML = ''; window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    window.print();
+  }
+
+  /* ---------- IMPRESSION DES FICHES (corrigé : ne supprime plus les classes du <body>) ---------- */
+  function printFiche() {
+    const which = currentView;
+    setPrintPage(which !== 'plants' ? 'landscape' : 'portrait');
+    document.body.classList.add('print-' + which);
+    const done = () => { document.body.classList.remove('print-' + which); window.removeEventListener('afterprint', done); };
+    window.addEventListener('afterprint', done);
+    window.print();
+  }
 
   async function manualRefresh() {
     const icon = $('sync-icon');
@@ -1348,24 +1451,6 @@
     finally { btn.disabled = false; }
   }
 
-  /* ---------- IMPRESSION PHYSIQUE CORRIGÉE (FICHE ISOLE EXCLUSIVEMENT) ---------- */
-  function printFiche() {
-    const which = currentView;
-    const isLandscape = which !== 'plants'; // Fiche 1 en portrait, Fiches 2, 3, 4 en paysage
-    
-    let st = $('print-page-style');
-    if (!st) {
-      st = document.createElement('style');
-      st.id = 'print-page-style';
-      document.head.appendChild(st);
-    }
-    st.textContent = `@page { size: ${isLandscape ? 'landscape' : 'portrait'}; margin: 5mm; }`;
-    
-    document.body.className = `print-${which}`;
-    window.print();
-    setTimeout(() => { document.body.className = ''; }, 1000);
-  }
-
   /* ---------- EXPORT PDF VECTORIEL (jsPDF) ---------- */
   const pdfSafe = (v) => String(v ?? '').replace(/\u00A0/g, ' ').replace(/[^\u0020-\u00FF\u0152\u0153\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026\u20AC]/g, '');
   const pdfDash = (v) => { const s = pdfSafe(v).trim(); return (s === '' || s === 'undefined') ? '-' : s; };
@@ -1580,7 +1665,13 @@
     }
   }
 
-  const OFFLINE_ASSETS = ['https://cdn.tailwindcss.com/3.4.17', 'https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'];
+  const OFFLINE_ASSETS = [
+    'https://cdn.tailwindcss.com/3.4.17',
+    'https://unpkg.com/lucide@0.460.0/dist/umd/lucide.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'
+  ];
   async function checkOfflineReady() {
     const el = $('offline-ready'); if (!el || !window.caches) return;
     try {
