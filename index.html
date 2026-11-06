@@ -25,14 +25,14 @@
     .sheet { background: #fff; color: #000; }
     .sheet-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-    /* MODE PLEIN SOLEIL : CONTRASTE MAXIMAL */
+    /* MODE PLEIN SOLEIL */
     body.sun { background: #fff !important; color: #000 !important; }
     body.sun input, body.sun select, body.sun textarea { border: 2px solid #000 !important; background: #fff !important; color: #000 !important; }
     body.sun .card { border: 2px solid #000 !important; }
 
     #qr-print { display: none; }
 
-    /* RÈGLE D'ISOLATION D'IMPRESSION ABSOLUE (AUCUN ÉLÉMENT PARASITE) */
+    /* RÈGLE D'IMPRESSION */
     @media print {
       @page {
         margin: 5mm;
@@ -44,11 +44,11 @@
         padding: 0 !important;
         height: auto !important;
         min-height: 0 !important;
-        overflow: hidden !important;
+        overflow: visible !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      header, footer, nav, .no-print, #toast, #auth-overlay, #passport-modal, #admin-lock-modal, #banner, #queue-bar, #install-bar, .card {
+      header, footer, nav, .no-print, #toast, #auth-overlay, #passport-modal, #admin-lock-modal, #banner, #queue-bar, #install-bar, .card, main {
         display: none !important;
       }
       body * {
@@ -70,18 +70,26 @@
         box-shadow: none !important;
         page-break-after: avoid !important;
         break-after: avoid !important;
-        page-break-inside: avoid !important;
-        break-inside: avoid !important;
       }
 
-      /* Étiquette QR code */
+      /* Impression du QR Code */
       body.print-qr .sheet { display: none !important; }
       body.print-qr { overflow: visible !important; }
       body.print-qr #qr-print {
-        display: grid !important; grid-template-columns: repeat(2, 98mm); gap: 3mm;
-        position: absolute; left: 0; top: 0;
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
       }
-      body.print-qr #qr-print, body.print-qr #qr-print * { visibility: visible !important; }
+      body.print-qr #qr-print.grid-multi {
+        display: grid !important;
+        grid-template-columns: repeat(2, 98mm);
+        gap: 4mm;
+      }
+      body.print-qr #qr-print, body.print-qr #qr-print * {
+        visibility: visible !important;
+      }
     }
   </style>
 
@@ -119,7 +127,7 @@
     </div>
   </div>
 
-  <!-- SÉCURITÉ SPÉCIFIQUE : ACCÈS ONGLET ADMIN -->
+  <!-- SÉCURITÉ ADMIN -->
   <div id="admin-lock-modal" class="hidden fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-xs w-full p-5 shadow-2xl text-center space-y-3 border-2 border-emerald-700">
       <i data-lucide="shield-alert" class="w-10 h-10 text-emerald-800 mx-auto"></i>
@@ -135,7 +143,7 @@
 
   <!-- MODALE PASSEPORT & QR CODE DU LOT -->
   <div id="passport-modal" class="hidden fixed inset-0 z-[95] bg-black/60 flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl text-center border-2 border-emerald-700">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl text-center border-2 border-emerald-700">
       <div class="flex justify-between items-center border-b pb-2">
         <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
           <i data-lucide="qr-code" class="w-5 h-5 text-emerald-700"></i>Passeport &amp; QR Code
@@ -143,7 +151,7 @@
         <button onclick="closePassportModal()" class="text-slate-400 hover:text-slate-600 text-lg font-black">✕</button>
       </div>
       <div class="space-y-3">
-        <img id="passport-qr" class="w-44 h-44 mx-auto rounded-lg border-2 border-slate-300 p-1 bg-white shadow-inner" alt="QR Code">
+        <img id="passport-qr" class="w-48 h-48 mx-auto rounded-xl border-2 border-slate-300 p-2 bg-white shadow-inner" alt="QR Code">
         <div class="bg-slate-50 border rounded-lg p-3 text-xs text-left space-y-1">
           <p><strong>Identifiant Lot :</strong> <span id="pass-id" class="font-mono font-bold text-emerald-950">--</span></p>
           <p><strong>Emplacement :</strong> <span id="pass-serre" class="font-bold">--</span></p>
@@ -153,14 +161,17 @@
           <p><strong>Pertes (Morts) :</strong> <span id="pass-morts" class="font-bold text-red-700">--</span> plants</p>
         </div>
       </div>
-      <div class="flex items-center justify-center gap-2 text-sm">
-        <label for="qr-copies" class="font-bold text-slate-700">Exemplaires :</label>
-        <select id="qr-copies" class="inp !min-h-[40px] !py-1 !w-auto">
-          <option value="1">1</option><option value="2">2</option><option value="4">4</option><option value="6">6</option>
+      <div class="bg-emerald-50 border border-emerald-200 rounded-lg p-3 text-left space-y-2">
+        <label for="qr-format" class="lbl-s text-emerald-950">Format d'impression :</label>
+        <select id="qr-format" class="inp !min-h-[42px] !py-1 text-sm font-bold">
+          <option value="full" selected>📄 Pleine page A4 (Affiche de serre grand format)</option>
+          <option value="2">📑 2 étiquettes par page A4</option>
+          <option value="4">📑 4 étiquettes par page A4</option>
+          <option value="6">📑 6 étiquettes par page A4</option>
         </select>
       </div>
-      <button onclick="printQrLabel()" class="btn w-full bg-emerald-700 hover:bg-emerald-800 text-xs">
-        <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimer l'étiquette QR Code</span>
+      <button onclick="printQrLabel()" class="btn w-full bg-emerald-700 hover:bg-emerald-800 text-sm">
+        <i data-lucide="printer" class="w-5 h-5"></i><span>Imprimer l'étiquette QR Code</span>
       </button>
     </div>
   </div>
@@ -205,7 +216,7 @@
     </div>
   </header>
 
-  <!-- BANDEAUX SYSTÈME & INSTALLATION PWA -->
+  <!-- BANDEAUX SYSTÈME -->
   <div id="banner" class="hidden max-w-4xl w-full mx-auto px-4 pt-3"><div id="banner-text" class="bg-amber-100 border-2 border-amber-400 text-amber-950 text-sm font-bold rounded-lg p-3"></div></div>
   <div id="lot-banner" class="hidden max-w-4xl w-full mx-auto px-4 pt-3">
     <div class="bg-red-50 border-2 border-red-600 text-red-900 rounded-lg p-3 flex items-center justify-between gap-3">
@@ -469,7 +480,7 @@
       </form>
     </div>
 
-    <!-- 5. FICHES & PDF VECTORIELS (AVEC FILTRAGE PAR LOT CORRIGÉ) -->
+    <!-- 5. FICHES & PDF VECTORIELS -->
     <div id="tab-reports" class="space-y-4 hidden">
       <div class="card">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
@@ -656,7 +667,7 @@
   const num = (v) => parseFloat(String(v ?? '').replace(',', '.'));
   const localISODate = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   const localHHmm = (d = new Date()) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  const isoToFR = (iso) => { const p = iso.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
+  const isoToFR = (iso) => { const p = String(iso).split('-'); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso; };
   const fmtH = (s) => String(s).replace(':', 'h');
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
@@ -701,10 +712,7 @@
   }
 
   function openAdminTab() {
-    if (adminUnlocked) {
-      switchTab('admin');
-      return;
-    }
+    if (adminUnlocked) { switchTab('admin'); return; }
     $('admin-pass').value = '';
     $('admin-lock-modal').classList.remove('hidden');
     $('admin-pass').focus();
@@ -713,34 +721,27 @@
   function unlockAdmin() {
     const p = $('admin-pass').value.trim();
     if (p === 'ADMIN2026' || p === (store.get('ardie_admin_pass') || 'ADMIN2026')) {
-      adminUnlocked = true;
-      closeAdminLock();
-      switchTab('admin');
-      toast("Espace Administrateur déverrouillé ✔");
-    } else {
-      alert("Code administrateur incorrect.");
-    }
+      adminUnlocked = true; closeAdminLock(); switchTab('admin'); toast("Espace Administrateur déverrouillé ✔");
+    } else { alert("Code administrateur incorrect."); }
   }
 
   /* ---------- PASSEPORT & ÉTIQUETTE QR CODE ---------- */
   let passportCtx = null;
 
-  // Adresse publique de lot.html (même dossier que l'application, quel que soit le nom du fichier ouvert)
   function lotPublicUrl(lotId) {
     const base = window.location.href.split('#')[0].split('?')[0].replace(/[^/]*$/, '');
     return `${base}lot.html#lot=${encodeURIComponent(lotId)}`;
   }
 
-  // QR généré dans l'appareil (aucun service externe : fonctionne hors ligne et s'imprime à coup sûr)
-  function makeQrDataUrl(text) {
+  function makeQrDataUrl(text, sizeMultiplier = 12) {
     try {
       if (window.qrcode) {
         const qr = window.qrcode(0, 'M');
         qr.addData(text); qr.make();
-        return qr.createDataURL(8, 2);
+        return qr.createDataURL(sizeMultiplier, 2);
       }
     } catch (e) { console.warn('QR local indisponible', e); }
-    return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&margin=8&data=${encodeURIComponent(text)}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=500x500&margin=10&data=${encodeURIComponent(text)}`;
   }
 
   function openPassportModal() {
@@ -750,7 +751,7 @@
     passportCtx = {
       id: k.lot.id, serre: $('global-serre').value, debut: k.lot.debut, initial: k.initial,
       sains: k.sains, morts: k.morts, surveillance: k.surveillance, distribues: k.distribues,
-      url, qr: makeQrDataUrl(url)
+      url, qr: makeQrDataUrl(url, 8)
     };
     $('pass-id').textContent = passportCtx.id;
     $('pass-serre').textContent = passportCtx.serre;
@@ -763,31 +764,88 @@
   }
   function closePassportModal() { $('passport-modal').classList.add('hidden'); }
 
-  // Étiquette imprimable : styles en ligne (indépendants de Tailwind), format 98 mm de large
-  function qrLabelHTML(c) {
-    const logo = LOGO.data ? `<img src="${LOGO.data}" alt="" style="height:16mm;width:16mm;object-fit:contain">` : '';
-    const row = (l, v) => `<tr><td style="padding:1.1mm 0;color:#475569;font-size:9pt">${l}</td><td style="padding:1.1mm 0;text-align:right;font-weight:700;font-size:10.5pt">${esc(v)}</td></tr>`;
+  // MODÈLE PLEINE PAGE A4 (remplit l'intégralité d'une feuille A4)
+  function qrFullPageA4HTML(c) {
+    const logo = LOGO.data ? `<img src="${LOGO.data}" alt="" style="height:26mm;width:26mm;object-fit:contain">` : '';
+    const bigQr = makeQrDataUrl(c.url, 14);
+    const row = (l, v, hl = false) => `
+      <tr style="border-bottom:0.4mm solid #cbd5e1">
+        <td style="padding:4mm 2mm;color:#475569;font-size:13pt;font-weight:600">${l}</td>
+        <td style="padding:4mm 2mm;text-align:right;font-weight:900;font-size:${hl?'16pt':'14pt'};color:${hl?'#065f46':'#0f172a'}">${esc(v)}</td>
+      </tr>`;
     const now = new Date();
-    return `<div style="box-sizing:border-box;width:98mm;border:0.4mm dashed #64748b;padding:5mm;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#fff;break-inside:avoid;page-break-inside:avoid">
-      <div style="display:flex;align-items:center;gap:3mm;border-bottom:0.6mm solid #064e3b;padding-bottom:3mm">
+    return `
+    <div style="box-sizing:border-box;width:190mm;min-height:275mm;max-height:280mm;margin:0 auto;border:1.2mm solid #064e3b;padding:8mm 10mm;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#fff;display:flex;flex-direction:column;justify-content:space-between;page-break-inside:avoid;break-inside:avoid">
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1mm solid #064e3b;padding-bottom:5mm">
+          <div style="display:flex;align-items:center;gap:4mm">
+            ${logo}
+            <div>
+              <div style="font-size:26pt;font-weight:900;letter-spacing:1.5px;line-height:1;color:#064e3b">ARDIE</div>
+              <div style="font-size:11pt;color:#334155;font-weight:700;margin-top:1.5mm">Association Réunionnaise pour le Développement de l'Insertion et de l'Emploi</div>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <span style="background:#064e3b;color:#fff;font-size:11pt;font-weight:900;padding:2mm 4mm;border-radius:4mm">FAP PRODUCTION</span>
+          </div>
+        </div>
+
+        <div style="text-align:center;margin:6mm 0 4mm">
+          <div style="font-size:10pt;color:#475569;text-transform:uppercase;letter-spacing:1px;font-weight:700">Passeport phytosanitaire &amp; Traçabilité officielle</div>
+          <h1 style="font-size:20pt;font-weight:900;margin:2mm 0 1mm;color:#0f172a">VITROPLANTS FRUITS À PAIN</h1>
+          <div style="font-family:'Courier New',monospace;font-size:18pt;font-weight:900;background:#f1f5f9;border:0.6mm dashed #475569;display:inline-block;padding:2.5mm 6mm;border-radius:3mm;margin-top:2mm;word-break:break-all">
+            ${esc(c.id)}
+          </div>
+        </div>
+
+        <div style="text-align:center;margin:4mm 0 2mm">
+          <img src="${bigQr}" alt="QR Code" style="width:115mm;height:115mm;image-rendering:pixelated;margin:0 auto;display:block;border:0.8mm solid #0f172a;padding:2mm;background:#fff;border-radius:3mm">
+          <div style="font-size:11.5pt;font-weight:800;color:#064e3b;margin-top:2mm">
+            📱 Scannez ce QR Code pour accéder à la fiche complète du lot en direct
+          </div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;margin-top:4mm">
+          ${row('Emplacement / Serre', c.serre, true)}
+          ${row('Date de démarrage', c.debut)}
+          ${row('Effectif initial au lot', c.initial + ' plants')}
+          ${row('Culture saine restante', c.sains + ' plants', true)}
+          ${row('Pertes cumulées constatées', c.morts + ' plants')}
+        </table>
+      </div>
+
+      <div style="border-top:0.4mm solid #94a3b8;padding-top:3mm;font-size:8.5pt;color:#64748b;display:flex;justify-content:space-between;align-items:center">
+        <span>ARDIE Réunion • Suivi officiel Serres</span>
+        <span>Document édité le ${now.toLocaleDateString('fr-FR')} à ${localHHmm(now)}</span>
+      </div>
+    </div>`;
+  }
+
+  // MODÈLE MULTI-ÉTIQUETTES PAR PAGE (98mm de large)
+  function qrCompactLabelHTML(c) {
+    const logo = LOGO.data ? `<img src="${LOGO.data}" alt="" style="height:14mm;width:14mm;object-fit:contain">` : '';
+    const row = (l, v) => `<tr><td style="padding:1mm 0;color:#475569;font-size:8.5pt">${l}</td><td style="padding:1mm 0;text-align:right;font-weight:700;font-size:9.5pt">${esc(v)}</td></tr>`;
+    const now = new Date();
+    return `<div style="box-sizing:border-box;width:98mm;border:0.4mm dashed #64748b;padding:4mm;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#fff;break-inside:avoid;page-break-inside:avoid">
+      <div style="display:flex;align-items:center;gap:2.5mm;border-bottom:0.5mm solid #064e3b;padding-bottom:2mm">
         ${logo}
-        <div><div style="font-size:17pt;font-weight:900;letter-spacing:1px;line-height:1">ARDIE</div>
-        <div style="font-size:8.5pt;color:#334155;margin-top:1mm">Vitroplants Fruits à Pain (FAP)</div></div>
+        <div><div style="font-size:14pt;font-weight:900;letter-spacing:1px;line-height:1">ARDIE</div>
+        <div style="font-size:7.5pt;color:#334155;margin-top:0.5mm">Vitroplants Fruits à Pain (FAP)</div></div>
       </div>
-      <div style="text-align:center;margin:4mm 0 2mm">
-        <div style="font-size:7.5pt;color:#475569;text-transform:uppercase;letter-spacing:.5px">Numéro de lot</div>
-        <div style="font-family:'Courier New',monospace;font-size:15pt;font-weight:900;word-break:break-all">${esc(c.id)}</div>
+      <div style="text-align:center;margin:2.5mm 0 1.5mm">
+        <div style="font-size:7pt;color:#475569;text-transform:uppercase;letter-spacing:.5px">Numéro de lot</div>
+        <div style="font-family:'Courier New',monospace;font-size:12pt;font-weight:900;word-break:break-all">${esc(c.id)}</div>
       </div>
-      <div style="text-align:center"><img src="${c.qr}" alt="QR Code" style="width:48mm;height:48mm;image-rendering:pixelated"></div>
-      <div style="text-align:center;font-size:8pt;color:#475569;margin:1mm 0 3mm">Scannez pour consulter la traçabilité du lot</div>
+      <div style="text-align:center"><img src="${c.qr}" alt="QR Code" style="width:42mm;height:42mm;image-rendering:pixelated"></div>
+      <div style="text-align:center;font-size:7.5pt;color:#475569;margin:1mm 0 2mm">Scannez pour la traçabilité en direct</div>
       <table style="width:100%;border-collapse:collapse;border-top:0.3mm solid #cbd5e1">
         ${row('Emplacement', c.serre)}
-        ${row('Date de démarrage', c.debut)}
-        ${row('Effectif initial', c.initial + ' plants')}
-        ${row('Culture saine à ce jour', c.sains + ' plants')}
-        ${row('Pertes constatées', c.morts + ' plants')}
+        ${row('Démarrage', c.debut)}
+        ${row('Initial', c.initial + ' plants')}
+        ${row('Culture saine', c.sains + ' plants')}
+        ${row('Pertes', c.morts + ' plants')}
       </table>
-      <div style="font-size:7pt;color:#64748b;text-align:center;margin-top:2mm">Étiquette éditée le ${now.toLocaleDateString('fr-FR')} à ${localHHmm(now)}</div>
+      <div style="font-size:6.5pt;color:#64748b;text-align:center;margin-top:1.5mm">Édité le ${now.toLocaleDateString('fr-FR')} à ${localHHmm(now)}</div>
     </div>`;
   }
 
@@ -798,13 +856,22 @@
   }
 
   async function printQrLabel() {
-    if (!passportCtx) return toast('Ouvrez d\'abord le passeport du lot.', 'err');
-    const n = Math.max(1, Number($('qr-copies').value) || 1);
+    if (!passportCtx) return toast("Ouvrez d'abord le passeport du lot.", 'err');
+    const fmt = $('qr-format').value;
     const box = $('qr-print');
-    box.innerHTML = Array.from({ length: n }, () => qrLabelHTML(passportCtx)).join('');
-    // Attendre que le logo et le QR soient chargés avant d'ouvrir l'impression (sinon page blanche)
+
+    if (fmt === 'full') {
+      box.className = '';
+      box.innerHTML = qrFullPageA4HTML(passportCtx);
+    } else {
+      const n = Math.max(1, Number(fmt) || 2);
+      box.className = 'grid-multi';
+      box.innerHTML = Array.from({ length: n }, () => qrCompactLabelHTML(passportCtx)).join('');
+    }
+
     await Promise.all([...box.querySelectorAll('img')].map(img =>
       img.complete ? Promise.resolve() : new Promise(r => { img.onload = img.onerror = r; })));
+
     setPrintPage('portrait');
     document.body.classList.add('print-qr');
     const done = () => { document.body.classList.remove('print-qr'); box.innerHTML = ''; window.removeEventListener('afterprint', done); };
@@ -812,7 +879,6 @@
     window.print();
   }
 
-  /* ---------- IMPRESSION DES FICHES (corrigé : ne supprime plus les classes du <body>) ---------- */
   function printFiche() {
     const which = currentView;
     setPrintPage(which !== 'plants' ? 'landscape' : 'portrait');
@@ -826,7 +892,7 @@
     const icon = $('sync-icon');
     if (icon) icon.classList.add('animate-spin');
     await loadConfig();
-    refreshSerre();
+    await refreshSerre();
     toast("Données synchronisées ✔");
     setTimeout(() => { if (icon) icon.classList.remove('animate-spin'); }, 800);
   }
@@ -841,12 +907,12 @@
     $('ac-lot-num').innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1} / 12</option>`).join('');
     $('p-ecl-debut').value = store.get('ardie_ecl_debut') || ''; $('p-ecl-fin').value = store.get('ardie_ecl_fin') || '';
 
-    $('global-serre').addEventListener('change', e => {
+    $('global-serre').addEventListener('change', async e => {
       store.set('ardie_serre', e.target.value);
       if ([...$('rep-serre-filter').options].some(o => o.value === e.target.value)) {
         $('rep-serre-filter').value = e.target.value;
       }
-      refreshSerre();
+      await refreshSerre();
     });
     $('global-intervenant').addEventListener('change', e => store.set('ardie_agent', e.target.value));
 
@@ -913,7 +979,7 @@
     toast(`Données copiées vers le plant ${n} ✔`);
   }
   function toggleMesuresDetail() {
-    const oui = $('an-mesures-choix').value === 'Oui';
+    const oui = $('an-mesures-choix').value === 'Oui (préciser)';
     $('an-mesures-box').classList.toggle('hidden', !oui);
     if (oui) $('an-mesures-detail').focus(); else $('an-mesures-detail').value = '';
   }
@@ -1049,15 +1115,15 @@
       const cached = jget('ardie_config', null);
       if (cached) applyConfig(cached);
     }
-    if ($('global-serre').value) refreshSerre();
+    if ($('global-serre').value) await refreshSerre();
     checkOfflineReady();
   }
 
-  function refreshSerre() {
+  async function refreshSerre() {
     const s = $('global-serre').value;
-    updateKpi(s);
-    loadSurvList();
-    loadLotsForReport(s);
+    await updateKpi(s);
+    await loadSurvList();
+    await loadLotsForReport(s);
   }
 
   function renderSelects() {
@@ -1183,7 +1249,7 @@
         toast('Lot clôturé avec succès ✔');
       }
       closeLotModal();
-      refreshSerre();
+      await refreshSerre();
     } catch (err) { toast('Échec : ' + err.message, 'err'); }
     finally { btn.disabled = false; }
   }
@@ -1198,7 +1264,7 @@
       const d = await getJSON({ action: 'getSurveillance', serre: serre, lot_id: lotId });
       const items = d.items || [];
       if (!items.length) {
-        ul.innerHTML = '<li class="py-3 text-emerald-900 text-center font-bold">Aucun plant sous surveillance pour ce lot ✔</li>';
+        ul.innerHTML = '<li class="py-3 text-emerald-900 text-center font-bold">Aucun plant sous surveillance active pour ce lot ✔</li>';
         return;
       }
       ul.innerHTML = items.map(it => `
@@ -1209,7 +1275,10 @@
               ${it.godet !== '-' ? `<span class="text-xs font-bold text-slate-700 font-mono">Repère : ${esc(it.godet)}</span>` : ''}
               <span class="text-xs text-slate-500">Depuis le ${esc(it.date)} à ${esc(it.heure)}</span>
             </div>
-            <div class="text-xs text-slate-700 mt-1">Action : <b>${esc(it.actionType)}</b> • Symptômes : ${esc([it.foliaires==='Oui'?'Foliaires':'', it.ravageurs==='Oui'?'Ravageurs':'', it.pourriture==='Oui'?'Pourriture':'', it.stress==='Oui'?'Stress':'', it.autres!=='-'?it.autres:''].filter(Boolean).join(', ') || 'aucun')}</div>
+            <div class="text-xs text-slate-700 mt-1">
+              Action : <b>${esc(it.actionType || 'Surveillance')}</b> • Symptômes : ${esc([it.foliaires==='Oui'?'Foliaires':'', it.ravageurs==='Oui'?'Ravageurs':'', it.pourriture==='Oui'?'Pourriture':'', it.stress==='Oui'?'Stress':'', (it.autres && it.autres!=='-')?it.autres:''].filter(Boolean).join(', ') || 'aucun')}
+              ${it.mesures && it.mesures !== 'Non' ? `<br><span class="text-emerald-800 font-semibold">Mesures : ${esc(it.mesures)}</span>` : ''}
+            </div>
           </div>
           <div class="flex items-center gap-1.5 shrink-0 w-full sm:w-auto">
             <button data-sortie="Sauvé" data-godet="${esc(it.godet)}" data-id="${esc(it.id)}" class="btn-sm bg-emerald-700 flex-1 sm:flex-none">
@@ -1232,7 +1301,8 @@
     try {
       await postData({ type: 'ANOMALIE_SORTIE', id, godet, statut_sortie: statut, serre: ctx.serre, intervenant: ctx.agent, date: localISODate() });
       toast(`Statut enregistré : ${statut} ✔`);
-      loadSurvList(); updateKpi(ctx.serre);
+      await loadSurvList();
+      await updateKpi(ctx.serre);
     } catch (err) { toast('Échec : ' + err.message, 'err'); }
   }
 
@@ -1266,13 +1336,13 @@
     }, 'Bilan vitroplants enregistré ✔');
     if (r) {
       store.set('ardie_ecl_debut', $('p-ecl-debut').value); store.set('ardie_ecl_fin', $('p-ecl-fin').value);
-      $('p-observations').value = ''; updateKpi(ctx.serre);
+      $('p-observations').value = ''; await updateKpi(ctx.serre);
     }
   });
 
   async function submitAnomAction(actionType) {
     const ctx = requireSerreAgent(); if (!ctx) return;
-    const oui = $('an-mesures-choix').value === 'Oui', det = $('an-mesures-detail').value.trim();
+    const oui = $('an-mesures-choix').value === 'Oui (préciser)', det = $('an-mesures-detail').value.trim();
     const qte = Number($('an-quantite').value) || 1;
 
     const payload = {
@@ -1299,8 +1369,9 @@
     $('an-godet-num').value = ''; $('an-quantite').value = 1; $('an-autres').value = '';
     ['an-maladie-foliaire', 'an-ravageurs', 'an-pourriture', 'an-stress-hydrique'].forEach(id => $(id).checked = false);
     $('an-mesures-choix').value = 'Non'; toggleMesuresDetail(); $('an-heure-entree').value = localHHmm();
-    loadSurvList();
-    updateKpi(ctx.serre);
+    
+    await updateKpi(ctx.serre);
+    await loadSurvList();
   }
 
   async function submitDistribution(e) {
@@ -1313,7 +1384,7 @@
       motif: `Bon ${bon}` + (motif ? ` | ${motif}` : ''), date: localISODate(), heure: localHHmm(),
       lot_id: (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : ''
     }, `${qte} plants distribués à ${benef} ✔`);
-    if (r) { ['dist-qte', 'dist-benef', 'dist-bon', 'dist-motif'].forEach(id => $(id).value = ''); updateKpi(ctx.serre); }
+    if (r) { ['dist-qte', 'dist-benef', 'dist-bon', 'dist-motif'].forEach(id => $(id).value = ''); await updateKpi(ctx.serre); }
   }
 
   $('form-acclim').addEventListener('submit', async (e) => {
@@ -1335,7 +1406,7 @@
     if (r) { buildAccCards(); $('ac-heure').value = localHHmm(); }
   });
 
-  /* ---------- GESTION DES RAPPORTS & SÉLECTION COMPLÈTE DU LOT ---------- */
+  /* ---------- GESTION DES RAPPORTS & SÉLECTION DU LOT ---------- */
   async function loadLotsForReport(serre) {
     const sel = $('rep-lot-filter');
     if (!serre) { sel.innerHTML = '<option value="">Choisir une serre</option>'; return; }
@@ -1343,19 +1414,14 @@
       const d = await getJSON({ action: 'getLots', serre: serre });
       const items = d.items || [];
       let html = '';
-      
-      // Affiche le lot actif en premier avec son ID complet
       if (lastKpi && lastKpi.hasLot) {
         html += `<option value="${esc(lastKpi.lot.id)}">🌱 Lot actif : ${esc(lastKpi.lot.id)} (EN COURS)</option>`;
       }
-      
-      // Ajoute tous les lots archivés
       items.forEach(l => {
         if (!lastKpi || l.id !== lastKpi.lot.id) {
           html += `<option value="${esc(l.id)}">📁 ${esc(l.id)} (${esc(l.statut)} - Début: ${esc(l.debut)})</option>`;
         }
       });
-      
       if (!html) html = '<option value="">Aucun lot trouvé</option>';
       sel.innerHTML = html;
     } catch (e) {
@@ -1419,7 +1485,7 @@
       for (let i = recs.length; i < 12; i++) h2 += `<tr>${Array(10).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
       $('f2-tbody').innerHTML = h2; T('f2-empty', recs.length ? '' : `Aucun relevé pour le ${fr}.`);
 
-      // FICHE 3 : ANOMALIES (AVEC DÉCOMPTE QUANTITÉS EXACTES)
+      // FICHE 3 : ANOMALIES
       T('f3-date', fr); T('f3-year', year); T('f3-serre', serre);
       const anoms = data.anomalies || [];
       let h3 = anoms.map(a => `<tr class="text-center">
@@ -1455,7 +1521,7 @@
   const pdfSafe = (v) => String(v ?? '').replace(/\u00A0/g, ' ').replace(/[^\u0020-\u00FF\u0152\u0153\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026\u20AC]/g, '');
   const pdfDash = (v) => { const s = pdfSafe(v).trim(); return (s === '' || s === 'undefined') ? '-' : s; };
   const logoFormat = () => { const m = (LOGO.data || '').match(/^data:image\/(\w+)/); return m ? m[1].toUpperCase().replace('JPG', 'JPEG') : 'PNG'; };
-  const DARK = [15, 23, 42], GREEN = [6, 95, 70], RED = [185, 28, 28];
+  const DARK = [15, 23, 42], GREEN = [6, 95, 70];
 
   function makePDF(which, rep) {
     const { jsPDF } = window.jspdf;
@@ -1681,7 +1747,7 @@
     } catch (e) {}
   }
 
-  function switchTab(id) {
+  async function switchTab(id) {
     ['clim', 'anom', 'plants', 'acclim', 'reports', 'admin'].forEach(k => {
       $(`tab-${k}`).classList.toggle('hidden', k !== id);
       const b = $(`btn-${k}`);
@@ -1693,15 +1759,15 @@
       }
     });
     if (id === 'clim') $('c-heure').value = localHHmm();
-    if (id === 'anom') loadSurvList();
-    if (id === 'plants') updateKpi($('global-serre').value);
+    if (id === 'anom') await loadSurvList();
+    if (id === 'plants') await updateKpi($('global-serre').value);
     if (id === 'reports') {
       const s = $('global-serre').value;
       if (s && [...$('rep-serre-filter').options].some(o => o.value === s)) {
         $('rep-serre-filter').value = s;
-        loadLotsForReport(s);
+        await loadLotsForReport(s);
       }
-      loadDailySheet();
+      await loadDailySheet();
     }
     icons();
   }
