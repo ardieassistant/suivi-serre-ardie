@@ -187,6 +187,35 @@
       const events = Array.isArray(data.events) ? data.events.slice().reverse() : [];
       $('events-empty').classList.toggle('hidden', events.length > 0);
       let lastDate = '', html = '';
+      // Détection si l'URL cible un pot précis (ex: lot.html#lot=...&godet=12)
+      const urlParams = new URLSearchParams(window.location.hash.replace('#', '?'));
+      const targetGodet = urlParams.get('godet') || new URLSearchParams(window.location.search).get('godet');
+
+      if (targetGodet) {
+        html += `
+          <div class="bg-amber-50 border-2 border-amber-400 rounded-xl p-3 mb-3 text-xs">
+            <span class="font-bold text-amber-950 uppercase">🔍 Suivi spécifique du pot : </span>
+            <span class="font-mono font-black text-amber-900 text-sm">${esc(targetGodet)}</span>
+            <p class="text-slate-600 mt-1">Les événements de ce pot sont surlignés ci-dessous.</p>
+          </div>`;
+      }
+
+      events.forEach(e => {
+        const t = TYPES[e.type] || { icon: '•', cls: 'bg-slate-50 border-slate-300' };
+        if (e.date !== lastDate) {
+          html += `<li class="pt-2 text-[11px] font-black uppercase tracking-wide text-slate-500">${esc(e.date)}</li>`;
+          lastDate = e.date;
+        }
+
+        const isTarget = targetGodet && e.label.includes('[' + targetGodet + ']');
+        const highlightClass = isTarget ? 'ring-2 ring-amber-500 shadow-md' : '';
+        const h = (e.heure && e.heure !== '00:00' && e.heure !== '23:59') ? `<span class="font-mono text-slate-500 mr-1">${esc(String(e.heure).replace(':', 'h'))}</span>` : '';
+
+        html += `<li class="flex gap-2 items-start border rounded-xl px-3 py-2 text-xs ${t.cls} ${highlightClass}">
+          <span class="shrink-0 text-base">${t.icon}</span>
+          <span class="min-w-0">${h}${esc(e.label)}</span>
+        </li>`;
+      });
       events.forEach(e => {
         const t = TYPES[e.type] || { icon: '•', cls: 'bg-slate-50 border-slate-300' };
         if (e.date !== lastDate) {
