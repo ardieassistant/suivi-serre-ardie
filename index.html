@@ -91,6 +91,18 @@
         visibility: visible !important;
       }
     }
+      /* Style pour mini-étiquettes de pots individuels */
+body.print-pots .sheet { display: none !important; }
+body.print-pots { overflow: visible !important; }
+body.print-pots #qr-print {
+  display: grid !important;
+  grid-template-columns: repeat(3, 62mm) !important;
+  gap: 3mm !important;
+  position: absolute; left: 0; top: 0;
+}
+body.print-pots #qr-print, body.print-pots #qr-print * {
+  visibility: visible !important;
+}
   </style>
 
   <style type="text/tailwindcss">
@@ -374,9 +386,39 @@
           <button onclick="loadSurvList()" class="min-h-[44px] px-2 text-sm text-slate-800 flex items-center gap-1 font-bold"><i data-lucide="refresh-cw" class="w-4 h-4"></i>Actualiser</button>
         </div>
         <p class="text-sm text-slate-700">« Sauvé » réintègre directement les plants en culture saine. « Mort » comptabilise une perte définitive.</p>
-        <ul id="surv-active-list" class="divide-y divide-slate-200"><li class="py-3 text-slate-500 text-center">Chargement...</li></ul>
-      </div>
+       <ul id="surv-active-list" class="divide-y divide-slate-200"><li class="py-3 text-slate-500 text-center">Chargement...</li></ul>
+
+<!-- Modale Impression Étiquette Pot Isolé -->
+<div id="pot-qr-modal" class="hidden fixed inset-0 z-[105] bg-black/60 flex items-center justify-center p-3">
+  <div class="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4 shadow-2xl text-center border-2 border-amber-600">
+    <div class="flex justify-between items-center border-b pb-2">
+      <h3 class="font-bold text-slate-900 text-sm flex items-center gap-1.5">
+        <i data-lucide="tag" class="w-4 h-4 text-amber-700"></i>Étiquette Pot Isolé
+      </h3>
+      <button onclick="closePotModal()" class="text-slate-400 hover:text-slate-600 font-black text-lg">✕</button>
     </div>
+    
+    <div id="pot-preview" class="border border-slate-300 rounded-lg p-2 bg-slate-50">
+      <img id="pot-qr-img" class="w-32 h-32 mx-auto rounded border bg-white p-1" alt="QR">
+      <p id="pot-preview-text" class="text-xs font-mono font-bold mt-1 text-slate-800"></p>
+    </div>
+
+    <div class="flex items-center justify-between text-xs font-bold text-slate-700">
+      <span>Nombre d'étiquettes :</span>
+      <select id="pot-copies" class="inp !min-h-[36px] !py-0.5 !w-20 text-center">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="4">4</option>
+        <option value="8">8</option>
+        <option value="12">12</option>
+      </select>
+    </div>
+
+    <button onclick="printPotLabels()" class="btn w-full bg-amber-700 hover:bg-amber-800 text-xs">
+      <i data-lucide="printer" class="w-4 h-4"></i><span>Imprimer les étiquettes pour pots</span>
+    </button>
+  </div>
+</div>
 
     <!-- 3. PLANTS & LOT -->
     <div id="tab-plants" class="space-y-4 hidden">
