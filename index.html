@@ -85,10 +85,14 @@
       body.print-qr #qr-print.grid-multi {
         display: grid !important;
         grid-template-columns: repeat(2, 98mm);
-        gap: 4mm;
+        gap: 3mm;
       }
       body.print-qr #qr-print, body.print-qr #qr-print * {
         visibility: visible !important;
+      }
+      body.print-qr #qr-print > div {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
     }
       /* Style pour mini-étiquettes de pots individuels */
@@ -809,18 +813,18 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
 
   // MODÈLE PLEINE PAGE A4 (remplit l'intégralité d'une feuille A4)
   function qrFullPageA4HTML(c) {
-    const logo = LOGO.data ? `<img src="${LOGO.data}" alt="" style="height:26mm;width:26mm;object-fit:contain">` : '';
+    const logo = LOGO.data ? `<img src="${LOGO.data}" alt="" style="height:22mm;width:22mm;object-fit:contain">` : '';
     const bigQr = makeQrDataUrl(c.url, 14);
     const row = (l, v, hl = false) => `
       <tr style="border-bottom:0.4mm solid #cbd5e1">
-        <td style="padding:4mm 2mm;color:#475569;font-size:13pt;font-weight:600">${l}</td>
-        <td style="padding:4mm 2mm;text-align:right;font-weight:900;font-size:${hl?'16pt':'14pt'};color:${hl?'#065f46':'#0f172a'}">${esc(v)}</td>
+        <td style="padding:2.2mm 2mm;color:#475569;font-size:12pt;font-weight:600">${l}</td>
+        <td style="padding:2.2mm 2mm;text-align:right;font-weight:900;font-size:${hl?'15pt':'13pt'};color:${hl?'#065f46':'#0f172a'}">${esc(v)}</td>
       </tr>`;
     const now = new Date();
     return `
-    <div style="box-sizing:border-box;width:190mm;min-height:275mm;max-height:280mm;margin:0 auto;border:1.2mm solid #064e3b;padding:8mm 10mm;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#fff;display:flex;flex-direction:column;justify-content:space-between;page-break-inside:avoid;break-inside:avoid">
+    <div style="box-sizing:border-box;width:190mm;height:277mm;margin:0 auto;border:1mm solid #064e3b;padding:5mm 8mm;font-family:Arial,Helvetica,sans-serif;color:#0f172a;background:#fff;display:flex;flex-direction:column;justify-content:space-between;page-break-inside:avoid;break-inside:avoid">
       <div>
-        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1mm solid #064e3b;padding-bottom:5mm">
+        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1mm solid #064e3b;padding-bottom:3mm">
           <div style="display:flex;align-items:center;gap:4mm">
             ${logo}
             <div>
@@ -829,26 +833,26 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
             </div>
           </div>
           <div style="text-align:right">
-            <span style="background:#064e3b;color:#fff;font-size:11pt;font-weight:900;padding:2mm 4mm;border-radius:4mm">FAP PRODUCTION</span>
+            <span style="background:#064e3b;color:#fff;font-size:11pt;font-weight:900;padding:2mm 4mm;border-radius:4mm;white-space:nowrap">FAP PRODUCTION</span>
           </div>
         </div>
 
-        <div style="text-align:center;margin:6mm 0 4mm">
+        <div style="text-align:center;margin:3mm 0 2mm">
           <div style="font-size:10pt;color:#475569;text-transform:uppercase;letter-spacing:1px;font-weight:700">Passeport phytosanitaire &amp; Traçabilité officielle</div>
-          <h1 style="font-size:20pt;font-weight:900;margin:2mm 0 1mm;color:#0f172a">VITROPLANTS FRUITS À PAIN</h1>
-          <div style="font-family:'Courier New',monospace;font-size:18pt;font-weight:900;background:#f1f5f9;border:0.6mm dashed #475569;display:inline-block;padding:2.5mm 6mm;border-radius:3mm;margin-top:2mm;word-break:break-all">
+          <h1 style="font-size:18pt;font-weight:900;margin:1.5mm 0 1mm;color:#0f172a">VITROPLANTS FRUITS À PAIN</h1>
+          <div style="font-family:'Courier New',monospace;font-size:16pt;font-weight:900;background:#f1f5f9;border:0.6mm dashed #475569;display:inline-block;padding:2mm 5mm;border-radius:3mm;margin-top:2mm;word-break:break-all">
             ${esc(c.id)}
           </div>
         </div>
 
-        <div style="text-align:center;margin:4mm 0 2mm">
+        <div style="text-align:center;margin:2mm 0 1mm">
           <img src="${bigQr}" alt="QR Code" style="width:115mm;height:115mm;image-rendering:pixelated;margin:0 auto;display:block;border:0.8mm solid #0f172a;padding:2mm;background:#fff;border-radius:3mm">
           <div style="font-size:11.5pt;font-weight:800;color:#064e3b;margin-top:2mm">
             📱 Scannez ce QR Code pour accéder à la fiche complète du lot en direct
           </div>
         </div>
 
-        <table style="width:100%;border-collapse:collapse;margin-top:4mm">
+        <table style="width:100%;border-collapse:collapse;margin-top:2mm">
           ${row('Emplacement / Serre', c.serre, true)}
           ${row('Date de démarrage', c.debut)}
           ${row('Effectif initial au lot', c.initial + ' plants')}
@@ -857,7 +861,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
         </table>
       </div>
 
-      <div style="border-top:0.4mm solid #94a3b8;padding-top:3mm;font-size:8.5pt;color:#64748b;display:flex;justify-content:space-between;align-items:center">
+      <div style="border-top:0.4mm solid #94a3b8;padding-top:2mm;font-size:8.5pt;color:#64748b;display:flex;justify-content:space-between;align-items:center">
         <span>ARDIE Réunion • Suivi officiel Serres</span>
         <span>Document édité le ${now.toLocaleDateString('fr-FR')} à ${localHHmm(now)}</span>
       </div>
@@ -1897,5 +1901,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5846a0add765420',t:'MTc5NDMwNjk2Ng=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5846a0add765420',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
