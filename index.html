@@ -1120,6 +1120,14 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     }
     return { serre, agent };
   }
+  function requireActiveLot() {
+    if (!lastKpi || !lastKpi.hasLot) {
+      toast('Aucun lot actif : créez d\'abord un lot dans l\'onglet 3 (Plants & Lot → Démarrer un lot).', 'err');
+      switchTab('plants');
+      return false;
+    }
+    return true;
+  }
   async function sendWith(btn, label, icon, payload, okMsg) {
     setBtn(btn, true);
     try {
@@ -1439,6 +1447,7 @@ async function printPotLabels() {
   $('form-clim').addEventListener('submit', async (e) => {
     e.preventDefault();
     const ctx = requireSerreAgent(); if (!ctx) return;
+    if (!requireActiveLot()) return;
     const r = await sendWith($('btn-submit-clim'), 'Valider le relevé', 'check', {
       type: 'CLIMAT', date: localISODate(), heure: $('c-heure').value || localHHmm(), serre: ctx.serre, intervenant: ctx.agent,
       temperature: $('c-temp').value, humidite_air: $('c-hygro').value, lumens: $('c-lumens').value || '-',
@@ -1452,6 +1461,7 @@ async function printPotLabels() {
   $('form-plants').addEventListener('submit', async (e) => {
     e.preventDefault();
     const ctx = requireSerreAgent(); if (!ctx) return;
+    if (!requireActiveLot()) return;
     const r = await sendWith($('btn-submit-plants'), 'Valider le bilan journalier', 'check-circle-2', {
       type: 'SUIVI_PLANTS', date: localISODate(), heure: localHHmm(), serre: ctx.serre, intervenant: ctx.agent,
       initial: parseInt($('p-initial').value) || 0,
@@ -1471,6 +1481,7 @@ async function printPotLabels() {
 
   async function submitAnomAction(actionType) {
     const ctx = requireSerreAgent(); if (!ctx) return;
+    if (!requireActiveLot()) return;
     const oui = $('an-mesures-choix').value === 'Oui (préciser)', det = $('an-mesures-detail').value.trim();
     const qte = Number($('an-quantite').value) || 1;
 
@@ -1506,6 +1517,7 @@ async function printPotLabels() {
   async function submitDistribution(e) {
     e.preventDefault();
     const ctx = requireSerreAgent(); if (!ctx) return;
+    if (!requireActiveLot()) return;
     const qte = parseInt($('dist-qte').value) || 0, benef = $('dist-benef').value.trim(), bon = $('dist-bon').value.trim(), motif = $('dist-motif').value.trim();
     if (qte < 1) return toast('Indiquez une quantité valide.', 'err');
     const r = await sendWith($('btn-submit-distrib'), 'Enregistrer la distribution', 'send', {
@@ -1519,6 +1531,7 @@ async function printPotLabels() {
   $('form-acclim').addEventListener('submit', async (e) => {
     e.preventDefault();
     const ctx = requireSerreAgent(); if (!ctx) return;
+    if (!requireActiveLot()) return;
     const plants = [];
     for (let n = 1; n <= 10; n++) {
       const v = (k) => $(`ac-${n}-${k}`).value;
@@ -1901,5 +1914,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5846a0add765420',t:'MTc5NDMwNjk2Ng=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5846a0add765420',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
