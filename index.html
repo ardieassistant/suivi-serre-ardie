@@ -513,27 +513,31 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <label class="lbl" for="p-initial">Stock en début de journée</label>
+            <label class="lbl" for="p-initial">Stock de départ du lot</label>
             <input type="number" inputmode="numeric" id="p-initial" min="0" required class="inp font-bold">
           </div>
           <div>
-            <label class="lbl text-amber-900" for="p-isoles">Total isolés ce jour</label>
+            <label class="lbl text-amber-900" for="p-isoles">Total isolés à ce jour</label>
             <input type="number" inputmode="numeric" id="p-isoles" value="0" min="0" required class="inp !border-amber-400 !bg-amber-50 text-amber-950 font-bold">
           </div>
           <div>
-            <label class="lbl text-red-800" for="p-morts">Total morts ce jour</label>
+            <label class="lbl text-red-800" for="p-morts">Total morts à ce jour</label>
             <input type="number" inputmode="numeric" id="p-morts" min="0" step="1" value="0" required class="inp !border-red-500 !bg-red-50 text-red-900 font-bold">
           </div>
           <div>
-            <label class="lbl text-blue-900" for="p-surveillance">Mis sous surveillance ce jour</label>
+            <label class="lbl text-blue-900" for="p-surveillance">Total sous surveillance à ce jour</label>
             <input type="number" inputmode="numeric" id="p-surveillance" value="0" min="0" required class="inp !border-blue-400 !bg-blue-50 text-blue-950 font-bold">
           </div>
           <div>
-            <label class="lbl text-teal-900" for="p-distribues">Distribués ce jour</label>
+            <label class="lbl text-teal-900" for="p-distribues">Total distribués à ce jour</label>
             <input type="number" inputmode="numeric" id="p-distribues" value="0" min="0" required class="inp !border-teal-400 !bg-teal-50 text-teal-950 font-bold">
           </div>
         </div>
-        <p class="text-xs text-slate-600 -mt-1">Chiffres <b>du jour</b> : les champs surlignés en jaune sont pré-remplis automatiquement depuis les saisies du jour (onglets 2 et 3). Un plant déjà mort ou déjà sous surveillance n'est jamais recompté. Modifiez librement si besoin.</p>
+        <div id="f1-autofill" class="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-3 text-xs text-emerald-950">
+          <p class="font-black uppercase tracking-wide text-[10px] text-emerald-800 mb-1">Rempli automatiquement depuis vos onglets</p>
+          <p id="f1-autofill-line" class="font-semibold">Chargement des chiffres de la journée…</p>
+          <p class="text-[11px] text-emerald-800 mt-1"><b>Stock de départ du lot</b> = l'effectif au démarrage (il ne change pas). <b>Les quatre autres</b> = les <b>totaux à la date du jour</b>, c'est ce qu'exige la formule officielle de la fiche : <b>Démarrage − (Morts + Surveillance + Distribués)</b>. Un plant déjà mort ou déjà sous surveillance n'est jamais recompté. Si vous corrigez un chiffre à la main, votre valeur est conservée ; remettez le chiffre automatique pour que la fiche se remette à jour toute seule.</p>
+        </div>
 
         <div class="grid grid-cols-2 gap-3 bg-indigo-50 p-3 rounded-xl border-2 border-indigo-200">
           <div class="col-span-2 text-sm font-bold text-indigo-950">Éclairage artificiel ambiant (nuit) : programmé</div>
@@ -1348,6 +1352,79 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     await loadSurvList();
     await refreshMortSurvSelect();
     await loadLotsForReport(s);
+    await autoFillFiche1(s);          // ← la fiche 1 se remplit toute seule
+  }
+
+  /* ---------- FICHE 1 : auto-remplissage permanent ----------
+     Appelé à chaque changement de serre, après chaque saisie, et quand on affiche
+     l'onglet 3. Plus besoin d'ouvrir « Fiches PDF » pour avoir les chiffres.
+     Règle : on n'écrase jamais une valeur saisie à la main (dataset.touched). */
+  let lastFicheJour = null, ficheSeq = 0;
+  async function autoFillFiche1(serre) {
+    if (!serre) return;
+    const lotId = (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : '';
+    const moi = ++ficheSeq;
+    let rep = null;
+    try {
+      const p = { action: 'getReports', date: localISODate(), serre };
+      if (lotId) p.lot_id = lotId;
+      rep = await getJSON(p, 25000);
+    } catch (e) { return; }
+    /* deux requêtes lancées coup sur coup (après une saisie) : seule la plus
+       récente doit s'afficher, sinon un chiffre périmé peut revenir à l'écran */
+    if (moi !== ficheSeq || !rep) return;
+
+    applyFicheJour(rep.cumul || {}, rep.ficheJour || {});
+  }
+
+  /* Applique les chiffres de la fiche 1 (partagé par l'auto-remplissage et l'onglet Fiches PDF) */
+  function applyFicheJour(cu, f) {
+    if (!cu) cu = {}; if (!f) f = {};
+    lastFicheJour = f;
+    if (f.stockDebut) lastStockVeille = f.stockDebut;
+
+    const setIfUntouched = (id, val) => {
+      const el = $(id);
+      if (!el) return;
+      /* l'utilisateur a remis exactement le chiffre automatique : on reprend la main */
+      if (el.dataset.touched === '1' && el.dataset.autoVal !== undefined && String(el.dataset.autoVal) === String(el.value)) {
+        el.dataset.touched = '';
+      }
+      if (el.dataset.touched === '1') return;
+      if (val === undefined || val === null || val === '') return;
+      el.value = val;
+      el.classList.add('!bg-yellow-50');
+      /* la valeur posée automatiquement est mémorisée : si l'utilisateur la remet
+         à l'identique, on considère qu'il n'a rien changé (la fiche continue de
+         se mettre à jour toute seule) */
+      f.__auto = f.__auto || {}; f.__auto[id] = String(val);
+      el.dataset.autoVal = String(val);
+      const lbl = el.parentElement && el.parentElement.querySelector('.lbl');
+      if (lbl && !lbl.dataset.auto) { lbl.dataset.auto = '1'; lbl.textContent += ' (auto)'; }
+    };
+    /* Les champs portent les TOTAUX à la date : c'est ce que demande la formule
+       officielle « Démarrage − (Morts + Surveillance + Distribués) ». */
+    setIfUntouched('p-initial', cu.initial || (lastKpi && lastKpi.initial) || '');
+    setIfUntouched('p-isoles', cu.isoles ?? 0);
+    setIfUntouched('p-morts', cu.morts ?? 0);
+    setIfUntouched('p-surveillance', cu.surveillance ?? 0);
+    setIfUntouched('p-distribues', cu.distribues ?? 0);
+    calcPlants();
+
+    /* Bandeau : ce qui est réellement inscrit, et le calcul de la fiche en clair */
+    const ligne = $('f1-autofill-line');
+    if (ligne) {
+      const v = (id) => parseInt((($(id) || {}).value)) || 0;
+      const init = v('p-initial'), morts = v('p-morts'), surv = v('p-surveillance'),
+            dist = v('p-distribues'), iso = v('p-isoles');
+      ligne.innerHTML =
+        `Aujourd'hui : <b>${f.mortsJour ?? 0}</b> mort(s) &nbsp;•&nbsp; ` +
+        `<b>${f.survJour ?? 0}</b> mis sous surveillance &nbsp;•&nbsp; ` +
+        `<b>${f.isolesJour ?? 0}</b> isolé(s) &nbsp;•&nbsp; ` +
+        `<b>${f.distribJour ?? 0}</b> distribué(s) &nbsp;|&nbsp; ` +
+        `calcul de la fiche : <b>${init}</b> − <b>${morts}</b> − <b>${surv}</b> − <b>${dist}</b> = ` +
+        `<b>${Math.max(0, init - morts - surv - dist)}</b> plant(s) en culture saine`;
+    }
   }
 
   function renderSelects() {
@@ -1415,10 +1492,10 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
         ? `<b>Lot actif : ${esc(k.lot.id)}</b> • Démarré le ${esc(k.lot.debut)} • Effectif initial : <b>${k.initial} plants</b><br><span class="text-xs text-slate-600">Culture saine en serre : <b>${k.sains}</b> | Sous surveillance : <b>${k.surveillance}</b> | Pertes cumulées : <b>${k.morts}</b></span>`
         : 'Aucun lot actif pour cette serre. Cliquez sur Démarrer un lot.';
 
-      const initEl = $('p-initial');
-      if (initEl && initEl.dataset.touched !== '1') {
-        initEl.value = has ? (lastStockVeille || k.initial || '') : '';
-      }
+      /* Le champ « Stock de départ » est piloté par applyFicheJour (il doit contenir
+         le DÉPART DU LOT, jamais l'effectif restant). On ne le touche pas ici :
+         c'était la cause du 312 qui revenait à la place du vrai stock du matin. */
+      if (!has) { const initVide = $('p-initial'); if (initVide && initVide.dataset.touched !== '1') initVide.value = ''; }
       $('btn-submit-plants').disabled = !has;
       $('dist-dispo').textContent = 'Dispo : ' + (has ? k.sains : '--');
       calcPlants();
@@ -1574,7 +1651,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
       });
       toast(n === total ? `Statut enregistré : ${statut} ✔` : `${n} plant(s) « ${statut} » — ${total - n} reste(nt) en surveillance ✔`);
       await loadSurvList();
-      await updateKpi(ctx.serre);
+      await updateKpi(ctx.serre); await autoFillFiche1(ctx.serre);
     } catch (err) { toast('Échec : ' + err.message, 'err'); }
   }
   $('sortie-qte').addEventListener('input', updateSortieRest);
@@ -1661,9 +1738,16 @@ async function printPotLabels() {
     if (r) { $('c-remarque').value = ''; $('c-arrosage').value = ''; $('c-temp').value = ''; $('c-hygro').value = ''; hrAlert(); $('c-heure').value = localHHmm(); }
   });
 
+  /* Une valeur n'est « retenue » à la main que si elle DIFFÈRE du chiffre automatique.
+     Cliquer dans le champ ou le remettre à la même valeur ne fige pas la fiche :
+     les jours suivants, l'auto-remplissage continue de fonctionner. */
   ['p-initial', 'p-morts', 'p-surveillance', 'p-distribues', 'p-isoles'].forEach(id => {
     const el = $(id); if (!el) return;
-    el.addEventListener('input', () => { el.dataset.touched = '1'; calcPlants(); });
+    el.addEventListener('input', () => {
+      /* identique au chiffre automatique → ce n'est pas une saisie manuelle */
+      el.dataset.touched = (el.dataset.autoVal !== undefined && String(el.dataset.autoVal) === String(el.value)) ? '' : '1';
+      calcPlants();
+    });
   });
 
   $('form-plants').addEventListener('submit', async (e) => {
@@ -1692,9 +1776,15 @@ async function printPotLabels() {
         const lbl = el.parentElement && el.parentElement.querySelector('.lbl');
         if (lbl && lbl.dataset.auto) { lbl.textContent = lbl.textContent.replace(' (auto)', ''); delete lbl.dataset.auto; }
       });
-      await updateKpi(ctx.serre); await refreshMortSurvSelect();
+      await updateKpi(ctx.serre); await autoFillFiche1(ctx.serre); await refreshMortSurvSelect();
     }
   });
+
+  /* après une saisie (anomalie, mort, sortie, distribution) on remet la fiche à jour */
+  async function refreshApresSaisie() {
+    await refreshSerre();
+    await autoFillFiche1($('global-serre').value);
+  }
 
   async function submitAnomAction(actionType) {
     const ctx = requireSerreAgent(); if (!ctx) return;
@@ -1727,7 +1817,7 @@ async function printPotLabels() {
     ['an-maladie-foliaire', 'an-ravageurs', 'an-pourriture', 'an-stress-hydrique'].forEach(id => $(id).checked = false);
     $('an-mesures-choix').value = 'Non'; toggleMesuresDetail(); $('an-heure-entree').value = localHHmm();
     
-    await updateKpi(ctx.serre);
+    await updateKpi(ctx.serre); await autoFillFiche1(ctx.serre);
     await loadSurvList();
   }
 
@@ -1755,7 +1845,7 @@ async function printPotLabels() {
       });
       toast(`${qte} plant(s) mort(s) enregistrés (hors surveillance) ✔`);
       $('mort-hs-qte').value = 1; $('mort-hs-godet').value = '';
-      await updateKpi(ctx.serre);
+      await updateKpi(ctx.serre); await autoFillFiche1(ctx.serre);
       await loadSurvList();
       await refreshMortSurvSelect();
     } catch (err) { toast('Échec : ' + err.message, 'err'); }
@@ -1796,7 +1886,7 @@ async function printPotLabels() {
       motif: `Bon ${bon}` + (motif ? ` | ${motif}` : ''), date: localISODate(), heure: localHHmm(),
       lot_id: (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : ''
     }, `${qte} plants distribués à ${benef} ✔`);
-    if (r) { ['dist-qte', 'dist-benef', 'dist-bon', 'dist-motif'].forEach(id => $(id).value = ''); await updateKpi(ctx.serre); }
+    if (r) { ['dist-qte', 'dist-benef', 'dist-bon', 'dist-motif'].forEach(id => $(id).value = ''); await updateKpi(ctx.serre); await autoFillFiche1(ctx.serre); }
   }
 
   $('form-acclim').addEventListener('submit', async (e) => {
@@ -1856,7 +1946,61 @@ async function printPotLabels() {
     });
   }
 
-  const dash = (v) => (v === undefined || v === null || String(v).trim() === '' || String(v) === 'undefined') ? '-' : esc(v);
+  /* ---------- NORMALISATION DES DATES (filet de sécurité) ----------
+     Une cellule Google Sheets renvoie parfois un objet Date que JSON transforme en
+     « Tue Nov 17 2026 00:00:00 GMT+0400 (heure normale de Maurice) », ou une heure
+     seule en « Sat Dec 30 1899 10:36:00 GMT+0350 ». On n'affiche JAMAIS ça. */
+  const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const MOIS_ABBR = { jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11 };
+
+  function normHeure(v) {
+    if (v === undefined || v === null) return '';
+    const s = String(v).trim();
+    if (s === '' || s === '-') return '';
+    let m = s.match(/\b(\d{1,2}):(\d{2}):(\d{2})\b/);          // « … 1899 10:36:00 GMT+0350 »
+    if (m) return pad(m[1]) + ':' + m[2];
+    m = s.match(/^(\d{1,2}):(\d{2})$/);                            // « 10:36 »
+    if (m) return pad(m[1]) + ':' + m[2];
+    m = s.match(/^(\d{1,2})h(\d{2})$/);                            // « 10h36 »
+    if (m) return pad(m[1]) + ':' + m[2];
+    return s;
+  }
+
+  /* Renvoie « 18/11/2026 » : gère 2026-11-18, 18/11/2026, Date JS, texte anglais */
+  function normDateFR(v) {
+    if (v === undefined || v === null) return '';
+    const s = String(v).trim();
+    if (s === '' || s === '-') return '';
+    let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);                  // ISO
+    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+    m = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);                    // déjà FR
+    if (m) return m[0];
+    m = s.match(/^[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);   // « Tue Nov 17 2026 … »
+    if (m) {
+      const mo = MOIS_ABBR[m[1].toLowerCase()];
+      const jj = String(m[2]).length === 1 ? '0' + m[2] : m[2];
+      if (mo !== undefined) return `${jj}/${pad(mo + 1)}/${m[3]}`;
+    }
+    return s;
+  }
+
+  /* « 18/11/2026 » ou « 18/11/2026 10:53 » (on garde l'heure utile, on jette l'année 1899) */
+  function normDateHeureFR(v) {
+    const d = normDateFR(v);
+    const h = normHeure(v);
+    if (!d) return h ? h : '';
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(d) && /^\d{2}:\d{2}$/.test(h) && h !== '00:00') return d + ' ' + h;
+    return d;
+  }
+
+  /* Texte court pour les entêtes : « 18/11/2026 » (jamais « Tue Nov 17 … ») */
+  const dash = (v) => {
+    if (v === undefined || v === null) return '-';
+    let s = String(v).trim();
+    if (s === '' || s === 'undefined') return '-';
+    if (/GMT[+-]|\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b|^\d{1,2}:\d{2}:/.test(s)) s = normDateHeureFR(s) || s;
+    return esc(s);
+  };
   const T = (id, v) => { const el = $(id); if (el) el.textContent = v; };
 
   async function loadDailySheet(testKey) {
@@ -1887,32 +2031,8 @@ async function printPotLabels() {
       lines.push(`✅ Reste en culture saine : ${cu.initial ? nb(cu.sains) : '--'}   ( ${nb(cu.initial)} − ${nb(cu.morts)} morts − ${nb(cu.surveillance)} surveillance − ${nb(cu.distribues)} distribués )`);
       document.querySelectorAll('[data-recap]').forEach(el => { el.textContent = lines.join('\n'); });
 
-      // ---- PRÉ-REMPLISSAGE DU BILAN (jamais si l'utilisateur a déjà saisi) ----
-      (function prefillBilan() {
-        if (!mv) return;
-        const setIfUntouched = (id, val) => {
-          const el = $(id); if (!el || el.dataset.touched === '1') return;
-          const actuel = (el.value || '').trim();
-          if (actuel === '' || actuel === '0') {
-            el.value = val;
-            el.classList.add('!bg-yellow-50');
-            const lbl = el.parentElement && el.parentElement.querySelector('.lbl');
-            if (lbl && !lbl.dataset.auto) { lbl.dataset.auto = '1'; lbl.textContent += ' (auto)'; }
-          }
-        };
-        // On reprend les mouvements SAISIS ce jour-là, en retirant les plants
-        // déjà comptés en morts le même jour (pas de double décompte).
-        const mortsJour = nb(mv.morts);
-        const survJour = Math.max(0, nb(mv.surveillance) - mortsJour);
-        setIfUntouched('p-morts', String(mortsJour));
-        setIfUntouched('p-surveillance', String(survJour));
-        setIfUntouched('p-distribues', String(nb(mv.distribues)));
-        const stockDepart = (cv && cv.initial) ? nb(cv.sains) : nb(cu.initial);
-        if (stockDepart) lastStockVeille = stockDepart;
-        const initEl = $('p-initial');
-        if (initEl && initEl.dataset.touched !== '1' && stockDepart) initEl.value = stockDepart;
-        calcPlants();
-      })();
+      // ---- PRÉ-REMPLISSAGE DU BILAN (même logique que l'auto-remplissage permanent) ----
+      applyFicheJour(cu, data.ficheJour || {});
 
       // FICHE 1 : PLANTS
       T('f1-date', fr); T('f1-year', year); T('f1-serre', serre);
@@ -1927,7 +2047,7 @@ async function printPotLabels() {
       T('f2-date', fr); T('f2-year', year); T('f2-serre', serre);
       const recs = data.climats || [];
       let h2 = recs.map(c => `<tr class="text-center">
-        <td class="${cell} font-bold font-mono">${dash(c.heure)}</td><td class="${cell} font-bold">${dash(c.temp)}${c.temp && c.temp !== '-' ? '°C' : ''}</td>
+        <td class="${cell} font-bold font-mono">${dash(normHeure(c.heure))}</td><td class="${cell} font-bold">${dash(c.temp)}${c.temp && c.temp !== '-' ? '°C' : ''}</td>
         <td class="${cell} font-black ${num(c.hygro) < 75 ? 'text-white bg-red-700' : 'text-emerald-900'}">${dash(c.hygro)}${c.hygro && c.hygro !== '-' ? '%' : ''}</td>
         <td class="${cell}">${dash(c.lumens)}</td><td class="${cell}">${dash(c.humTerreau)}</td><td class="${cell}">${dash(c.ph)}</td>
         <td class="${cell}">${dash(c.eclairage)}</td><td class="${cell} text-left">${dash(c.arrosage)}</td><td class="${cell} text-left">${dash(c.remarque)}</td><td class="${cell}">${dash(c.intervenant)}</td></tr>`).join('');
@@ -1938,13 +2058,13 @@ async function printPotLabels() {
       T('f3-date', fr); T('f3-year', year); T('f3-serre', serre);
       const anoms = data.anomalies || [];
       let h3 = anoms.map(a => `<tr class="text-center">
-        <td class="${cell} font-mono">${dash(a.date_entree)}<br><b>${dash(a.heure_entree)}</b></td><td class="${cell}">${dash(a.intervenant_entree)}</td>
+        <td class="${cell} font-mono">${dash(normDateFR(a.date_entree))}<br><b>${dash(normHeure(a.heure_entree))}</b></td><td class="${cell}">${dash(a.intervenant_entree)}</td>
         <td class="${cell} font-bold bg-amber-50">${dash(a.godet_num)}</td>
         <td class="${cell} font-black font-mono text-center">${dash(a.quantite)}</td>
         <td class="${cell}">${dash(a.maladie_foliaire)}</td><td class="${cell}">${dash(a.ravageurs)}</td>
         <td class="${cell}">${dash(a.pourriture_racines)}</td><td class="${cell}">${dash(a.stress_hydrique)}</td>
         <td class="${cell} text-left">${dash(a.autres_constats)}</td><td class="${cell} text-left">${dash(a.mesures_sanitaires)}</td>
-        <td class="${cell} font-bold ${a.statut_sortie === 'Mort' ? 'text-red-700' : a.statut_sortie === 'Sauvé' ? 'text-emerald-800' : ''}">${dash(a.statut_sortie)}<br><span class="font-mono font-normal">${dash(a.date_sortie)}</span></td>
+        <td class="${cell} font-bold ${a.statut_sortie === 'Mort' ? 'text-red-700' : a.statut_sortie === 'Sauvé' ? 'text-emerald-800' : ''}">${dash(a.statut_sortie)}<br><span class="font-mono font-normal">${dash(normDateHeureFR(a.date_sortie))}</span></td>
         <td class="${cell} font-black bg-amber-50">${a.perte ? `<span class="text-red-700">${a.quantite} (Mort)</span>` : (a.statut_sortie === 'Sauvé' ? `<span class="text-emerald-700">${a.quantite} (Sauvé)</span>` : '-')}</td></tr>`).join('');
       for (let i = anoms.length; i < 6; i++) h3 += `<tr>${Array(12).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
       $('f3-tbody').innerHTML = h3; T('f3-empty', anoms.length ? '' : `Aucune anomalie pour le ${fr}.`);
@@ -1968,9 +2088,23 @@ async function printPotLabels() {
 
   /* ---------- EXPORT PDF VECTORIEL (jsPDF) ---------- */
   const pdfSafe = (v) => String(v ?? '').replace(/\u00A0/g, ' ').replace(/[^\u0020-\u00FF\u0152\u0153\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026\u20AC]/g, '');
-  const pdfDash = (v) => { const s = pdfSafe(v).trim(); return (s === '' || s === 'undefined') ? '-' : s; };
+  const pdfDash = (v) => {
+    let s = pdfSafe(v).trim();
+    if (s === '' || s === 'undefined') return '-';
+    if (/GMT[+-]|\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b|^\d{1,2}:\d{2}:/.test(s)) s = normDateHeureFR(s) || s;
+    return s;
+  };
   const logoFormat = () => { const m = (LOGO.data || '').match(/^data:image\/(\w+)/); return m ? m[1].toUpperCase().replace('JPG', 'JPEG') : 'PNG'; };
   const DARK = [15, 23, 42], GREEN = [6, 95, 70];
+
+  /* « mardi 18 novembre 2026 » — libellé long en français, sans dépendre de la langue du navigateur */
+  function libelleJour(iso) {
+    const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!m) return normDateFR(iso);
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    const jours = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+    return `${jours[d.getDay()]} ${Number(m[3])} ${MOIS_FR[Number(m[2]) - 1]} ${m[1]}`;
+  }
 
   function makePDF(which, rep) {
     const { jsPDF } = window.jspdf;
@@ -1995,7 +2129,8 @@ async function printPotLabels() {
     doc.setFontSize(land ? 11 : 12.5); doc.text(titles[which], tx, 22);
 
     doc.setFontSize(8.5); doc.setTextColor(100, 116, 139); doc.text(rep.iso.slice(0, 4), W - M, 9.5, { align: 'right' });
-    doc.setFontSize(9.5); doc.setTextColor(...DARK); doc.text('Date : ' + rep.fr, W - M, 14.5, { align: 'right' });
+    doc.setFontSize(9.5); doc.setTextColor(...DARK);
+    doc.text('Date : ' + libelleJour(rep.iso), W - M, 14.5, { align: 'right' });
     doc.setTextColor(...GREEN); doc.text('SERRE : ' + pdfSafe(rep.serre), W - M, 19.5, { align: 'right' });
     doc.setDrawColor(...DARK); doc.setLineWidth(0.6); doc.line(M, 26, W - M, 26);
 
@@ -2037,11 +2172,11 @@ async function printPotLabels() {
     } else if (which === 'anom') {
       const anoms = rep.data.anomalies || [];
       const body = anoms.map(a => [
-        pdfDash(a.date_entree) + '\n' + pdfDash(a.heure_entree),
+        pdfDash(normDateFR(a.date_entree)) + '\n' + pdfDash(normHeure(a.heure_entree)),
         pdfSafe(a.intervenant_entree), pdfDash(a.godet_num), pdfDash(a.quantite),
         pdfDash(a.maladie_foliaire), pdfDash(a.ravageurs), pdfDash(a.pourriture_racines),
         pdfDash(a.stress_hydrique), pdfSafe(a.autres_constats), pdfSafe(a.mesures_sanitaires),
-        pdfDash(a.statut_sortie) + (a.date_sortie && a.date_sortie !== '-' ? '\n' + pdfDash(a.date_sortie) : ''),
+        pdfDash(a.statut_sortie) + (a.date_sortie && a.date_sortie !== '-' ? '\n' + pdfDash(normDateHeureFR(a.date_sortie)) : ''),
         a.perte ? `${a.quantite} (Mort)` : (a.statut_sortie === 'Sauvé' ? `${a.quantite} (Sauvé)` : '-')
       ]);
       while (body.length < 6) body.push(['', '', '', '', '', '', '', '', '', '', '', '']);
@@ -2056,7 +2191,7 @@ async function printPotLabels() {
         },
         head: [
           [{ content: 'Entrée', colSpan: 4 }, { content: 'Constats', colSpan: 5 }, { content: 'Mesures sanitaires', colSpan: 1 }, { content: 'Sortie', colSpan: 2 }],
-          ['Date / Heure', 'Intervenant', 'Godet/Repère', 'Qté', 'Foliaire', 'Ravageurs', 'Racines', 'Stress', 'Autres', 'Mesures (Oui/Non)', 'Statut / Date', 'Pertes réelles']
+          ['Date / Heure', 'Intervenant', 'Godet', 'Qté', 'Foliaire', 'Ravageurs', 'Racines', 'Stress', 'Autres', 'Mesures (Oui/Non)', 'Statut / Date', 'Pertes réelles']
         ],
         body
       }));
@@ -2064,7 +2199,7 @@ async function printPotLabels() {
     } else if (which === 'clim') {
       const recs = rep.data.climats || [];
       const body = recs.map(c => [
-        pdfDash(c.heure), pdfDash(c.temp) + (c.temp && c.temp !== '-' ? '°C' : ''),
+        pdfDash(normHeure(c.heure)), pdfDash(c.temp) + (c.temp && c.temp !== '-' ? '°C' : ''),
         pdfDash(c.hygro) + (c.hygro && c.hygro !== '-' ? '%' : ''), pdfDash(c.lumens),
         pdfDash(c.humTerreau), pdfDash(c.ph), pdfDash(c.eclairage), pdfDash(c.arrosage), pdfDash(c.remarque), pdfSafe(c.intervenant)
       ]);
@@ -2121,7 +2256,9 @@ async function printPotLabels() {
     const n = doc.getNumberOfPages();
     for (let i = 1; i <= n; i++) {
       doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(148, 163, 184);
-      doc.text('ARDIE - document officiel généré le ' + new Date().toLocaleDateString('fr-FR') + ' à ' + localHHmm() + (n > 1 ? `  -  page ${i}/${n}` : ''), W / 2, H - 4, { align: 'center' });
+      const now = new Date();
+      const genLe = pad(now.getDate()) + '/' + pad(now.getMonth() + 1) + '/' + now.getFullYear() + ' à ' + localHHmm();
+      doc.text('ARDIE - document officiel généré le ' + genLe + (n > 1 ? `  -  page ${i}/${n}` : ''), W / 2, H - 4, { align: 'center' });
     }
     return doc;
   }
@@ -2207,6 +2344,7 @@ async function printPotLabels() {
   }
 
   async function switchTab(id) {
+    if (id === 'plants' && $('global-serre').value) { try { await autoFillFiche1($('global-serre').value); } catch (e) {} }
     ['clim', 'anom', 'plants', 'acclim', 'reports', 'admin'].forEach(k => {
       $(`tab-${k}`).classList.toggle('hidden', k !== id);
       const b = $(`btn-${k}`);
@@ -2231,5 +2369,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c58047ae993930',t:'MTc5NDk4OTQ1MQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c58047ae993930',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c5beb48d1a2858',t:'MTc5NDk5MjAwOA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c5beb48d1a2858',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
