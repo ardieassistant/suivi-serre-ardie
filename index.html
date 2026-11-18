@@ -1116,10 +1116,18 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
   async function getJSON(params, ms = 20000) {
     const ctrl = new AbortController(), t = setTimeout(() => ctrl.abort(), ms);
     try {
-      const res = await fetch(`${SCRIPT_URL}?${new URLSearchParams(params)}`, { signal: ctrl.signal });
+      const res = await fetch(`${SCRIPT_URL}?${new URLSearchParams(params)}`, { signal: ctrl.signal, cache: 'no-store' });
       const out = await res.json();
       if (out && out.error) throw new Error(out.message || 'Erreur serveur');
       return out;
+    } catch (e) {
+      /* Le navigateur coupe la requête au bout de « ms ». Avant, le message
+         brut « signal is aborted without reason » ne voulait rien dire. */
+      if (e && (e.name === 'AbortError' || /aborted/i.test(String(e.message || '')))) {
+        throw new Error(`Le serveur Google a mis plus de ${Math.round(ms / 1000)} s à répondre. Réessayez : le 2e essai est toujours plus rapide.`);
+      }
+      if (e instanceof TypeError) throw new Error("Connexion impossible. Vérifiez internet puis réessayez.");
+      throw e;
     } finally { clearTimeout(t); }
   }
 
@@ -1366,9 +1374,11 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     const moi = ++ficheSeq;
     let rep = null;
     try {
-      const p = { action: 'getReports', date: localISODate(), serre };
+      /* leger=1 : on ne demande que les chiffres (pas les relevés climatiques ni
+         les tests d'acclimatation) → réponse beaucoup plus rapide. */
+      const p = { action: 'getReports', date: localISODate(), serre, leger: 1 };
       if (lotId) p.lot_id = lotId;
-      rep = await getJSON(p, 25000);
+      rep = await getJSON(p, 45000);
     } catch (e) { return; }
     /* deux requêtes lancées coup sur coup (après une saisie) : seule la plus
        récente doit s'afficher, sinon un chiffre périmé peut revenir à l'écran */
@@ -2344,7 +2354,9 @@ async function printPotLabels() {
   }
 
   async function switchTab(id) {
-    if (id === 'plants' && $('global-serre').value) { try { await autoFillFiche1($('global-serre').value); } catch (e) {} }
+    /* on ne bloque plus l'affichage : l'onglet s'ouvre tout de suite, les chiffres
+       arrivent derrière (avant, l'onglet attendait la réponse du serveur). */
+    if (id === 'plants' && $('global-serre').value) { autoFillFiche1($('global-serre').value).catch(() => {}); }
     ['clim', 'anom', 'plants', 'acclim', 'reports', 'admin'].forEach(k => {
       $(`tab-${k}`).classList.toggle('hidden', k !== id);
       const b = $(`btn-${k}`);
@@ -2357,7 +2369,11 @@ async function printPotLabels() {
     });
     if (id === 'clim') $('c-heure').value = localHHmm();
     if (id === 'anom') await loadSurvList();
-    if (id === 'plants') { await updateKpi($('global-serre').value); await refreshMortSurvSelect(); }
+    if (id === 'plants') {
+      /* rafraîchissements en parallèle, et sans bloquer l'affichage */
+      updateKpi($('global-serre').value).catch(() => {});
+      refreshMortSurvSelect().catch(() => {});
+    }
     if (id === 'reports') {
       const s = $('global-serre').value;
       if (s && [...$('rep-serre-filter').options].some(o => o.value === s)) {
@@ -2369,5 +2385,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c5beb48d1a2858',t:'MTc5NDk5MjAwOA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c5beb48d1a2858',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c607f88aa216d9',t:'MTc5NDk5NTAwOQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c607f88aa216d9',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
