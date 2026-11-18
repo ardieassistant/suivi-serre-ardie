@@ -513,7 +513,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
-            <label class="lbl" for="p-initial">Nombre au démarrage</label>
+            <label class="lbl" for="p-initial">Stock en début de journée</label>
             <input type="number" inputmode="numeric" id="p-initial" min="0" required class="inp font-bold">
           </div>
           <div>
@@ -533,7 +533,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
             <input type="number" inputmode="numeric" id="p-distribues" value="0" min="0" required class="inp !border-teal-400 !bg-teal-50 text-teal-950 font-bold">
           </div>
         </div>
-        <p class="text-xs text-slate-600 -mt-1">Chiffres <b>du jour</b> (comptage quotidien) : un plant déjà mort ou déjà sous surveillance n'est pas recompté.</p>
+        <p class="text-xs text-slate-600 -mt-1">Chiffres <b>du jour</b> : les champs surlignés en jaune sont pré-remplis automatiquement depuis les saisies du jour (onglets 2 et 3). Un plant déjà mort ou déjà sous surveillance n'est jamais recompté. Modifiez librement si besoin.</p>
 
         <div class="grid grid-cols-2 gap-3 bg-indigo-50 p-3 rounded-xl border-2 border-indigo-200">
           <div class="col-span-2 text-sm font-bold text-indigo-950">Éclairage artificiel ambiant (nuit) : programmé</div>
@@ -655,7 +655,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
         </table>
         <div class="text-sm"><p class="font-bold">• Remarques / Observations supplémentaires :</p>
           <div id="f1-obs" class="mt-2 p-3 bg-slate-50 border border-slate-300 rounded min-h-[60px] italic">-</div></div>
-        <div data-recap class="border-2 border-emerald-700 bg-emerald-50 rounded p-2 text-center text-xs sm:text-sm font-black leading-relaxed"></div>
+        <div data-recap class="border-2 border-emerald-700 bg-emerald-50 rounded p-2 text-center text-[11px] sm:text-xs font-black leading-snug whitespace-pre-line"></div>
       </div></div>
 
       <!-- Aperçu FICHE 2 -->
@@ -774,7 +774,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
   let LOGO = { src: null, data: null };
 
   let state = { emplacements: [], agentsActifs: [], tousLesAgents: [] };
-  let lastKpi = null, lastReport = null, currentView = 'clim', lotMode = null;
+  let lastKpi = null, lastReport = null, currentView = 'clim', lotMode = null, lastStockVeille = null;
   let adminUnlocked = false;
 
   const $ = (id) => document.getElementById(id);
@@ -1317,7 +1317,10 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
         ? `<b>Lot actif : ${esc(k.lot.id)}</b> • Démarré le ${esc(k.lot.debut)} • Effectif initial : <b>${k.initial} plants</b><br><span class="text-xs text-slate-600">Culture saine en serre : <b>${k.sains}</b> | Sous surveillance : <b>${k.surveillance}</b> | Pertes cumulées : <b>${k.morts}</b></span>`
         : 'Aucun lot actif pour cette serre. Cliquez sur Démarrer un lot.';
 
-      $('p-initial').value = has ? (k.sains > 0 ? k.sains : k.initial) : '';
+      const initEl = $('p-initial');
+      if (initEl && initEl.dataset.touched !== '1') {
+        initEl.value = has ? (lastStockVeille || k.initial || '') : '';
+      }
       $('btn-submit-plants').disabled = !has;
       $('dist-dispo').textContent = 'Dispo : ' + (has ? k.sains : '--');
       calcPlants();
@@ -1561,7 +1564,8 @@ async function printPotLabels() {
   });
 
   ['p-initial', 'p-morts', 'p-surveillance', 'p-distribues', 'p-isoles'].forEach(id => {
-    const el = $(id); if (el) el.addEventListener('input', calcPlants);
+    const el = $(id); if (!el) return;
+    el.addEventListener('input', () => { el.dataset.touched = '1'; calcPlants(); });
   });
 
   $('form-plants').addEventListener('submit', async (e) => {
@@ -1582,7 +1586,15 @@ async function printPotLabels() {
     }, 'Bilan vitroplants enregistré ✔');
     if (r) {
       store.set('ardie_ecl_debut', $('p-ecl-debut').value); store.set('ardie_ecl_fin', $('p-ecl-fin').value);
-      $('p-observations').value = ''; await updateKpi(ctx.serre);
+      $('p-observations').value = '';
+      ['p-morts', 'p-surveillance', 'p-distribues', 'p-isoles'].forEach(id => {
+        const el = $(id); if (!el) return;
+        el.value = 0; el.dataset.touched = '';
+        el.classList.remove('!bg-yellow-50');
+        const lbl = el.parentElement && el.parentElement.querySelector('.lbl');
+        if (lbl && lbl.dataset.auto) { lbl.textContent = lbl.textContent.replace(' (auto)', ''); delete lbl.dataset.auto; }
+      });
+      await updateKpi(ctx.serre); await refreshMortSurvSelect();
     }
   });
 
@@ -1764,13 +1776,45 @@ async function printPotLabels() {
       lastReport = { iso, serre, fr, data };
       const kpi = data.kpi || {}, year = iso.slice(0, 4), cell = 'td';
 
-      // Résumé au pied de chaque fiche : chiffres DU JOUR sélectionné (jamais le temps réel)
+      // ---- Récapitulatif : état du lot À LA DATE SÉLECTIONNÉE (départ → mouvements → reste) ----
       const p0 = data.plant || {};
-      const recapTxt = `📅 ${fr} — Morts du jour : ${p0.hasBilan ? (p0.morts ?? 0) : (data.mortsJour ?? 0)}` +
-                       `  |  Sous surveillance : ${p0.hasBilan ? (p0.surveillance ?? 0) : (data.surveillanceJour ?? 0)}` +
-                       `  |  Distribués le jour : ${p0.hasBilan ? (p0.distribuesJour ?? 0) : (data.distribuesJour ?? 0)}` +
-                       `  |  Reste en culture saine : ${p0.hasBilan ? (p0.sains ?? '--') : '--'}`;
-      document.querySelectorAll('[data-recap]').forEach(el => { el.textContent = recapTxt; });
+      const cu = data.cumul || {}, mv = data.mouvements || {}, cv = data.cumulVeille || {};
+      const nb = (v) => (v === undefined || v === null || v === '') ? 0 : v;
+      const lines = [];
+      const veille = (cu.initial && cv.initial) ? nb(cv.sains) : (cu.initial ? nb(cu.initial) : '--');
+      lines.push(`📅 ${fr}${data.lot_id ? ' — lot ' + data.lot_id : ''}  •  Départ du lot : ${nb(cu.initial)} plants  •  Stock la veille : ${veille}`);
+      lines.push(`Mouvements saisis ce jour : morts ${nb(mv.morts)} • surveillance ${nb(mv.surveillance)} • isolés ${nb(mv.isoles)} • distribués ${nb(mv.distribues)}`);
+      if (p0.hasBilan) lines.push(`Bilan saisi ce jour : morts ${nb(p0.morts)} • surveillance ${nb(p0.surveillance)} • distribués ${nb(p0.distribuesJour)}`);
+      lines.push(`Cumuls à cette date : morts ${nb(cu.morts)} • sous surveillance ${nb(cu.surveillance)} • distribués ${nb(cu.distribues)}`);
+      lines.push(`✅ Reste en culture saine : ${cu.initial ? nb(cu.sains) : '--'}   ( ${nb(cu.initial)} − ${nb(cu.morts)} morts − ${nb(cu.surveillance)} surveillance − ${nb(cu.distribues)} distribués )`);
+      document.querySelectorAll('[data-recap]').forEach(el => { el.textContent = lines.join('\n'); });
+
+      // ---- PRÉ-REMPLISSAGE DU BILAN (jamais si l'utilisateur a déjà saisi) ----
+      (function prefillBilan() {
+        if (!mv) return;
+        const setIfUntouched = (id, val) => {
+          const el = $(id); if (!el || el.dataset.touched === '1') return;
+          const actuel = (el.value || '').trim();
+          if (actuel === '' || actuel === '0') {
+            el.value = val;
+            el.classList.add('!bg-yellow-50');
+            const lbl = el.parentElement && el.parentElement.querySelector('.lbl');
+            if (lbl && !lbl.dataset.auto) { lbl.dataset.auto = '1'; lbl.textContent += ' (auto)'; }
+          }
+        };
+        // On reprend les mouvements SAISIS ce jour-là, en retirant les plants
+        // déjà comptés en morts le même jour (pas de double décompte).
+        const mortsJour = nb(mv.morts);
+        const survJour = Math.max(0, nb(mv.surveillance) - mortsJour);
+        setIfUntouched('p-morts', String(mortsJour));
+        setIfUntouched('p-surveillance', String(survJour));
+        setIfUntouched('p-distribues', String(nb(mv.distribues)));
+        const stockDepart = (cv && cv.initial) ? nb(cv.sains) : nb(cu.initial);
+        if (stockDepart) lastStockVeille = stockDepart;
+        const initEl = $('p-initial');
+        if (initEl && initEl.dataset.touched !== '1' && stockDepart) initEl.value = stockDepart;
+        calcPlants();
+      })();
 
       // FICHE 1 : PLANTS
       T('f1-date', fr); T('f1-year', year); T('f1-serre', serre);
@@ -1970,7 +2014,11 @@ async function printPotLabels() {
     const sJ = pd.hasBilan ? (pd.surveillance ?? 0) : (rep.data.surveillanceJour ?? 0);
     const dJ = pd.hasBilan ? (pd.distribuesJour ?? 0) : (rep.data.distribuesJour ?? 0);
     const reste = pd.hasBilan ? (pd.sains ?? '--') : '--';
-    doc.text(`${rep.fr}  —  Morts du jour : ${mJ}  |  Sous surveillance : ${sJ}  |  Distribués : ${dJ}  |  Reste en culture saine : ${reste}`, M + 4, ry + 6);
+    const cu = rep.data.cumul || null;
+    const lignePied = cu
+      ? `${rep.fr}  —  Départ : ${cu.initial}  |  Morts : ${cu.morts}  |  Surveillance : ${cu.surveillance}  |  Distribués : ${cu.distribues}  |  Reste sain : ${cu.sains}`
+      : `${rep.fr}  —  Morts du jour : ${mJ}  |  Sous surveillance : ${sJ}  |  Distribués : ${dJ}  |  Reste en culture saine : ${reste}`;
+    doc.text(lignePied, M + 4, ry + 6);
 
     const n = doc.getNumberOfPages();
     for (let i = 1; i <= n; i++) {
@@ -2085,5 +2133,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c54ef95d2473ad',t:'MTc5NDk4NzQzMQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c54ef95d2473ad',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c56188db2f4ec3',t:'MTc5NDk4ODE5Mg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c56188db2f4ec3',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
