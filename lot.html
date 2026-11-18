@@ -62,6 +62,71 @@
         <p class="text-[11px] text-emerald-200 mt-3 text-center" id="stats-line"></p>
       </section>
 
+      <!-- SUIVI DES PLANTS : morts / sauvés / surveillance / distribués -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+        <div class="border-b pb-2 flex items-baseline justify-between gap-2">
+          <h2 class="font-bold text-slate-900 text-sm">Suivi des plants — d'où vient chaque plant</h2>
+          <span class="text-[10px] font-bold uppercase text-slate-500" id="suivi-total">--</span>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+          <div class="rounded-xl border-2 border-red-300 bg-red-50 p-2">
+            <p class="text-[10px] font-bold uppercase text-red-800">Morts</p>
+            <p class="text-xl font-black font-mono text-red-900" id="suivi-morts">--</p>
+          </div>
+          <div class="rounded-xl border-2 border-emerald-300 bg-emerald-50 p-2">
+            <p class="text-[10px] font-bold uppercase text-emerald-800">Sauvés</p>
+            <p class="text-xl font-black font-mono text-emerald-900" id="suivi-sauves">--</p>
+          </div>
+          <div class="rounded-xl border-2 border-amber-300 bg-amber-50 p-2">
+            <p class="text-[10px] font-bold uppercase text-amber-800">Sous surveillance</p>
+            <p class="text-xl font-black font-mono text-amber-900" id="suivi-surv">--</p>
+          </div>
+          <div class="rounded-xl border-2 border-teal-300 bg-teal-50 p-2">
+            <p class="text-[10px] font-bold uppercase text-teal-800">Distribués</p>
+            <p class="text-xl font-black font-mono text-teal-900" id="suivi-distrib">--</p>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-[11px] border-collapse">
+            <thead>
+              <tr class="bg-slate-100 text-slate-700">
+                <th class="text-left p-1.5 border">Date</th>
+                <th class="text-left p-1.5 border">Heure</th>
+                <th class="text-left p-1.5 border">Événement</th>
+                <th class="text-left p-1.5 border">Godet</th>
+                <th class="text-right p-1.5 border">Qté</th>
+                <th class="text-right p-1.5 border">Reste sous surveillance</th>
+                <th class="text-left p-1.5 border">Intervenant</th>
+              </tr>
+            </thead>
+            <tbody id="suivi-mouvements"></tbody>
+          </table>
+          <p id="suivi-vide" class="hidden text-xs italic text-slate-500 pt-2">Aucun mouvement de plant enregistré pour ce lot.</p>
+        </div>
+
+        <div id="bloc-releves" class="hidden">
+          <h3 class="text-xs font-black uppercase text-slate-600 mb-1">Relevés d'anomalie (surveillance)</h3>
+          <div class="overflow-x-auto">
+            <table class="w-full text-[11px] border-collapse">
+              <thead>
+                <tr class="bg-slate-100 text-slate-700">
+                  <th class="text-left p-1.5 border">Relevé</th>
+                  <th class="text-left p-1.5 border">Date</th>
+                  <th class="text-right p-1.5 border">Plantés</th>
+                  <th class="text-right p-1.5 border">Morts</th>
+                  <th class="text-right p-1.5 border">Sauvés</th>
+                  <th class="text-right p-1.5 border">Encore sous surveillance</th>
+                  <th class="text-left p-1.5 border">Statut</th>
+                </tr>
+              </thead>
+              <tbody id="suivi-releves"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
         <h2 class="font-bold text-slate-900 text-sm border-b pb-2 mb-3">Historique chronologique du lot</h2>
         <ol id="events" class="space-y-2"></ol>
@@ -83,7 +148,7 @@
   </div>
 
   <script>
-    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzxKJOSQxtaL7Pc5qyCA1tytnFjImffwT__8oeN-quJZgTU1D-Eamy1mqUVl7nU0dPmA/exec";
 
     const $ = (id) => document.getElementById(id);
     const setText = (id, v) => { const el = $(id); if (el) el.textContent = (v === undefined || v === null || v === '') ? '--' : v; };
@@ -206,26 +271,58 @@
           html += `<li class="pt-2 text-[11px] font-black uppercase tracking-wide text-slate-500">${esc(e.date)}</li>`;
           lastDate = e.date;
         }
-
         const isTarget = targetGodet && e.label.includes('[' + targetGodet + ']');
         const highlightClass = isTarget ? 'ring-2 ring-amber-500 shadow-md' : '';
         const h = (e.heure && e.heure !== '00:00' && e.heure !== '23:59') ? `<span class="font-mono text-slate-500 mr-1">${esc(String(e.heure).replace(':', 'h'))}</span>` : '';
-
         html += `<li class="flex gap-2 items-start border rounded-xl px-3 py-2 text-xs ${t.cls} ${highlightClass}">
           <span class="shrink-0 text-base">${t.icon}</span>
           <span class="min-w-0">${h}${esc(e.label)}</span>
         </li>`;
       });
-      events.forEach(e => {
-        const t = TYPES[e.type] || { icon: '•', cls: 'bg-slate-50 border-slate-300' };
-        if (e.date !== lastDate) {
-          html += `<li class="pt-2 text-[11px] font-black uppercase tracking-wide text-slate-500">${esc(e.date)}</li>`;
-          lastDate = e.date;
-        }
-        const h = (e.heure && e.heure !== '00:00' && e.heure !== '23:59') ? `<span class="font-mono text-slate-500 mr-1">${esc(String(e.heure).replace(':', 'h'))}</span>` : '';
-        html += `<li class="flex gap-2 items-start border rounded-xl px-3 py-2 text-xs ${t.cls}"><span class="shrink-0">${t.icon}</span><span class="min-w-0">${h}${esc(e.label)}</span></li>`;
-      });
       $('events').innerHTML = html;
+
+      // ---------- SUIVI DES PLANTS (morts / sauvés / surveillance / distribués) ----------
+      const suivi = data.suivi || {};
+      const mouvements = Array.isArray(suivi.mouvements) ? suivi.mouvements : [];
+      const listReleves = Array.isArray(suivi.releves) ? suivi.releves : [];
+      setText('suivi-morts', suivi.morts ?? kpi.morts);
+      setText('suivi-sauves', suivi.sauves ?? 0);
+      setText('suivi-surv', suivi.surveillance ?? kpi.surveillance);
+      setText('suivi-distrib', suivi.distribues ?? kpi.distribues);
+      setText('suivi-total', mouvements.length + ' mouvement(s) enregistré(s)');
+
+      const tbody = $('suivi-mouvements');
+      tbody.innerHTML = mouvements.map(m => {
+        const mort = String(m.type).toUpperCase() === 'MORT';
+        const cls = mort ? 'bg-red-50 text-red-950' : 'bg-emerald-50 text-emerald-950';
+        return `<tr class="border ${cls}">
+          <td class="p-1.5 border">${esc(m.date)}</td>
+          <td class="p-1.5 border font-mono">${esc(m.heure || '--')}</td>
+          <td class="p-1.5 border font-bold">${mort ? '🔴 Mort' : '🟢 Sauvé'}</td>
+          <td class="p-1.5 border">${esc(m.godet || '-')}</td>
+          <td class="p-1.5 border text-right font-black">${esc(m.quantite)}</td>
+          <td class="p-1.5 border text-right">${m.restant > 0 ? esc(m.restant) : 'clôturé'}</td>
+          <td class="p-1.5 border">${esc(m.intervenant || '-')}</td>
+        </tr>`;
+      }).join('');
+      $('suivi-vide').classList.toggle('hidden', mouvements.length > 0);
+
+      if (listReleves.length) {
+        $('bloc-releves').classList.remove('hidden');
+        $('suivi-releves').innerHTML = listReleves.map(r => {
+          const st = String(r.statut || '').toLowerCase();
+          const col = st === 'mort' ? 'text-red-800 font-black' : (st === 'en cours' ? 'text-amber-800 font-bold' : 'text-emerald-800 font-bold');
+          return `<tr class="border">
+            <td class="p-1.5 border font-mono">${esc(r.id)}</td>
+            <td class="p-1.5 border">${esc(r.date || '-')}</td>
+            <td class="p-1.5 border text-right">${esc(r.quantiteOrigine)}</td>
+            <td class="p-1.5 border text-right text-red-800">${esc(r.morts)}</td>
+            <td class="p-1.5 border text-right text-emerald-800">${esc(r.sauves)}</td>
+            <td class="p-1.5 border text-right font-black">${esc(r.reste)}</td>
+            <td class="p-1.5 border ${col}">${esc(r.statut)}</td>
+          </tr>`;
+        }).join('');
+      }
 
       setText('generated', 'Données consultées le ' + new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
     }
@@ -234,5 +331,5 @@
     window.addEventListener('hashchange', load);
     window.addEventListener('DOMContentLoaded', load);
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c59d9629b085c8',t:'MTc5NDk5MDY1MQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c59d9629b085c8',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
