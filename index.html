@@ -48,9 +48,19 @@
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      header, footer, nav, .no-print, #toast, #auth-overlay, #passport-modal, #admin-lock-modal, #sortie-modal, #banner, #queue-bar, #install-bar, .card, main {
+      /* On masque les éléments d'interface — MAIS PAS <main>, qui contient les feuilles à imprimer */
+      header, footer, nav, .no-print, #toast, #auth-overlay, #passport-modal, #admin-lock-modal, #sortie-modal, #banner, #queue-bar, #install-bar, .card {
         display: none !important;
       }
+      main {
+        display: block !important;
+        position: static !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        max-width: none !important;
+        width: 100% !important;
+      }
+      .sheet-scroll { overflow: visible !important; }
       body * {
         visibility: hidden !important;
       }
@@ -462,6 +472,39 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
         </div>
       </div>
 
+      <!-- MORTALITÉ DU JOUR : hors surveillance / sous surveillance -->
+      <div class="card border-2 border-red-300">
+        <div class="flex items-center justify-between border-b pb-2">
+          <h2 class="font-bold text-slate-900 flex items-center gap-2"><i data-lucide="heart-pulse" class="w-5 h-5 text-red-700"></i>Mortalité constatée aujourd'hui</h2>
+          <span class="text-xs bg-red-100 text-red-900 font-black px-2 py-1 rounded">PERTES</span>
+        </div>
+        <p class="text-sm text-slate-700">Deux situations différentes — déclarez ici, sans attendre :</p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="border-2 border-red-400 bg-red-50 rounded-xl p-3 space-y-2">
+            <p class="font-black text-red-950 text-sm">① Morts hors surveillance</p>
+            <p class="text-xs text-red-900">Plants trouvés morts <b>sans être</b> isolés ni sous surveillance : ils passent directement en pertes, comptés <b>une seule fois</b>.</p>
+            <div class="flex gap-2 items-end">
+              <div class="flex-1"><label class="lbl" for="mort-hs-qte">Nombre</label><input type="number" inputmode="numeric" id="mort-hs-qte" min="1" value="1" class="inp text-center font-black"></div>
+              <div class="flex-1"><label class="lbl" for="mort-hs-godet">Pot / Repère</label><input type="text" id="mort-hs-godet" placeholder="Bac A, Rang 2…" class="inp"></div>
+            </div>
+            <button type="button" onclick="declareMortHorsSurveillance()" id="btn-mort-hs" class="btn w-full bg-red-700 hover:bg-red-800 text-sm">
+              <i data-lucide="skull" class="w-4 h-4"></i><span>Déclarer ces morts</span>
+            </button>
+          </div>
+
+          <div class="border-2 border-amber-400 bg-amber-50 rounded-xl p-3 space-y-2">
+            <p class="font-black text-amber-950 text-sm">② Morts parmi les plants sous surveillance</p>
+            <p class="text-xs text-amber-900">Pour un lot déjà suivi dans l'onglet 2 : choisissez l'observation, puis le nombre réellement mort <b>aujourd'hui</b>.</p>
+            <select id="mort-surv-select" class="inp !min-h-[44px] text-sm"></select>
+            <button type="button" onclick="openMortSurvFromHere()" id="btn-mort-surv" class="btn w-full bg-amber-700 hover:bg-amber-800 text-sm">
+              <i data-lucide="eye-off" class="w-4 h-4"></i><span>Saisir les morts de cette observation</span>
+            </button>
+          </div>
+        </div>
+        <p class="text-xs text-slate-600">Un plant compté ici n'est jamais compté ailleurs : la saisie reste reliée à l'observation d'origine.</p>
+      </div>
+
       <form id="form-plants" class="card">
         <div class="flex items-center justify-between border-b pb-2">
           <h2 class="font-bold text-slate-900 flex items-center gap-2"><i data-lucide="clipboard-check" class="w-5 h-5 text-emerald-700"></i>Suivi journalier vitroplants (Fiche 1)</h2>
@@ -485,7 +528,12 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
             <label class="lbl text-blue-900" for="p-surveillance">Mis sous surveillance ce jour</label>
             <input type="number" inputmode="numeric" id="p-surveillance" value="0" min="0" required class="inp !border-blue-400 !bg-blue-50 text-blue-950 font-bold">
           </div>
+          <div>
+            <label class="lbl text-teal-900" for="p-distribues">Distribués ce jour</label>
+            <input type="number" inputmode="numeric" id="p-distribues" value="0" min="0" required class="inp !border-teal-400 !bg-teal-50 text-teal-950 font-bold">
+          </div>
         </div>
+        <p class="text-xs text-slate-600 -mt-1">Chiffres <b>du jour</b> (comptage quotidien) : un plant déjà mort ou déjà sous surveillance n'est pas recompté.</p>
 
         <div class="grid grid-cols-2 gap-3 bg-indigo-50 p-3 rounded-xl border-2 border-indigo-200">
           <div class="col-span-2 text-sm font-bold text-indigo-950">Éclairage artificiel ambiant (nuit) : programmé</div>
@@ -496,7 +544,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
         <div class="bg-emerald-900 text-white p-4 rounded-xl flex items-center justify-between shadow-inner">
           <div>
             <p class="text-sm uppercase font-bold tracking-wider text-emerald-100">Total restant en culture saine</p>
-            <p class="text-xs text-emerald-200">Formule officielle : Démarrage − (Isolés + Morts)</p>
+            <p class="text-xs text-emerald-200">Formule officielle : Démarrage − (Morts + Surveillance + Distribués)</p>
           </div>
           <span class="text-4xl font-mono font-black" id="p-sains-display">--</span>
         </div>
@@ -597,16 +645,17 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
         <table class="w-full border-collapse border border-slate-500 text-sm">
           <thead><tr><th class="th text-left">Quantité</th><th class="th w-24">Nombre</th><th class="th w-48 text-left">Intervenant technicien</th></tr></thead>
           <tbody>
-            <tr><td class="td">Nombre de vitro plants initial au démarrage</td><td class="td text-center font-bold" id="f1-init">-</td><td class="td" rowspan="5" id="f1-agent">-</td></tr>
+            <tr><td class="td">Nombre de vitro plants initial au démarrage</td><td class="td text-center font-bold" id="f1-init">-</td><td class="td" rowspan="6" id="f1-agent">-</td></tr>
             <tr><td class="td text-amber-900">Total vitro plants isolés ce jour</td><td class="td text-center font-bold text-amber-900" id="f1-isoles">-</td></tr>
             <tr><td class="td text-red-800">Total vitro plants morts ce jour</td><td class="td text-center font-bold text-red-800" id="f1-morts">-</td></tr>
             <tr><td class="td text-blue-900">Total vitro plants sous surveillance</td><td class="td text-center font-bold text-blue-900" id="f1-surv">-</td></tr>
+            <tr><td class="td text-teal-900">Total vitro plants distribués ce jour</td><td class="td text-center font-bold text-teal-900" id="f1-distrib">-</td></tr>
             <tr class="bg-emerald-50"><td class="td font-bold">Total des vitro plants restant en culture saine</td><td class="td text-center font-black text-base text-emerald-900" id="f1-sains">-</td></tr>
           </tbody>
         </table>
         <div class="text-sm"><p class="font-bold">• Remarques / Observations supplémentaires :</p>
           <div id="f1-obs" class="mt-2 p-3 bg-slate-50 border border-slate-300 rounded min-h-[60px] italic">-</div></div>
-        <div data-recap class="border-2 border-emerald-700 bg-emerald-50 rounded p-2 text-center text-sm font-black"></div>
+        <div data-recap class="border-2 border-emerald-700 bg-emerald-50 rounded p-2 text-center text-xs sm:text-sm font-black leading-relaxed"></div>
       </div></div>
 
       <!-- Aperçu FICHE 2 -->
@@ -1199,6 +1248,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     const s = $('global-serre').value;
     await updateKpi(s);
     await loadSurvList();
+    await refreshMortSurvSelect();
     await loadLotsForReport(s);
   }
 
@@ -1278,9 +1328,10 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
 
   function calcPlants() {
     const init = parseInt($('p-initial').value) || 0;
-    const isoles = parseInt($('p-isoles').value) || 0;
     const morts = parseInt($('p-morts').value) || 0;
-    const sains = Math.max(0, init - (isoles + morts));
+    const surv = parseInt(($('p-surveillance') || {}).value) || 0;
+    const dist = parseInt(($('p-distribues') || {}).value) || 0;
+    const sains = Math.max(0, init - (morts + surv + dist));
     $('p-sains-display').textContent = sains;
     return sains;
   }
@@ -1509,6 +1560,10 @@ async function printPotLabels() {
     if (r) { $('c-remarque').value = ''; $('c-arrosage').value = ''; $('c-temp').value = ''; $('c-hygro').value = ''; hrAlert(); $('c-heure').value = localHHmm(); }
   });
 
+  ['p-initial', 'p-morts', 'p-surveillance', 'p-distribues', 'p-isoles'].forEach(id => {
+    const el = $(id); if (el) el.addEventListener('input', calcPlants);
+  });
+
   $('form-plants').addEventListener('submit', async (e) => {
     e.preventDefault();
     const ctx = requireSerreAgent(); if (!ctx) return;
@@ -1519,6 +1574,7 @@ async function printPotLabels() {
       isoles: parseInt($('p-isoles').value) || 0,
       morts: parseInt($('p-morts').value) || 0,
       surveillance: parseInt($('p-surveillance').value) || 0,
+      distribues_jour: parseInt(($('p-distribues') || {}).value) || 0,
       sains: calcPlants(),
       observations: $('p-observations').value || '-',
       eclairage_debut: $('p-ecl-debut').value, eclairage_fin: $('p-ecl-fin').value,
@@ -1563,6 +1619,60 @@ async function printPotLabels() {
     
     await updateKpi(ctx.serre);
     await loadSurvList();
+  }
+
+  /* ---------- MORTALITÉ : hors surveillance (création + sortie en une seule opération) ---------- */
+  async function declareMortHorsSurveillance() {
+    const ctx = requireSerreAgent(); if (!ctx) return;
+    if (!requireActiveLot()) return;
+    const qte = parseInt($('mort-hs-qte').value) || 0;
+    if (qte < 1) return toast('Indiquez un nombre de plants supérieur à 0.', 'err');
+    const godet = $('mort-hs-godet').value.trim() || 'Non spécifié';
+    const btn = $('btn-mort-hs'); btn.disabled = true;
+    try {
+      const res = await postData({
+        type: 'ANOMALIE', action_type: 'Mort hors surveillance',
+        date_entree: localISODate(), heure_entree: localHHmm(),
+        serre: ctx.serre, intervenant: ctx.agent, quantite: qte, godet_num: godet,
+        maladie_foliaire: false, ravageurs: false, pourriture_racines: false, stress_hydrique: false,
+        autres_constats: 'Mort constatée hors surveillance', mesures_sanitaires: 'Non',
+        lot_id: (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : ''
+      });
+      await postData({
+        type: 'ANOMALIE_SORTIE', id: res.id, godet, statut_sortie: 'Mort',
+        quantite_sortie: qte, quantite_restante: 0,
+        serre: ctx.serre, intervenant: ctx.agent, date: localISODate(), heure: localHHmm()
+      });
+      toast(`${qte} plant(s) mort(s) enregistrés (hors surveillance) ✔`);
+      $('mort-hs-qte').value = 1; $('mort-hs-godet').value = '';
+      await updateKpi(ctx.serre);
+      await loadSurvList();
+      await refreshMortSurvSelect();
+    } catch (err) { toast('Échec : ' + err.message, 'err'); }
+    finally { btn.disabled = false; }
+  }
+
+  /* ---------- MORTALITÉ : depuis une observation déjà sous surveillance ---------- */
+  let mortSurvItems = [];
+  async function refreshMortSurvSelect() {
+    const sel = $('mort-surv-select'); if (!sel) return;
+    const serre = $('global-serre').value;
+    const lotId = (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : '';
+    if (!serre) { sel.innerHTML = '<option value="">Choisissez une serre</option>'; return; }
+    try {
+      const d = await getJSON({ action: 'getSurveillance', serre, lot_id: lotId });
+      const items = d.items || [];
+      mortSurvItems = items;
+      sel.innerHTML = items.length
+        ? items.map((it, i) => `<option value="${i}">${esc(it.godet)} — ${esc(it.quantite)} plant(s) — ${esc(it.date)}</option>`).join('')
+        : '<option value="">Aucune observation en cours</option>';
+    } catch (e) { sel.innerHTML = '<option value="">Liste indisponible</option>'; }
+  }
+  function openMortSurvFromHere() {
+    if (!mortSurvItems.length) return toast('Aucune observation sous surveillance pour ce lot.', 'err');
+    const it = mortSurvItems[parseInt($('mort-surv-select').value) || 0];
+    if (!it) return toast('Sélectionnez une observation.', 'err');
+    openSortieModal(it.godet, 'Mort', it.id, it.quantite);
   }
 
   async function submitDistribution(e) {
@@ -1654,16 +1764,20 @@ async function printPotLabels() {
       lastReport = { iso, serre, fr, data };
       const kpi = data.kpi || {}, year = iso.slice(0, 4), cell = 'td';
 
-      document.querySelectorAll('[data-recap]').forEach(el => {
-        el.textContent = `Morts : ${kpi.morts ?? 0}  |  Reste en culture saine : ${kpi.sains ?? '--'}`;
-      });
+      // Résumé au pied de chaque fiche : chiffres DU JOUR sélectionné (jamais le temps réel)
+      const p0 = data.plant || {};
+      const recapTxt = `📅 ${fr} — Morts du jour : ${p0.hasBilan ? (p0.morts ?? 0) : (data.mortsJour ?? 0)}` +
+                       `  |  Sous surveillance : ${p0.hasBilan ? (p0.surveillance ?? 0) : (data.surveillanceJour ?? 0)}` +
+                       `  |  Distribués le jour : ${p0.hasBilan ? (p0.distribuesJour ?? 0) : (data.distribuesJour ?? 0)}` +
+                       `  |  Reste en culture saine : ${p0.hasBilan ? (p0.sains ?? '--') : '--'}`;
+      document.querySelectorAll('[data-recap]').forEach(el => { el.textContent = recapTxt; });
 
       // FICHE 1 : PLANTS
       T('f1-date', fr); T('f1-year', year); T('f1-serre', serre);
       const p = data.plant || {};
       T('f1-ecl-debut', p.eclairageDebut ? fmtH(p.eclairageDebut) : '.......'); T('f1-ecl-fin', p.eclairageFin ? fmtH(p.eclairageFin) : '.......');
-      T('f1-init', p.initial || '-'); T('f1-isoles', p.isoles || '-'); T('f1-morts', p.morts || '-');
-      T('f1-surv', p.surveillance || '-'); T('f1-sains', p.sains || '-');
+      T('f1-init', p.initial ?? '-'); T('f1-isoles', p.isoles ?? 0); T('f1-morts', p.morts ?? 0);
+      T('f1-surv', p.surveillance ?? '-'); T('f1-distrib', p.distribuesJour ?? 0); T('f1-sains', p.sains ?? '-');
       T('f1-agent', p.hasBilan ? p.intervenant : 'Aucun bilan');
       T('f1-obs', (p.observations && p.observations !== '-') ? p.observations : 'Aucune observation saisie.');
 
@@ -1760,10 +1874,11 @@ async function printPotLabels() {
         columnStyles: { 0: { cellWidth: 'auto' }, 1: { cellWidth: 30, halign: 'center', fontStyle: 'bold' }, 2: { cellWidth: 55 } },
         head: [['Quantité', 'Nombre', 'Intervenant technicien']],
         body: [
-          ['Nombre de vitro plants initial au démarrage', pdfDash(p.initial), { content: agent, rowSpan: 5, styles: { valign: 'middle', halign: 'center' } }],
+          ['Nombre de vitro plants initial au démarrage', pdfDash(p.initial), { content: agent, rowSpan: 6, styles: { valign: 'middle', halign: 'center' } }],
           ['Total vitro plants isolés ce jour', pdfDash(p.isoles)],
           ['Total vitro plants morts ce jour', pdfDash(p.morts)],
           ['Total vitro plants sous surveillance', pdfDash(p.surveillance)],
+          ['Total vitro plants distribués ce jour', pdfDash(p.distribuesJour)],
           ['Total des vitro plants restant en culture saine', pdfDash(p.sains)]
         ]
       }));
@@ -1850,7 +1965,12 @@ async function printPotLabels() {
     const ry = H - 18;
     doc.setDrawColor(...GREEN); doc.setLineWidth(0.5); doc.setFillColor(236, 253, 245); doc.roundedRect(M, ry, W - 2 * M, 9, 1.5, 1.5, 'FD');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...DARK);
-    doc.text(`Morts : ${kpi.morts || 0}  |  Reste en culture saine : ${kpi.sains || '--'}`, M + 4, ry + 6);
+    const pd = rep.data.plant || {};
+    const mJ = pd.hasBilan ? (pd.morts ?? 0) : (rep.data.mortsJour ?? 0);
+    const sJ = pd.hasBilan ? (pd.surveillance ?? 0) : (rep.data.surveillanceJour ?? 0);
+    const dJ = pd.hasBilan ? (pd.distribuesJour ?? 0) : (rep.data.distribuesJour ?? 0);
+    const reste = pd.hasBilan ? (pd.sains ?? '--') : '--';
+    doc.text(`${rep.fr}  —  Morts du jour : ${mJ}  |  Sous surveillance : ${sJ}  |  Distribués : ${dJ}  |  Reste en culture saine : ${reste}`, M + 4, ry + 6);
 
     const n = doc.getNumberOfPages();
     for (let i = 1; i <= n; i++) {
@@ -1953,7 +2073,7 @@ async function printPotLabels() {
     });
     if (id === 'clim') $('c-heure').value = localHHmm();
     if (id === 'anom') await loadSurvList();
-    if (id === 'plants') await updateKpi($('global-serre').value);
+    if (id === 'plants') { await updateKpi($('global-serre').value); await refreshMortSurvSelect(); }
     if (id === 'reports') {
       const s = $('global-serre').value;
       if (s && [...$('rep-serre-filter').options].some(o => o.value === s)) {
@@ -1965,5 +2085,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c52a517c6e73c3',t:'MTc5NDk4NTkzMA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c52a517c6e73c3',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c54ef95d2473ad',t:'MTc5NDk4NzQzMQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c54ef95d2473ad',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
