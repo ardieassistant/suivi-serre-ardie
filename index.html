@@ -769,7 +769,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
   <div id="toast" class="hidden fixed left-1/2 -translate-x-1/2 bottom-6 z-[120] max-w-[92vw] px-4 py-3 rounded-xl shadow-lg text-base font-bold text-white"></div>
 
   <script>
-  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxaF6p4Vt-JNOn4STB3kin7eNZayU4YhCqX0RBiHT1KCy16b8KmHjJdipBjo8sN5qigAw/exec";
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzxKJOSQxtaL7Pc5qyCA1tytnFjImffwT__8oeN-quJZgTU1D-Eamy1mqUVl7nU0dPmA/exec";
   const LOGO_CANDIDATES = ['logo.png', 'icon-192.png'];
   let LOGO = { src: null, data: null };
 
@@ -1209,17 +1209,24 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
   }
 
   function applyConfig(raw) {
-    const tous = (Array.isArray(raw.tousLesAgents) ? raw.tousLesAgents : []).map(a => {
-      const nom = String(a.nom ?? a.name ?? '').trim(), civ = String(a.civilite ?? '').trim();
-      const displayName = String(a.displayName ?? ((civ ? civ + ' ' : '') + nom)).trim();
+    raw = raw || {};
+    const brut = Array.isArray(raw.tousLesAgents) ? raw.tousLesAgents
+               : (Array.isArray(raw.agents) ? raw.agents : []);
+    const tous = brut.map(a => {
+      a = a || {};
+      const nom = String(a.nom ?? a.name ?? '').trim();
+      const prenom = String(a.prenom ?? '').trim();
+      const civ = String(a.civilite ?? '').trim();
+      const nomComplet = String(a.nomComplet ?? (prenom ? nom + ' ' + prenom : nom)).trim();
+      const displayName = String(a.displayName ?? ((civ ? civ + ' ' : '') + nomComplet)).trim();
       const contrat = String(a.contrat ?? '').trim();
       return {
-        id: String(a.id ?? '').trim(), nom, displayName, contrat,
+        id: String(a.id ?? a.ID ?? '').trim(), nom: nomComplet, displayName, contrat,
         atelier: String(a.atelier ?? '').trim(),
         actif: a.actif !== undefined ? !!a.actif : (String(a.statut ?? a.status ?? '').toLowerCase() === 'actif'),
         label: String(a.label ?? (displayName + (contrat ? ` (${contrat})` : '')))
       };
-    }).filter(a => a.nom && a.displayName && a.nom !== 'undefined');
+    }).filter(a => a.nom && a.displayName && a.displayName !== 'undefined' && a.nom !== 'undefined');
 
     state = {
       emplacements: (raw.emplacements || raw.serres || []).map(e => String(e).trim()).filter(Boolean),
@@ -1231,17 +1238,108 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     renderAdmin();
   }
 
+  /* Encart orange : la feuille est joignable mais sa configuration est incomplète */
+  function notifyConfigProblems() {
+    const problemes = [];
+    if (!state.emplacements.length) problemes.push("Aucune serre : l'onglet « Config_Emplacements » doit contenir au moins une ligne (Nom_Emplacement + Actif = VRAI).");
+    if (!state.tousLesAgents.length) problemes.push("Aucun agent : l'onglet « Config_Agents » doit contenir au moins une ligne (Nom, Prénom, Actif = VRAI).");
+    if (!problemes.length) { const v = $('config-warning'); if (v) v.remove(); return true; }
+    if (!state.emplacements.length) {
+      $('global-serre').innerHTML = '<option value="" selected>⚠️ Aucune serre dans Config_Emplacements</option>';
+    }
+    if (!state.agentsActifs.length) {
+      $('global-intervenant').innerHTML = '<option value="" selected>⚠️ Aucun agent dans Config_Agents</option>';
+    }
+    showConfigWarning(problemes);
+    return false;
+  }
+
+  function showConfigWarning(problemes) {
+    let box = $('config-warning');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'config-warning';
+      box.className = 'card border-2 border-amber-500 bg-amber-50 text-amber-950';
+      const sel = $('global-serre');
+      const anchor = sel ? sel.closest('.card') : null;
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(box, anchor.nextSibling);
+      else document.querySelector('main').prepend(box);
+    }
+    box.innerHTML =
+      '<h3 class="font-black flex items-center gap-2 text-base">⚠️ Configuration à compléter dans la feuille</h3>' +
+      '<ul class="text-sm mt-2 list-disc list-inside space-y-1">' +
+        problemes.map(p => '<li>' + esc(p) + '</li>').join('') +
+      '</ul>' +
+      '<p class="text-xs mt-2">En-têtes attendus — <code>Config_Agents</code> : ID_Agent, Civilite, Nom, Prenom, Contrat, Atelier, Actif &nbsp;|&nbsp; <code>Config_Emplacements</code> : Nom_Emplacement, Type, Actif.</p>' +
+      '<button type="button" onclick="loadConfig()" class="btn-sm bg-amber-700 text-white mt-3">🔄 Recharger après correction</button>';
+    box.classList.remove('hidden');
+  }
+
   async function loadConfig() {
+    let erreur = null;
     try {
       const raw = await getJSON({ action: 'getConfig' });
+      if (!raw || !(Array.isArray(raw.emplacements) || Array.isArray(raw.serres))) {
+        throw new Error(raw && raw.message ? raw.message : 'Réponse du serveur invalide (aucune serre reçue).');
+      }
       store.set('ardie_config', JSON.stringify(raw));
       applyConfig(raw);
     } catch (err) {
+      erreur = err;
       const cached = jget('ardie_config', null);
-      if (cached) applyConfig(cached);
+      if (cached && (Array.isArray(cached.emplacements) || Array.isArray(cached.serres))) {
+        try { applyConfig(cached); } catch (e) {}
+      }
     }
-    if ($('global-serre').value) await refreshSerre();
+
+    if (erreur) {
+      const msg = errMsg(err2str(erreur));
+      $('global-serre').innerHTML = '<option value="" selected>⚠️ Serveur indisponible</option>';
+      $('global-intervenant').innerHTML = '<option value="" selected>⚠️ Aucun agent reçu</option>';
+      showServerWarning(msg, erreur);
+      toast('Serveur indisponible : ' + msg, 'err');
+    } else {
+      const v = $('server-warning'); if (v) v.remove();
+      const ok = notifyConfigProblems();
+      if (ok && $('global-serre').value) await refreshSerre();
+      else if (!ok) toast('Configuration incomplète : voir l\'encart orange.', 'warn');
+    }
     checkOfflineReady();
+  }
+
+  function err2str(e) { return (e && e.message) ? e.message : String(e || ''); }
+
+  function errMsg(m) {
+    const s = String(m || '');
+    if (/Failed to fetch|NetworkError|Load failed/i.test(s)) return "L'application n'arrive pas à joindre Google. Vérifiez la connexion internet, puis rechargez la page.";
+    if (/Aucune feuille|openById|SPREADSHEET_ID/i.test(s)) return "Le serveur n'est pas relié à une feuille de calcul. Dans Apps Script : ouvrez la feuille → Extensions → Apps Script, puis relancez setupARDIE.";
+    if (/is not valid JSON|Unexpected token|JSON/i.test(s)) return "La réponse de Google n'est pas exploitable : l'URL du script est probablement incorrecte, ou le déploiement n'est pas accessible (« Tout le monde »). Vérifiez SCRIPT_URL dans index.html.";
+    if (/Action inconnue/i.test(s)) return "Le serveur déployé est une ancienne version. Déployez la nouvelle version de Code.gs (Déployer → Gérer les déploiements → nouvelle version).";
+    if (/permission|autorisation|Authorization/i.test(s)) return "Le script n'a pas l'autorisation d'accéder à la feuille. Relancez setupARDIE et acceptez l'autorisation.";
+    return s || 'Erreur inconnue.';
+  }
+
+  function showServerWarning(msg, err) {
+    let box = $('server-warning');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'server-warning';
+      box.className = 'card border-2 border-red-400 bg-red-50 text-red-950';
+      const sel = $('global-serre');
+      const anchor = sel ? sel.closest('.card') : null;
+      if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(box, anchor.nextSibling);
+      else document.querySelector('main').prepend(box);
+    }
+    box.innerHTML =
+      '<h3 class="font-black flex items-center gap-2 text-base">⚠️ Connexion au serveur impossible</h3>' +
+      '<p class="text-sm mt-1">' + esc(msg) + '</p>' +
+      '<p class="text-xs mt-2 text-red-800">Détail technique : <code class="break-all">' + esc(err2str(err).slice(0, 200)) + '</code></p>' +
+      '<div class="flex flex-wrap gap-2 mt-3">' +
+        '<button type="button" onclick="loadConfig()" class="btn-sm bg-red-700 text-white">🔄 Réessayer</button>' +
+        '<a href="' + SCRIPT_URL + '?action=diag" target="_blank" rel="noopener" class="btn-sm bg-slate-700 text-white">🔍 Diagnostic du serveur</a>' +
+      '</div>' +
+      '<p class="text-xs mt-2">Le diagnostic doit afficher la liste des feuilles et des serres. S\'il affiche une erreur, elle indique quoi corriger.</p>';
+    box.classList.remove('hidden');
   }
 
   async function refreshSerre() {
@@ -2133,5 +2231,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c56188db2f4ec3',t:'MTc5NDk4ODE5Mg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c56188db2f4ec3',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c58047ae993930',t:'MTc5NDk4OTQ1MQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c58047ae993930',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
