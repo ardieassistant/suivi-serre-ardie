@@ -48,7 +48,7 @@
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
-      header, footer, nav, .no-print, #toast, #auth-overlay, #passport-modal, #admin-lock-modal, #banner, #queue-bar, #install-bar, .card, main {
+      header, footer, nav, .no-print, #toast, #auth-overlay, #passport-modal, #admin-lock-modal, #sortie-modal, #banner, #queue-bar, #install-bar, .card, main {
         display: none !important;
       }
       body * {
@@ -189,6 +189,27 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
       <button onclick="printQrLabel()" class="btn w-full bg-emerald-700 hover:bg-emerald-800 text-sm">
         <i data-lucide="printer" class="w-5 h-5"></i><span>Imprimer l'étiquette QR Code</span>
       </button>
+    </div>
+  </div>
+
+  <!-- MODALE CLÔTURE PARTIELLE SURVEILLANCE (SAUVÉ / MORT) -->
+  <div id="sortie-modal" class="hidden fixed inset-0 z-[95] bg-black/60 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl border-2 border-emerald-700">
+      <div class="flex justify-between items-center border-b pb-2">
+        <h3 id="sortie-title" class="font-bold text-slate-900 text-base">Clôturer l'observation</h3>
+        <button onclick="closeSortieModal()" class="text-slate-400 hover:text-slate-600 text-lg font-black">✕</button>
+      </div>
+      <p id="sortie-desc" class="text-sm text-slate-700"></p>
+      <div>
+        <label for="sortie-qte" class="lbl-s">Nombre de plants concernés :</label>
+        <input type="number" id="sortie-qte" min="1" class="inp text-center text-lg font-black" inputmode="numeric">
+        <p id="sortie-rest" class="text-xs text-slate-600 mt-1"></p>
+        <p id="sortie-error" class="text-sm font-bold text-red-700 hidden mt-1"></p>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <button onclick="closeSortieModal()" class="btn bg-slate-600 hover:bg-slate-700 text-sm">Annuler</button>
+        <button id="sortie-confirm" onclick="confirmSortie()" class="btn bg-emerald-700 hover:bg-emerald-800 text-sm">Confirmer</button>
+      </div>
     </div>
   </div>
 
@@ -389,7 +410,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
           <h3 class="font-bold text-slate-900 flex items-center gap-2"><i data-lucide="hourglass" class="w-5 h-5 text-amber-700"></i>Plants sous surveillance active (Lot en cours)</h3>
           <button onclick="loadSurvList()" class="min-h-[44px] px-2 text-sm text-slate-800 flex items-center gap-1 font-bold"><i data-lucide="refresh-cw" class="w-4 h-4"></i>Actualiser</button>
         </div>
-        <p class="text-sm text-slate-700">« Sauvé » réintègre directement les plants en culture saine. « Mort » comptabilise une perte définitive.</p>
+        <p class="text-sm text-slate-700">« Sauvé » réintègre directement les plants en culture saine. « Mort » comptabilise une perte définitive. Vous pouvez clôturer <strong>une partie seulement</strong> (ex. 4 morts sur 44) : le reste reste en surveillance.</p>
        <ul id="surv-active-list" class="divide-y divide-slate-200"><li class="py-3 text-slate-500 text-center">Chargement...</li></ul>
 
 <!-- Modale Impression Étiquette Pot Isolé -->
@@ -1216,7 +1237,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     if ((el = t('[data-del-loc]'))) return delLocation(el.dataset.delLoc);
     if ((el = t('[data-toggle-agent]'))) return toggleAgent(el.dataset.toggleAgent, el.dataset.name);
     if (t('[data-q-send]')) return flushQueue(true);
-    if ((el = t('[data-sortie]'))) return cloturerSurveillance(el.dataset.godet, el.dataset.sortie, el.dataset.id);
+    if ((el = t('[data-sortie]'))) return openSortieModal(el.dataset.godet, el.dataset.sortie, el.dataset.id, el.dataset.qte);
   });
 
   /* ---------- HUD / INVENTAIRE EN TEMPS RÉEL PAR LOT ---------- */
@@ -1341,10 +1362,10 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
             <button onclick="openPotLabelModal('${itemEnc}')" title="Imprimer mini-étiquette pour le pot" class="btn-sm bg-amber-600 hover:bg-amber-700">
               <i data-lucide="tag" class="w-4 h-4"></i><span>Étiquette pot</span>
             </button>
-            <button data-sortie="Sauvé" data-godet="${esc(it.godet)}" data-id="${esc(it.id)}" class="btn-sm bg-emerald-700 flex-1 sm:flex-none">
+            <button data-sortie="Sauvé" data-godet="${esc(it.godet)}" data-id="${esc(it.id)}" data-qte="${esc(it.quantite)}" class="btn-sm bg-emerald-700 flex-1 sm:flex-none">
               <i data-lucide="check" class="w-4 h-4"></i><span>Sauvé</span>
             </button>
-            <button data-sortie="Mort" data-godet="${esc(it.godet)}" data-id="${esc(it.id)}" class="btn-sm bg-red-700 flex-1 sm:flex-none">
+            <button data-sortie="Mort" data-godet="${esc(it.godet)}" data-id="${esc(it.id)}" data-qte="${esc(it.quantite)}" class="btn-sm bg-red-700 flex-1 sm:flex-none">
               <i data-lucide="x" class="w-4 h-4"></i><span>Mort</span>
             </button>
           </div>
@@ -1356,25 +1377,55 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     }
   }
 
-  async function cloturerSurveillance(godet, statut, id) {
+  let sortieCtx = null;
+  function openSortieModal(godet, statut, id, total) {
+    sortieCtx = { godet, statut, id, total: Number(total) || 0 };
+    $('sortie-title').textContent = statut === 'Mort' ? '✖ Clôturer — Mort (perte définitive)' : '✔ Clôturer — Sauvé (réintégration en culture saine)';
+    $('sortie-desc').textContent = `Observation « ${godet} » : ${sortieCtx.total} plant(s) en surveillance. Combien sont « ${statut} » ?`;
+    $('sortie-qte').value = sortieCtx.total;
+    $('sortie-qte').max = sortieCtx.total;
+    $('sortie-error').classList.add('hidden');
+    updateSortieRest();
+    $('sortie-modal').classList.remove('hidden');
+    $('sortie-qte').focus(); $('sortie-qte').select();
+  }
+  function updateSortieRest() {
+    if (!sortieCtx) return;
+    const n = Number($('sortie-qte').value) || 0;
+    const rest = sortieCtx.total - n;
+    $('sortie-rest').textContent = rest > 0 ? `→ Les ${rest} plant(s) restants resteront en surveillance.` : '→ Tous les plants seront clôturés.';
+  }
+  function closeSortieModal() { $('sortie-modal').classList.add('hidden'); sortieCtx = null; }
+  async function confirmSortie() {
+    if (!sortieCtx) return;
     const ctx = requireSerreAgent(); if (!ctx) return;
-    if (!confirm(`Confirmer la clôture de cette observation en « ${statut} » ?`)) return;
+    const n = Number($('sortie-qte').value);
+    const err = $('sortie-error');
+    if (!Number.isInteger(n) || n < 1 || n > sortieCtx.total) {
+      err.textContent = `Saisissez un nombre entre 1 et ${sortieCtx.total}.`;
+      err.classList.remove('hidden'); return;
+    }
+    const { godet, statut, id, total } = sortieCtx;
+    closeSortieModal();
     try {
-await postData({ 
-  type: 'ANOMALIE_SORTIE', 
-  id, 
-  godet, 
-  statut_sortie: statut, 
-  serre: ctx.serre, 
-  intervenant: ctx.agent, 
-  date: localISODate(),
-  heure: localHHmm()
-});
-      toast(`Statut enregistré : ${statut} ✔`);
+      await postData({
+        type: 'ANOMALIE_SORTIE',
+        id,
+        godet,
+        statut_sortie: statut,
+        quantite_sortie: n,
+        quantite_restante: total - n,
+        serre: ctx.serre,
+        intervenant: ctx.agent,
+        date: localISODate(),
+        heure: localHHmm()
+      });
+      toast(n === total ? `Statut enregistré : ${statut} ✔` : `${n} plant(s) « ${statut} » — ${total - n} reste(nt) en surveillance ✔`);
       await loadSurvList();
       await updateKpi(ctx.serre);
     } catch (err) { toast('Échec : ' + err.message, 'err'); }
   }
+  $('sortie-qte').addEventListener('input', updateSortieRest);
 /* ---------- GESTION DES MINI-ÉTIQUETTES DE POTS ISOLÉS ---------- */
 let currentPotItem = null;
 
@@ -1914,5 +1965,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c52a517c6e73c3',t:'MTc5NDk4NTkzMA=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c52a517c6e73c3',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
