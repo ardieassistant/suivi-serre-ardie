@@ -82,6 +82,23 @@
         break-after: avoid !important;
       }
 
+      /* ---------- IMPRESSION DU DOSSIER COMPLET D'UN LOT ----------
+         « Imprimer les 4 fiches du lot » : les feuilles ne sont plus superposées
+         en absolu, elles s'enchaînent page après page (une fiche = une page). */
+      body.print-dossier .sheet:not(.hidden) {
+        position: static !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        min-height: 0 !important;
+      }
+      body.print-dossier .sheet:not(.hidden):last-of-type {
+        page-break-after: auto !important;
+        break-after: auto !important;
+      }
+      body.print-dossier .sheet.hidden { display: block !important; visibility: visible !important; }
+      body.print-dossier .sheet.hidden *, body.print-dossier .sheet:not(.hidden) * { visibility: visible !important; }
+      body.print-dossier main { padding-bottom: 0 !important; }
+
       /* Impression du QR Code */
       body.print-qr .sheet { display: none !important; }
       body.print-qr { overflow: visible !important; }
@@ -154,6 +171,20 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
   </div>
 
   <!-- SÉCURITÉ ADMIN -->
+  <!-- HISTORIQUE D'UN VITROPLANT SUIVI (acclimatation) -->
+  <div id="acc-hist-modal" class="fixed inset-0 z-[106] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between border-b p-4 gap-2">
+        <div>
+          <h3 class="font-black text-lg text-slate-900" id="acc-hist-titre">Historique du plant</h3>
+          <p class="text-xs text-slate-600">Toutes les mesures de ce plant, de la plus récente à la plus ancienne.</p>
+        </div>
+        <button type="button" onclick="fermerAccHist()" class="btn bg-slate-200 hover:bg-slate-300 text-slate-900 !w-auto px-3"><i data-lucide="x" class="w-5 h-5"></i><span>Fermer</span></button>
+      </div>
+      <div class="p-3 overflow-auto" id="acc-hist-corps"></div>
+    </div>
+  </div>
+
   <!-- TABLEAU DES SAISIES DU JOUR (contrôle anti-erreur des salariés) -->
   <div id="saisies-modal" class="fixed inset-0 z-[105] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-3">
     <div class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl max-h-[88vh] flex flex-col">
@@ -666,7 +697,14 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
           <button onclick="exportPDF('clim')" class="btn-sm bg-red-700 hover:bg-red-800"><i data-lucide="download" class="w-4 h-4"></i>PDF Fiche 2</button>
           <button onclick="exportPDF('anom')" class="btn-sm bg-red-700 hover:bg-red-800"><i data-lucide="download" class="w-4 h-4"></i>PDF Fiche 3</button>
           <button onclick="exportPDF('acclim')" class="btn-sm bg-red-700 hover:bg-red-800"><i data-lucide="download" class="w-4 h-4"></i>PDF Fiche 4</button>
-          <button onclick="printFiche()" class="col-span-2 md:col-span-4 btn bg-slate-800 hover:bg-slate-900 text-white">
+          <button onclick="exportDossierPDF()" class="col-span-2 md:col-span-4 btn bg-red-800 hover:bg-red-900 text-white">
+            <i data-lucide="file-down" class="w-5 h-5"></i><span>Télécharger les 4 fiches du lot en un seul PDF</span>
+          </button>
+          <!-- IMPRESSION : la fiche affichée, OU le dossier complet du lot sélectionné -->
+          <button onclick="imprimerLot()" class="col-span-2 md:col-span-2 btn bg-indigo-800 hover:bg-indigo-900 text-white">
+            <i data-lucide="files" class="w-5 h-5"></i><span>Imprimer les 4 fiches du lot</span>
+          </button>
+          <button onclick="printFiche()" class="col-span-2 md:col-span-2 btn bg-slate-800 hover:bg-slate-900 text-white">
             <i data-lucide="printer" class="w-5 h-5"></i><span>Imprimer la fiche affichée</span>
           </button>
         </div>
@@ -684,6 +722,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
             <span class="text-xs text-slate-500 font-mono" id="f1-year">2026</span>
             <p class="mt-2">Date : <span id="f1-date" class="underline font-mono">--/--/----</span></p>
             <p class="text-emerald-900">Serre : <span id="f1-serre">--</span></p>
+            <p class="text-emerald-900">Lot : <span data-lot-num class="underline font-bold">-</span> / 12</p>
           </div>
         </div>
         <div class="border border-slate-400 rounded p-3 text-sm space-y-1">
@@ -714,7 +753,8 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
             <h2 class="text-base font-black uppercase mt-1">Relevés climatiques serre et irrigation</h2></div>
           <div class="text-right text-xs font-bold"><span class="text-slate-500 font-mono" id="f2-year">2026</span>
             <p>Date : <span id="f2-date" class="underline font-mono">--/--/----</span></p>
-            <p class="text-emerald-900">SERRE : <span id="f2-serre">--</span></p></div>
+            <p class="text-emerald-900">SERRE : <span id="f2-serre">--</span></p>
+            <p class="text-emerald-900">LOT : <span data-lot-num class="underline font-bold">-</span> / 12</p></div>
         </div>
         <table class="w-full border-collapse border border-slate-500 text-xs">
           <thead><tr>
@@ -734,7 +774,8 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
             <h2 class="text-base font-black uppercase mt-1">Suivi journalier d'anomalies / pertes - Vitro plants sous surveillance</h2></div>
           <div class="text-right text-xs font-bold"><span class="text-slate-500 font-mono" id="f3-year">2026</span>
             <p>Date : <span id="f3-date" class="underline font-mono">--/--/----</span></p>
-            <p class="text-emerald-900">SERRE : <span id="f3-serre">--</span></p></div>
+            <p class="text-emerald-900">SERRE : <span id="f3-serre">--</span></p>
+            <p class="text-emerald-900">LOT : <span data-lot-num class="underline font-bold">-</span> / 12</p></div>
         </div>
         <table class="w-full border-collapse border border-slate-500 text-xs">
           <thead>
@@ -762,6 +803,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
             <p>Date : <span id="f4-date" class="underline font-mono">--/--/----</span></p>
             <p>Heure : <span id="f4-heure">--h--</span></p>
             <p class="text-emerald-900">SERRE : <span id="f4-serre">--</span></p>
+            <p class="text-emerald-900">LOT : <span data-lot-num class="underline font-bold">-</span> / 12</p>
             <p class="font-semibold">Intervenant : <span id="f4-agent">--</span></p></div>
         </div>
         <table class="w-full border-collapse border border-slate-500 text-xs">
@@ -818,7 +860,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
   <div id="toast" class="hidden fixed left-1/2 -translate-x-1/2 bottom-6 z-[120] max-w-[92vw] px-4 py-3 rounded-xl shadow-lg text-base font-bold text-white"></div>
 
   <script>
-  const APP_VERSION = '3.6';     // ← doit correspondre au Code.gs déployé
+  const APP_VERSION = '3.7';     // ← doit correspondre au Code.gs déployé
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzxKJOSQxtaL7Pc5qyCA1tytnFjImffwT__8oeN-quJZgTU1D-Eamy1mqUVl7nU0dPmA/exec";
   const LOGO_CANDIDATES = ['logo.png', 'icon-192.png'];
   let LOGO = { src: null, data: null };
@@ -1055,6 +1097,39 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     window.print();
   }
 
+  /* ---------- IMPRESSION DU DOSSIER COMPLET D'UN LOT ----------
+     « Imprimer la fiche affichée » n'imprimait que l'onglet visible. Ici on imprime
+     les 4 fiches (Plants, Climat, Anomalies, Acclimatation) du lot et de la date
+     choisis dans la liste déroulante — c'est ce qu'on remet à la direction. */
+  async function imprimerLot() {
+    const iso = ($('rep-date') && $('rep-date').value) || localISODate();
+    const serre = ($('rep-serre-filter') && $('rep-serre-filter').value) || $('global-serre').value;
+    const lot = ($('rep-lot-filter') && $('rep-lot-filter').value) || '';
+    if (!serre) { toast('Choisissez une serre.', 'err'); return; }
+    const btn = $('btn-load');
+    if (btn) { btn.disabled = true; }
+    toast('Préparation du dossier du lot…');
+    try {
+      const p = { action: 'getReports', date: iso, serre };
+      if (lot) p.lot_id = lot;
+      const data = await getJSON(p, 60000);
+      const fr = iso.split('-').reverse().join('/');
+      lastReport = { iso, serre, fr, data };
+      appliquerRapport(data, iso, serre, fr);   /* remplit les 4 fiches (réutilisé par l'impression du dossier) */
+      /* le CSS « print-dossier » met les 4 fiches l'une après l'autre, une par page */
+      document.body.classList.add('print-dossier');
+      const fini = () => { document.body.classList.remove('print-dossier'); window.removeEventListener('afterprint', fini); };
+      window.addEventListener('afterprint', fini);
+      /* filet de sécurité : si le navigateur ne signale pas la fin d'impression,
+         l'écran redevient normal au bout d'une minute */
+      setTimeout(fini, 60000);
+      setTimeout(() => { window.print(); }, 400);
+      toast(`Dossier ${lot || serre} — ${fr} prêt à imprimer ✔`);
+    } catch (e) {
+      toast('Impression impossible : ' + e.message, 'err');
+    } finally { if (btn) btn.disabled = false; }
+  }
+
   async function manualRefresh() {
     const icon = $('sync-icon');
     if (icon) icon.classList.add('animate-spin');
@@ -1106,6 +1181,9 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
       await refreshSerre();
     });
     $('global-intervenant').addEventListener('change', e => store.set('ardie_agent', e.target.value));
+    /* changer de lot d'acclimatation => on réaffiche la dernière mesure des plants
+       de CE lot (l'échantillonnage 10 % est suivi lot par lot) */
+    if ($('ac-lot-num')) $('ac-lot-num').addEventListener('change', () => buildAccCards());
 
     ['p-initial', 'p-isoles', 'p-morts', 'p-surveillance'].forEach(id => {
       $(id).addEventListener('input', calcPlants);
@@ -1136,6 +1214,130 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     }
   }
 
+  /* ---------- MÉMOIRE DE L'ACCLIMATATION ----------
+     On garde en main la dernière mesure de CHAQUE plant (toutes dates confondues)
+     et l'historique complet, pour l'afficher à côté du formulaire. Suivre toujours
+     les mêmes plants est l'intérêt même de l'échantillonnage 10 %. */
+  let ACC_LAST = {};        // n° plant → dernière mesure
+  let ACC_HIST = [];        // toutes les mesures, du plus récent au plus ancien
+
+  function accIndexer(rep) {
+    ACC_HIST = (rep && rep.acclimHistorique) || (rep && rep.acclimatation) || [];
+    ACC_LAST = {};
+    ACC_HIST.forEach(m => {
+      const n = parseInt(m.num_plante, 10);
+      if (!n) return;
+      const cle = n + '|' + (m.lot_numero || '1');
+      if (!ACC_LAST[cle]) ACC_LAST[cle] = m;         // le 1er trouvé est le plus récent (tri décroissant)
+    });
+  }
+  function accDerniere(n) {
+    /* Chaque lot a SES plants : jamais de repli sur le lot 1, sinon un lot
+       sans historique afficherait les mesures d'un autre lot. */
+    const lot = ($('ac-lot-num') && $('ac-lot-num').value) || '1';
+    return ACC_LAST[n + '|' + lot] || null;
+  }
+  const ACC_TXT = { t: 'taille_cm', f: 'nb_feuilles', c: 'couleur_feuilles', a: 'aspect_tige', v: 'vigueur', ts: 'temp_substrat', hs: 'hum_substrat', ph: 'ph_substrat' };
+  const ACC_CASE = { mf: 'maladie_foliaire', rav: 'ravageurs', pr: 'pourriture_racines', fong: 'maladie_fongique' };
+
+  function accVide(v) { return v === undefined || v === null || String(v).trim() === '' || String(v).trim() === '-'; }
+
+  /* Bandeau « dernière mesure » d'un plant */
+  function accHistoriqueHTML(n) {
+    const d = accDerniere(n);
+    if (!d) {
+      return `<div class="rounded-lg border border-dashed border-slate-300 bg-white px-2 py-1.5 text-[11px] text-slate-500 italic">
+        Aucune mesure précédente pour le plant ${n}. Ce sera la première.</div>`;
+    }
+    const r = (v) => accVide(v) ? '—' : esc(String(v));
+    const oui = (v) => String(v || 'Non').toLowerCase().startsWith('oui') ? '🔴 Oui' : '✔ Non';
+    return `<div class="rounded-lg border-2 border-blue-200 bg-blue-50 px-2 py-1.5">
+      <div class="flex items-center justify-between gap-2 flex-wrap">
+        <span class="text-[11px] font-black uppercase text-blue-900">Dernière mesure — ${esc(normDateHeureFR(d.date + ' ' + d.heure) || d.date)}</span>
+        <span class="flex gap-1">
+          <button type="button" onclick="accReprendre(${n})" class="btn-sm bg-blue-700" title="Recopie ces valeurs dans le formulaire">↺ Reprendre</button>
+          <button type="button" onclick="accVoirHistorique(${n})" class="btn-sm bg-slate-600">Historique</button>
+        </span>
+      </div>
+      <div class="mt-1 grid grid-cols-2 sm:grid-cols-5 gap-x-2 gap-y-0.5 text-[11px] text-slate-800">
+        <span>Taille : <b>${r(d.taille_cm)}</b> cm</span>
+        <span>Feuilles : <b>${r(d.nb_feuilles)}</b></span>
+        <span>Couleur : <b>${r(d.couleur_feuilles)}</b></span>
+        <span>Tige : <b>${r(d.aspect_tige)}</b></span>
+        <span>Vigueur : <b>${r(d.vigueur)}</b></span>
+        <span>T° subst. : <b>${r(d.temp_substrat)}</b></span>
+        <span>Humidité : <b>${r(d.hum_substrat)}</b></span>
+        <span>pH : <b>${r(d.ph_substrat)}</b></span>
+        <span>Foliaire : <b>${oui(d.maladie_foliaire)}</b></span>
+        <span>Ravageurs : <b>${oui(d.ravageurs)}</b></span>
+      </div>
+    </div>`;
+  }
+
+  /* Recopie la dernière mesure dans le formulaire (l'utilisateur ajuste ensuite) */
+  function accReprendre(n) {
+    const d = accDerniere(n);
+    if (!d) { toast('Aucune mesure précédente pour ce plant.', 'err'); return; }
+    const NUM = { t: 1, f: 1, ts: 1, hs: 1, ph: 1 };     // seuls ceux-là acceptent la virgule décimale
+    Object.keys(ACC_TXT).forEach(k => {
+      const v = d[ACC_TXT[k]];
+      const el = $(`ac-${n}-${k}`);
+      if (!el || accVide(v)) return;
+      /* « Vert, une jaunie » doit rester tel quel : la virgule ne devient un point
+         que pour les mesures chiffrées. */
+      el.value = NUM[k] ? String(v).replace(',', '.') : String(v);
+    });
+    Object.keys(ACC_CASE).forEach(k => {
+      const el = $(`ac-${n}-${k}`);
+      if (el) el.checked = String(d[ACC_CASE[k]] || '').toLowerCase().startsWith('oui');
+    });
+    toast(`Dernière mesure du plant ${n} recopiée — complétez ce qui a évolué ✔`);
+  }
+
+  /* Petite fenêtre : tout l'historique d'un plant */
+  function accVoirHistorique(n) {
+    const lot = ($('ac-lot-num') && $('ac-lot-num').value) || '1';
+    const lignes = ACC_HIST.filter(m => parseInt(m.num_plante, 10) === n && String(m.lot_numero || '1') === lot);
+    const corps = lignes.length ? `<div class="overflow-auto rounded-lg border">
+      <table class="w-full text-xs border-collapse">
+        <thead><tr class="bg-slate-100">
+          ${['Date / heure', 'Taille', 'Feuilles', 'Couleur', 'Tige', 'Vigueur', 'T° subst.', 'Humidité', 'pH', 'Foliaire', 'Ravageurs'].map(h => `<th class="p-1.5 border text-left whitespace-nowrap">${h}</th>`).join('')}
+        </tr></thead>
+        <tbody>${lignes.map(m => `<tr>
+          <td class="p-1.5 border font-bold whitespace-nowrap">${esc(normDateHeureFR(m.date + ' ' + m.heure) || m.date)}</td>
+          <td class="p-1.5 border">${accVide(m.taille_cm) ? '—' : esc(m.taille_cm)}</td>
+          <td class="p-1.5 border">${accVide(m.nb_feuilles) ? '—' : esc(m.nb_feuilles)}</td>
+          <td class="p-1.5 border">${accVide(m.couleur_feuilles) ? '—' : esc(m.couleur_feuilles)}</td>
+          <td class="p-1.5 border">${accVide(m.aspect_tige) ? '—' : esc(m.aspect_tige)}</td>
+          <td class="p-1.5 border">${accVide(m.vigueur) ? '—' : esc(m.vigueur)}</td>
+          <td class="p-1.5 border">${accVide(m.temp_substrat) ? '—' : esc(m.temp_substrat)}</td>
+          <td class="p-1.5 border">${accVide(m.hum_substrat) ? '—' : esc(m.hum_substrat)}</td>
+          <td class="p-1.5 border">${accVide(m.ph_substrat) ? '—' : esc(m.ph_substrat)}</td>
+          <td class="p-1.5 border">${String(m.maladie_foliaire||'').toLowerCase().startsWith('oui') ? '🔴' : '✔'}</td>
+          <td class="p-1.5 border">${String(m.ravageurs||'').toLowerCase().startsWith('oui') ? '🔴' : '✔'}</td>
+        </tr>`).join('')}</tbody>
+      </table></div>` : '<p class="text-sm italic text-slate-500">Aucune mesure enregistrée pour ce plant.</p>';
+    const m = $('acc-hist-modal');
+    if (m) {
+      $('acc-hist-titre').textContent = `Plant n° ${n} — lot ${lot} / 12 — ${lignes.length} mesure(s)`;
+      $('acc-hist-corps').innerHTML = corps;
+      m.classList.remove('hidden'); m.classList.add('flex');
+    }
+  }
+  function fermerAccHist() { const m = $('acc-hist-modal'); if (!m) return; m.classList.add('hidden'); m.classList.remove('flex'); }
+
+  /* Recharge l'historique quand on change de lot (chaque lot a ses plants) */
+  async function accChargerHistorique() {
+    const serre = $('global-serre').value;
+    if (!serre) return;
+    try {
+      const p = { action: 'getReports', date: localISODate(), serre };
+      if (lastKpi && lastKpi.hasLot) p.lot_id = lastKpi.lot.id;
+      accIndexer(await getJSON(p, 45000));
+    } catch (e) { /* hors ligne : on garde ce qu'on a */ }
+    buildAccCards();
+  }
+
   function accCard(n) {
     const ni = (k, lbl, ph) => `<div><label class="lbl-s" for="ac-${n}-${k}">${lbl}</label><input type="number" inputmode="decimal" step="any" id="ac-${n}-${k}" placeholder="${ph}" class="inp text-center"></div>`;
     const ti = (k, lbl, ph, dl) => `<div><label class="lbl-s" for="ac-${n}-${k}">${lbl}</label><input type="text" list="${dl}" id="ac-${n}-${k}" placeholder="${ph}" class="inp"></div>`;
@@ -1146,6 +1348,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
           <span class="text-sm font-black text-emerald-950">Vitroplant testé ${n} / 10</span>
           ${n > 1 ? `<button type="button" onclick="copyAccPrevious(${n})" class="btn-sm bg-emerald-700">Copier le n° ${n - 1}</button>` : ''}
         </div>
+        ${accHistoriqueHTML(n)}
         <p class="text-xs font-bold uppercase text-slate-700">Suivi morphologique</p>
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2">
           ${ni('t', 'Taille (cm)', 'cm')}${ni('f', 'Nb feuilles', 'n')}
@@ -2102,7 +2305,7 @@ async function printPotLabels() {
       serre: ctx.serre, intervenant: ctx.agent, lot_numero: $('ac-lot-num').value, plants,
       lot_id: (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : ''
     }, `${plants.length} test(s) d'acclimatation enregistré(s) ✔`);
-    if (r) { try { store.set(ACC_CLE, ''); } catch (e) {} buildAccCards(); $('ac-heure').value = localHHmm(); }
+    if (r) { try { store.set(ACC_CLE, ''); } catch (e) {} $('ac-heure').value = localHHmm(); await accChargerHistorique(); }
   });
 
   /* ---------- GESTION DES RAPPORTS & SÉLECTION DU LOT ---------- */
@@ -2113,12 +2316,16 @@ async function printPotLabels() {
       const d = await getJSON({ action: 'getLots', serre: serre });
       const items = d.items || [];
       let html = '';
+      /* Le numéro de lot (1 → 12) est mis en tête de ligne : c'est lui que
+         l'utilisateur connaît, l'identifiant complet reste affiché entre parenthèses. */
+      const nomLot = (l) => (l.lot_numero ? `Lot n° ${l.lot_numero} / 12 — ` : '');
       if (lastKpi && lastKpi.hasLot) {
-        html += `<option value="${esc(lastKpi.lot.id)}">🌱 Lot actif : ${esc(lastKpi.lot.id)} (EN COURS)</option>`;
+        const ici = (items.find(l => l.id === lastKpi.lot.id) || {});
+        html += `<option value="${esc(lastKpi.lot.id)}">🌱 ${esc(nomLot(ici))}${esc(lastKpi.lot.id)} (EN COURS)</option>`;
       }
       items.forEach(l => {
         if (!lastKpi || l.id !== lastKpi.lot.id) {
-          html += `<option value="${esc(l.id)}">📁 ${esc(l.id)} (${esc(l.statut)} - Début: ${esc(l.debut)})</option>`;
+          html += `<option value="${esc(l.id)}">📁 ${esc(nomLot(l))}${esc(l.id)} (${esc(l.statut)} - Début: ${esc(l.debut)})</option>`;
         }
       });
       if (!html) html = '<option value="">Aucun lot trouvé</option>';
@@ -2242,6 +2449,18 @@ async function printPotLabels() {
       if (testKey) params.test = testKey;
       const data = await getJSON(params, 30000);
       lastReport = { iso, serre, fr, data };
+      appliquerRapport(data, iso, serre, fr);            /* tout le remplissage des 4 fiches */
+      showReportView(currentView);
+      toast(`Données chargées ✔`);
+    } catch (err) { lastReport = null; toast('Chargement impossible : ' + err.message, 'err'); }
+    finally { btn.disabled = false; }
+  }
+
+  /* ---------- REMPLISSAGE DES 4 FICHES ----------
+     Extrait de loadDailySheet pour pouvoir être appelé aussi par l'impression
+     du dossier complet d'un lot. */
+  function appliquerRapport(data, iso, serre, fr) {
+      if (!data) return;
       const kpi = data.kpi || {}, year = iso.slice(0, 4), cell = 'td';
 
       // ---- Récapitulatif : état du lot À LA DATE SÉLECTIONNÉE (départ → mouvements → reste) ----
@@ -2303,8 +2522,14 @@ async function printPotLabels() {
 
       // FICHE 4 : ACCLIMATATION
       T('f4-date', fr); T('f4-year', year); T('f4-serre', serre);
+      /* Le numéro de lot est calculé ICI, une fois, et réutilisé par l'aperçu
+         (R.1..R.4) comme par le PDF : impossible que les deux divergent. */
+      const lotNumPrint = String(data.lot_numero || '').trim();
+      document.querySelectorAll('[data-lot-num]').forEach(el => { el.textContent = lotNumPrint || '-'; });
       const acc = data.acclimatation || [];
-      T('f4-lot-num', acc.length ? acc[0].lot_numero : '1'); T('f4-heure', acc.length ? fmtH(acc[0].heure) : '--h--'); T('f4-agent', acc.length ? acc[0].intervenant : '--');
+      /* Le lot imprimé est celui qui est SÉLECTIONNÉ ; les mesures ne servent
+         de repli que si aucune sélection n'a été transmise. */
+      T('f4-lot-num', (data.lot_numero || (acc.length && acc[0].lot_numero) || '1').replace(' / 12', '').replace('/ 12', '').replace('/ 12', '').trim()); T('f4-heure', acc.length ? fmtH(acc[0].heure) : '--h--'); T('f4-agent', acc.length ? acc[0].intervenant : '--');
       let h4 = acc.map(a => `<tr class="text-center"><td class="${cell} font-bold bg-slate-100">${dash(a.num_plante)}</td><td class="${cell} font-semibold">${val(a.taille_cm)}</td>
         <td class="${cell}">${val(a.nb_feuilles)}</td><td class="${cell}">${val(a.couleur_feuilles)}</td><td class="${cell}">${val(a.aspect_tige)}</td><td class="${cell} font-semibold">${val(a.vigueur)}</td>
         <td class="${cell} bg-emerald-50">${val(a.temp_substrat)}</td><td class="${cell} bg-emerald-50">${val(a.hum_substrat)}</td><td class="${cell} bg-emerald-50">${val(a.ph_substrat)}</td>
@@ -2312,10 +2537,6 @@ async function printPotLabels() {
       for (let i = acc.length; i < 10; i++) h4 += `<tr><td class="${cell} text-center font-bold bg-slate-100">${i + 1}</td>${Array(12).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
       $('f4-tbody').innerHTML = h4; T('f4-empty', acc.length ? '' : `Aucun test pour le ${fr}.`);
 
-      showReportView(currentView);
-      toast(`Données chargées ✔`);
-    } catch (err) { lastReport = null; toast('Chargement impossible : ' + err.message, 'err'); }
-    finally { btn.disabled = false; }
   }
 
   /* ---------- EXPORT PDF VECTORIEL (jsPDF) ---------- */
@@ -2372,6 +2593,10 @@ async function printPotLabels() {
     doc.setFontSize(9.5); doc.setTextColor(...DARK);
     doc.text('Date : ' + libelleJour(rep.iso), W - M, 14.5, { align: 'right' });
     doc.setTextColor(...GREEN); doc.text('SERRE : ' + pdfSafe(rep.serre), W - M, 19.5, { align: 'right' });
+    /* Le lot imprimé est rappelé sur les 4 fiches : un dossier qui ne dit pas
+       de quel lot il parle ne sert à rien une fois sur le bureau. */
+    const lotPdf = String(rep.data.lot_numero || '').replace('/ 12', '').trim();
+    if (lotPdf) { doc.setFontSize(9); doc.text('LOT : ' + pdfSafe(lotPdf) + ' / 12', W - M, (land ? 24.5 : 24.5), { align: 'right' }); }
     doc.setDrawColor(...DARK); doc.setLineWidth(0.6); doc.line(M, 26, W - M, 26);
 
     const baseTable = (extra) => Object.assign({ theme: 'grid', margin: { left: M, right: M, top: 12, bottom: BOTTOM }, headStyles: headSt }, extra);
@@ -2461,7 +2686,8 @@ async function printPotLabels() {
 
     } else if (which === 'acclim') {
       const acc = rep.data.acclimatation || [];
-      let lotVal = acc.length && acc[0].lot_numero ? acc[0].lot_numero.replace('/ 12', '').replace('/12', '').trim() : '1';
+      let lotVal = String(rep.data.lot_numero || (acc.length && acc[0].lot_numero) || '1')
+        .replace('/ 12', '').replace('/12', '').trim();
       doc.setFontSize(9); doc.setFont('helvetica', 'bold');
       doc.text(`Test effectué sur le lot numéro : ${lotVal} / 12  |  Intervenant : ${acc.length ? pdfSafe(acc[0].intervenant) : '-'}`, M, 30);
       const body = acc.map(a => [
@@ -2520,6 +2746,42 @@ async function printPotLabels() {
       doc.save(`ARDIE_${names[which]}_${lastReport.serre.replace(/\s+/g, '-')}_${iso}.pdf`);
       toast('PDF téléchargé ✔');
     } catch (err) { toast('Échec PDF : ' + err.message, 'err'); }
+  }
+
+  /* Dossier complet : les 4 fiches du lot et de la date choisis, dans un seul
+     fichier PDF — c'est la pièce qu'on archive et qu'on envoie à la direction. */
+  async function exportDossierPDF() {
+    if (!window.jspdf || !window.jspdf.jsPDF) return toast('Moteur PDF non chargé (vérifiez le réseau)', 'err');
+    const iso = $('rep-date').value, serre = $('rep-serre-filter').value || 'ALL';
+    const lotId = $('rep-lot-filter').value || '';
+    if (!iso) return toast('Sélectionnez une date', 'err');
+    const btn = $('btn-load'); if (btn) btn.disabled = true;
+    toast('Création du dossier…');
+    try {
+      const params = { action: 'getReports', date: iso, serre };
+      if (lotId) params.lot_id = lotId;
+      const data = await getJSON(params, 60000);
+      const fr = isoToFR(iso);
+      lastReport = { iso, serre, fr, data };
+      appliquerRapport(data, iso, serre, fr);
+
+      /* Les 4 fiches sont téléchargées l'une après l'autre (le navigateur bloque
+         les téléchargements simultanés). Chacune garde son nom officiel. */
+      const fiches = [
+        ['plants', 'Fiche1_Plants'],
+        ['clim',   'Fiche2_Climat'],
+        ['anom',   'Fiche3_Anomalies'],
+        ['acclim', 'Fiche4_Acclimatation']
+      ];
+      for (let i = 0; i < fiches.length; i++) {
+        const [which, nom] = fiches[i];
+        const d = makePDF(which, lastReport);
+        d.save(`ARDIE_${nom}_${String(serre || 'serres').replace(/\s+/g, '-')}_${iso}.pdf`);
+        await new Promise(r => setTimeout(r, 600));       // laisse le temps au téléchargement
+      }
+      toast('Les 4 fiches du lot ont été téléchargées ✔');
+    } catch (err) { toast('Échec du dossier : ' + err.message, 'err'); }
+    finally { if (btn) btn.disabled = false; }
   }
 
   /* ---------- ADMINISTRATION ---------- */
@@ -2603,7 +2865,10 @@ async function printPotLabels() {
     });
     if (id === 'clim') $('c-heure').value = localHHmm();
     if (id === 'anom') await loadSurvList();
-    if (id === 'acclim') { try { restaurerAcclim(); } catch (e) {} }
+    if (id === 'acclim') {
+      try { restaurerAcclim(); } catch (e) {}
+      accChargerHistorique();                 // affiche la dernière mesure de chaque plant
+    }
     if (id === 'plants') {
       /* rafraîchissements en parallèle, et sans bloquer l'affichage */
       updateKpi($('global-serre').value).catch(() => {});
@@ -2620,5 +2885,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5d662aebc606c9c',t:'MTc5NTE2NjQ5Nw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5d662aebc606c9c',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5d691e6a82c738a',t:'MTc5NTE2ODQzMQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5d691e6a82c738a',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
