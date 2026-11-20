@@ -154,6 +154,29 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
   </div>
 
   <!-- SÉCURITÉ ADMIN -->
+  <!-- TABLEAU DES SAISIES DU JOUR (contrôle anti-erreur des salariés) -->
+  <div id="saisies-modal" class="fixed inset-0 z-[105] bg-black/60 backdrop-blur-sm hidden items-center justify-center p-3">
+    <div class="bg-white w-full max-w-5xl rounded-2xl shadow-2xl max-h-[88vh] flex flex-col">
+      <div class="flex items-center justify-between border-b p-4 gap-2">
+        <div>
+          <h3 class="font-black text-lg text-slate-900">Saisies déjà enregistrées</h3>
+          <p class="text-xs text-slate-600" id="saisies-sous-titre">—</p>
+        </div>
+        <button type="button" onclick="fermerSaisiesJour()" class="btn bg-slate-200 hover:bg-slate-300 text-slate-900 !w-auto px-3"><i data-lucide="x" class="w-5 h-5"></i><span>Fermer</span></button>
+      </div>
+      <div class="p-3 overflow-auto">
+        <div class="flex flex-wrap gap-2 items-end mb-3">
+          <div><label class="lbl" for="saisies-serre">Serre</label>
+            <select id="saisies-serre" class="inp !py-1.5"><option value="">Toutes</option></select></div>
+          <div><label class="lbl" for="saisies-date">Date</label>
+            <input type="date" id="saisies-date" class="inp !py-1.5"></div>
+          <button type="button" onclick="chargerSaisiesJour()" class="btn bg-slate-800 hover:bg-slate-900 !w-auto px-4"><i data-lucide="refresh-cw" class="w-4 h-4"></i><span>Actualiser</span></button>
+        </div>
+        <div id="saisies-corps" class="space-y-4 text-sm"></div>
+      </div>
+    </div>
+  </div>
+
   <div id="admin-lock-modal" class="hidden fixed inset-0 z-[110] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-white rounded-2xl max-w-xs w-full p-5 shadow-2xl text-center space-y-3 border-2 border-emerald-700">
       <i data-lucide="shield-alert" class="w-10 h-10 text-emerald-800 mx-auto"></i>
@@ -511,6 +534,20 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
           <span class="text-xs bg-slate-200 font-mono text-slate-800 px-2 py-1 rounded">FAP</span>
         </div>
 
+        <!-- Date des chiffres affichés : par défaut AUJOURD'HUI -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 items-end rounded-xl bg-slate-50 border p-3">
+          <div>
+            <label class="lbl" for="f1-date-ref">Date des chiffres affichés</label>
+            <input type="date" id="f1-date-ref" class="inp">
+          </div>
+          <div class="text-xs text-slate-600 leading-snug">
+            Par défaut : <b>aujourd'hui</b>. Choisissez une autre date pour consulter une journée passée (lecture seule).
+          </div>
+          <button type="button" onclick="ouvrirSaisiesJour()" class="btn bg-slate-800 hover:bg-slate-900">
+            <i data-lucide="table" class="w-5 h-5"></i><span>Voir les saisies du jour</span>
+          </button>
+        </div>
+
         <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
           <div>
             <label class="lbl" for="p-initial">Stock de départ du lot</label>
@@ -596,7 +633,15 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
         <datalist id="dl-couleur"><option value="Vert foncé"><option value="Vert clair"><option value="Jaunâtre"><option value="Marron"></datalist>
         <datalist id="dl-tige"><option value="Ferme"><option value="Souple"><option value="Molle"><option value="Noircie"></datalist>
         <div id="acc-cards-container" class="space-y-3"></div>
-        <button type="submit" id="btn-submit-acclim" class="btn w-full bg-blue-700 hover:bg-blue-800"><i data-lucide="check" class="w-5 h-5"></i><span>Valider l'acclimatation (10 plants)</span></button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button type="button" id="btn-save-acclim" onclick="enregistrerAcclim()" class="btn bg-slate-700 hover:bg-slate-800"><i data-lucide="save" class="w-5 h-5"></i><span>Enregistrer le brouillon</span></button>
+          <button type="submit" id="btn-submit-acclim" class="btn bg-blue-700 hover:bg-blue-800"><i data-lucide="check" class="w-5 h-5"></i><span>Valider les plants saisis</span></button>
+        </div>
+        <p class="text-xs text-slate-600 mt-1">
+          <b>Enregistrer</b> garde votre saisie en cours sur cet appareil (vous pouvez revenir plus tard, rien n'est perdu).
+          <b>Valider</b> envoie à la feuille <b>uniquement les vitroplants réellement renseignés</b> ; les fiches vides ne sont pas enregistrées.
+        </p>
+        <p id="ac-brouillon-info" class="text-xs font-bold text-emerald-800"></p>
       </form>
     </div>
 
@@ -773,6 +818,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
   <div id="toast" class="hidden fixed left-1/2 -translate-x-1/2 bottom-6 z-[120] max-w-[92vw] px-4 py-3 rounded-xl shadow-lg text-base font-bold text-white"></div>
 
   <script>
+  const APP_VERSION = '3.6';     // ← doit correspondre au Code.gs déployé
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzxKJOSQxtaL7Pc5qyCA1tytnFjImffwT__8oeN-quJZgTU1D-Eamy1mqUVl7nU0dPmA/exec";
   const LOGO_CANDIDATES = ['logo.png', 'icon-192.png'];
   let LOGO = { src: null, data: null };
@@ -1022,7 +1068,31 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     checkAuthToken();
     if (store.get('ardie_sun') === '1') document.body.classList.add('sun');
     $('date-label').textContent = new Date().toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    /* Témoin de version : d'un coup d'œil on sait si NOUS avons bien la dernière
+       application à l'écran. */
+    try {
+      const vEl = $('app-version-label') || (function () {
+        const d = $('date-label'); if (!d || !d.parentElement) return null;
+        const s = document.createElement('span');
+        s.id = 'app-version-label';
+        s.className = 'text-[10px] font-mono text-emerald-200/80';
+        d.parentElement.appendChild(s);
+        return s;
+      })();
+      if (vEl) {
+        vEl.textContent = 'app ' + APP_VERSION;
+        getJSON({ action: 'diag' }, 20000).then(d => {
+          const v = (d && d.diag && d.diag.version) || '?';
+          vEl.textContent = 'app ' + APP_VERSION + ' · serveur ' + v;
+          vEl.className = 'text-[10px] font-mono ' + (v === APP_VERSION.split('.')[0] + '.x' || v === '3.6' ? 'text-emerald-300' : 'text-amber-300 font-bold');
+        }).catch(() => { vEl.textContent = 'app ' + APP_VERSION + ' · serveur injoignable'; });
+      }
+    } catch (e) {}
     $('c-heure').value = localHHmm(); $('rep-date').value = localISODate();
+    if ($('f1-date-ref')) {
+      $('f1-date-ref').value = localISODate();
+      $('f1-date-ref').addEventListener('change', () => autoFillFiche1($('global-serre').value));
+    }
     $('an-date-entree').value = localISODate(); $('an-heure-entree').value = localHHmm();
     $('ac-date').value = localISODate(); $('ac-heure').value = localHHmm();
     $('ac-lot-num').innerHTML = Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}">${i + 1} / 12</option>`).join('');
@@ -1375,8 +1445,10 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     let rep = null;
     try {
       /* leger=1 : on ne demande que les chiffres (pas les relevés climatiques ni
-         les tests d'acclimatation) → réponse beaucoup plus rapide. */
-      const p = { action: 'getReports', date: localISODate(), serre, leger: 1 };
+         les tests d'acclimatation) → réponse beaucoup plus rapide.
+         La date est celle choisie dans « Date des chiffres affichés » (défaut : aujourd'hui). */
+      const dateRef = ($('f1-date-ref') && $('f1-date-ref').value) || localISODate();
+      const p = { action: 'getReports', date: dateRef, serre, leger: 1 };
       if (lotId) p.lot_id = lotId;
       rep = await getJSON(p, 45000);
     } catch (e) { return; }
@@ -1391,6 +1463,15 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
   function applyFicheJour(cu, f) {
     if (!cu) cu = {}; if (!f) f = {};
     lastFicheJour = f;
+    /* Journée passée : on AFFICHE les chiffres, on ne permet pas de les valider */
+    const dateRef = ($('f1-date-ref') && $('f1-date-ref').value) || localISODate();
+    const passe = dateRef !== localISODate();
+    const btnVal = $('btn-submit-plants');
+    if (btnVal) {
+      btnVal.disabled = passe;
+      const sp = btnVal.querySelector('span');
+      if (sp) sp.textContent = passe ? `Journée du ${dateRef.split('-').reverse().join('/')} — lecture seule` : 'Valider le bilan journalier';
+    }
     if (f.stockDebut) lastStockVeille = f.stockDebut;
 
     const setIfUntouched = (id, val) => {
@@ -1474,6 +1555,60 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
     if (t('[data-q-send]')) return flushQueue(true);
     if ((el = t('[data-sortie]'))) return openSortieModal(el.dataset.godet, el.dataset.sortie, el.dataset.id, el.dataset.qte);
   });
+
+  /* ---------- TABLEAU DES SAISIES DU JOUR ----------
+     Un seul écran pour voir CE QUI A DÉJÀ ÉTÉ SAISI : deux salariés qui se
+     succèdent voient immédiatement si le relevé climatique, le bilan ou la mort
+     du jour sont déjà enregistrés. Aucune écriture, uniquement de la lecture. */
+  function ouvrirSaisiesJour() {
+    const m = $('saisies-modal');
+    if (!m) return;
+    const sel = $('saisies-serre');
+    const s = $('global-serre').value;
+    if (sel && sel.options.length <= 1 && state.emplacements.length) {
+      sel.innerHTML = '<option value="">Toutes</option>' + state.emplacements.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
+    }
+    if (sel && s) sel.value = s;
+    const d = $('saisies-date'); if (d) d.value = ($('f1-date-ref') && $('f1-date-ref').value) || localISODate();
+    m.classList.remove('hidden'); m.classList.add('flex');
+    chargerSaisiesJour();
+  }
+  function fermerSaisiesJour() {
+    const m = $('saisies-modal'); if (!m) return;
+    m.classList.add('hidden'); m.classList.remove('flex');
+  }
+  async function chargerSaisiesJour() {
+    const corps = $('saisies-corps'); if (!corps) return;
+    const date = ($('saisies-date') && $('saisies-date').value) || localISODate();
+    const serre = ($('saisies-serre') && $('saisies-serre').value) || $('global-serre').value;
+    corps.innerHTML = '<p class="text-slate-500">Chargement…</p>';
+    let rep;
+    try { rep = await getJSON({ action: 'getReports', date, serre }, 45000); }   // version complète : on veut AUSSI les relevés climatiques
+    catch (e) { corps.innerHTML = `<p class="text-red-700 font-bold">${esc(e.message)}</p>`; return; }
+
+    const fr = date.split('-').reverse().join('/');
+    $('saisies-sous-titre').textContent = `${serre || 'toutes serres'} — ${fr}`;
+    const bloc = (titre, entetes, lignes, vide) => {
+      if (!lignes.length) return `<section><h4 class="font-black text-slate-800 mb-1">${titre}</h4><p class="text-xs italic text-slate-500">${vide}</p></section>`;
+      return `<section><h4 class="font-black text-slate-800 mb-1">${titre} <span class="text-xs font-bold text-emerald-700">(${lignes.length})</span></h4>
+        <div class="overflow-auto rounded-lg border"><table class="w-full text-xs border-collapse">
+        <thead><tr class="bg-slate-100">${entetes.map(h => `<th class="p-1.5 border text-left whitespace-nowrap">${h}</th>`).join('')}</tr></thead>
+        <tbody>${lignes.map(l => `<tr>${l.map(c => `<td class="p-1.5 border align-top">${c}</td>`).join('')}</tr>`).join('')}</tbody>
+        </table></div></section>`;
+    };
+
+    const clim = (rep.climats || []).map(c => [esc(normDateHeureFR(c.dateHeure) || normHeure(c.heure)), esc(c.temp), esc(c.hygro), esc(c.lumens), esc(c.humTerreau), esc(c.ph), esc(c.eclairage), esc(c.arrosage), esc(c.remarque), esc(c.intervenant)]);
+    const anom = (rep.anomalies || []).map(a => [`${esc(normDateHeureFR(a.dateHeure || (a.date_entree + ' ' + a.heure_entree)))}`, esc(a.godet_num), esc(a.quantite), esc(a.statut_sortie), esc(a.autres_constats), esc(a.intervenant_entree)]);
+    const p = rep.plant || {};
+    const bilan = p.hasBilan ? [[esc(p.initial), esc(p.isoles), esc(p.morts), esc(p.surveillance), esc(p.distribuesJour), esc(p.sains), esc(p.intervenant), esc(p.observations)]] : [];
+    const acc = (rep.acclimatation || []).map(a => [esc(a.num_plante), val(a.taille_cm), val(a.nb_feuilles), esc(a.couleur_feuilles), esc(a.aspect_tige), esc(a.vigueur), val(a.temp_substrat), val(a.hum_substrat), val(a.ph_substrat)]);
+
+    corps.innerHTML =
+      bloc('Relevés climatiques', ['Date / heure', 'Temp.', 'Humid. air', 'Lumens', 'Hum. terreau', 'pH', 'Éclairage', 'Arrosage', 'Remarques', 'Agent'], clim, 'Aucun relevé climatique enregistré pour cette date.') +
+      bloc('Bilan journalier (Fiche 1)', ['Départ', 'Isolés', 'Morts', 'Surveillance', 'Distribués', 'Sains', 'Agent', 'Observations'], bilan, 'Aucun bilan saisi pour cette date.') +
+      bloc('Anomalies / pertes', ['Date / heure', 'Godet', 'Qté', 'Statut', 'Constat', 'Agent'], anom, 'Aucune anomalie enregistrée pour cette date.') +
+      bloc("Tests d'acclimatation", ['N° plante', 'Taille', 'Feuilles', 'Couleur', 'Tige', 'Vigueur', 'T° substrat', 'Humidité', 'pH'], acc, "Aucun test d'acclimatation enregistré pour cette date.");
+  }
 
   /* ---------- HUD / INVENTAIRE EN TEMPS RÉEL PAR LOT ---------- */
   async function updateKpi(serre) {
@@ -1899,24 +2034,75 @@ async function printPotLabels() {
     if (r) { ['dist-qte', 'dist-benef', 'dist-bon', 'dist-motif'].forEach(id => $(id).value = ''); await updateKpi(ctx.serre); await autoFillFiche1(ctx.serre); }
   }
 
+  /* ---------- ACCLIMATATION : brouillon local + validation partielle ----------
+     « Enregistrer » garde la saisie en cours sur l'appareil (localStorage) : on ne
+     remplit pas 10 fiches d'un coup, on peut s'arrêter et revenir.
+     « Valider » n'envoie QUE les vitroplants réellement renseignés. */
+  const ACC_CLE = 'ardie_acclim_brouillon';
+  const ACC_CHAMPS = ['t', 'f', 'c', 'a', 'v', 'ts', 'hs', 'ph'];
+  const ACC_CASES = ['mf', 'rav', 'pr', 'fong'];
+
+  function acclimSaisi(n) {
+    /* un plant compte comme « saisi » dès qu'une seule information est renseignée */
+    const texte = ACC_CHAMPS.some(k => {
+      const el = $(`ac-${n}-${k}`); if (!el) return false;
+      const v = String(el.value || '').trim();
+      return v !== '' && !(el.tagName === 'SELECT' && v === 'Bonne' && k === 'v');
+    });
+    const cases = ACC_CASES.some(k => { const el = $(`ac-${n}-${k}`); return el && el.checked; });
+    return texte || cases;
+  }
+
+  function enregistrerAcclim() {
+    const d = { date: $('ac-date').value, heure: $('ac-heure').value, lot: $('ac-lot-num').value, serre: $('global-serre').value, plants: {} };
+    for (let n = 1; n <= 10; n++) {
+      const o = {}; ACC_CHAMPS.forEach(k => { const el = $(`ac-${n}-${k}`); if (el) o[k] = el.value; });
+      ACC_CASES.forEach(k => { const el = $(`ac-${n}-${k}`); if (el) o[k] = el.checked; });
+      d.plants[n] = o;
+    }
+    try { store.set(ACC_CLE, JSON.stringify(d)); } catch (e) {}
+    const info = $('ac-brouillon-info');
+    if (info) info.textContent = 'Brouillon enregistré sur cet appareil le ' + new Date().toLocaleString('fr-FR') + ' — vous pouvez fermer, rien n\'est perdu.';
+    toast('Brouillon enregistré ✔');
+  }
+
+  function restaurerAcclim() {
+    let d = null;
+    try { d = JSON.parse(store.get(ACC_CLE) || 'null'); } catch (e) { d = null; }
+    if (!d || !d.plants) return;
+    if (d.serre && $('global-serre').value && d.serre !== $('global-serre').value) return;
+    if (d.date) $('ac-date').value = d.date;
+    if (d.heure) $('ac-heure').value = d.heure;
+    if (d.lot && $('ac-lot-num')) { try { $('ac-lot-num').value = d.lot; } catch (e) {} }
+    Object.keys(d.plants).forEach(n => {
+      const o = d.plants[n] || {};
+      ACC_CHAMPS.forEach(k => { const el = $(`ac-${n}-${k}`); if (el && o[k] !== undefined) el.value = o[k]; });
+      ACC_CASES.forEach(k => { const el = $(`ac-${n}-${k}`); if (el && o[k] !== undefined) el.checked = !!o[k]; });
+    });
+    const info = $('ac-brouillon-info');
+    if (info) info.textContent = 'Brouillon retrouvé (saisie en cours restaurée).';
+  }
+
   $('form-acclim').addEventListener('submit', async (e) => {
     e.preventDefault();
     const ctx = requireSerreAgent(); if (!ctx) return;
     if (!requireActiveLot()) return;
     const plants = [];
     for (let n = 1; n <= 10; n++) {
+      if (!acclimSaisi(n)) continue;                       // fiche vide → non envoyée
       const v = (k) => $(`ac-${n}-${k}`).value;
       plants.push({ n, taille_cm: v('t') || '-', nb_feuilles: v('f') || '-', couleur_feuilles: v('c').trim() || '-', aspect_tige: v('a').trim() || '-',
         vigueur: v('v'), temp_substrat: v('ts') || '-', hum_substrat: v('hs') || '-', ph_substrat: v('ph') || '-',
         maladie_foliaire: $(`ac-${n}-mf`).checked, ravageurs: $(`ac-${n}-rav`).checked,
         pourriture_racines: $(`ac-${n}-pr`).checked, maladie_fongique: $(`ac-${n}-fong`).checked });
     }
-    const r = await sendWith($('btn-submit-acclim'), "Valider l'acclimatation (10 plants)", 'check', {
+    if (!plants.length) { toast('Aucun vitroplant renseigné : rien à envoyer.', 'err'); return; }
+    const r = await sendWith($('btn-submit-acclim'), 'Valider les plants saisis', 'check', {
       type: 'ACCLIMATATION', date: $('ac-date').value || localISODate(), heure: $('ac-heure').value || localHHmm(),
       serre: ctx.serre, intervenant: ctx.agent, lot_numero: $('ac-lot-num').value, plants,
       lot_id: (lastKpi && lastKpi.hasLot) ? lastKpi.lot.id : ''
-    }, "Test d'acclimatation enregistré ✔");
-    if (r) { buildAccCards(); $('ac-heure').value = localHHmm(); }
+    }, `${plants.length} test(s) d'acclimatation enregistré(s) ✔`);
+    if (r) { try { store.set(ACC_CLE, ''); } catch (e) {} buildAccCards(); $('ac-heure').value = localHHmm(); }
   });
 
   /* ---------- GESTION DES RAPPORTS & SÉLECTION DU LOT ---------- */
@@ -1973,6 +2159,8 @@ async function printPotLabels() {
     if (m) return pad(m[1]) + ':' + m[2];
     m = s.match(/^(\d{1,2})h(\d{2})$/);                            // « 10h36 »
     if (m) return pad(m[1]) + ':' + m[2];
+    m = s.match(/(\d{1,2}):(\d{2})\s*$/);                          // « 19/11/2026 10:38 »
+    if (m) return pad(m[1]) + ':' + m[2];
     return s;
   }
 
@@ -2002,6 +2190,34 @@ async function printPotLabels() {
     if (/^\d{2}\/\d{2}\/\d{4}$/.test(d) && /^\d{2}:\d{2}$/.test(h) && h !== '00:00') return d + ' ' + h;
     return d;
   }
+
+  /* Heure d'éclairage : « 02:30 » ou « 02:30:00 », et surtout JAMAIS
+     « 1899-12-29T22:40:00.000Z ». Filet de sécurité indépendant du reste. */
+  function heureSeule(v) {
+    if (v === undefined || v === null) return '';
+    const s = String(v).trim();
+    if (s === '' || s === '-' || s === 'undefined') return '';
+    let m = s.match(/T(\d{2}):(\d{2})/);                       // 1899-12-29T22:40:00.000Z
+    if (m) return m[1] + ':' + m[2];
+    m = s.match(/\b(\d{1,2}):(\d{2})(?::\d{2})?\b/);          // 02:30 / 02:30:00
+    if (m) return ('0' + m[1]).slice(-2) + ':' + m[2];
+    m = s.match(/^(\d{1,2})h(\d{2})$/);
+    if (m) return ('0' + m[1]).slice(-2) + ':' + m[2];
+    return '';
+  }
+
+  /* Valeur « simple » (température, pH, humidité, taille…) : un nombre reste un
+     nombre. Si la feuille a transformé la case en date (format automatique), on
+     n'affiche JAMAIS « 07/09/2026 » : on affiche « - ». */
+  const val = (v) => {
+    if (v === undefined || v === null) return '-';
+    const s = String(v).trim();
+    if (s === '' || s === 'undefined' || s === '-') return '-';
+    /* date déguisée : 07/09/2026, 2026-09-07, objet Date sérialisé, 1899… */
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(s) || /^\d{4}-\d{2}-\d{2}/.test(s) || /GMT|\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/.test(s)) return '-';
+    return esc(s);
+  };
+  const nbVal = (v) => { const x = parseFloat(String(v === undefined || v === null ? '' : v).replace(',', '.')); return isNaN(x) ? null : x; };
 
   /* Texte court pour les entêtes : « 18/11/2026 » (jamais « Tue Nov 17 … ») */
   const dash = (v) => {
@@ -2047,7 +2263,7 @@ async function printPotLabels() {
       // FICHE 1 : PLANTS
       T('f1-date', fr); T('f1-year', year); T('f1-serre', serre);
       const p = data.plant || {};
-      T('f1-ecl-debut', p.eclairageDebut ? fmtH(p.eclairageDebut) : '.......'); T('f1-ecl-fin', p.eclairageFin ? fmtH(p.eclairageFin) : '.......');
+      T('f1-ecl-debut', heureSeule(p.eclairageDebut) || '.......'); T('f1-ecl-fin', heureSeule(p.eclairageFin) || '.......');
       T('f1-init', p.initial ?? '-'); T('f1-isoles', p.isoles ?? 0); T('f1-morts', p.morts ?? 0);
       T('f1-surv', p.surveillance ?? '-'); T('f1-distrib', p.distribuesJour ?? 0); T('f1-sains', p.sains ?? '-');
       T('f1-agent', p.hasBilan ? p.intervenant : 'Aucun bilan');
@@ -2056,11 +2272,17 @@ async function printPotLabels() {
       // FICHE 2 : CLIMAT
       T('f2-date', fr); T('f2-year', year); T('f2-serre', serre);
       const recs = data.climats || [];
-      let h2 = recs.map(c => `<tr class="text-center">
-        <td class="${cell} font-bold font-mono">${dash(normHeure(c.heure))}</td><td class="${cell} font-bold">${dash(c.temp)}${c.temp && c.temp !== '-' ? '°C' : ''}</td>
-        <td class="${cell} font-black ${num(c.hygro) < 75 ? 'text-white bg-red-700' : 'text-emerald-900'}">${dash(c.hygro)}${c.hygro && c.hygro !== '-' ? '%' : ''}</td>
-        <td class="${cell}">${dash(c.lumens)}</td><td class="${cell}">${dash(c.humTerreau)}</td><td class="${cell}">${dash(c.ph)}</td>
-        <td class="${cell}">${dash(c.eclairage)}</td><td class="${cell} text-left">${dash(c.arrosage)}</td><td class="${cell} text-left">${dash(c.remarque)}</td><td class="${cell}">${dash(c.intervenant)}</td></tr>`).join('');
+      /* ⚠️ Les valeurs numériques passent par val() : une case que la feuille a
+         transformée en date affiche « - » et non « 07/09/2026 ». */
+      let h2 = recs.map(c => {
+        const t = nbVal(c.temp), hy = nbVal(c.hygro);
+        return `<tr class="text-center">
+        <td class="${cell} font-bold font-mono whitespace-nowrap">${dash(normDateHeureFR(c.dateHeure) || normHeure(c.heure))}</td>
+        <td class="${cell} font-bold">${t === null ? '-' : esc(String(c.temp).replace('.', ',')) + '°C'}</td>
+        <td class="${cell} font-black ${hy !== null && hy < 75 ? 'text-white bg-red-700' : 'text-emerald-900'}">${hy === null ? '-' : esc(String(c.hygro).replace('.', ',')) + '%'}</td>
+        <td class="${cell}">${val(c.lumens)}</td><td class="${cell}">${val(c.humTerreau)}</td><td class="${cell}">${val(c.ph)}</td>
+        <td class="${cell}">${val(c.eclairage)}</td><td class="${cell} text-left">${val(c.arrosage)}</td><td class="${cell} text-left">${val(c.remarque)}</td><td class="${cell}">${val(c.intervenant)}</td></tr>`;
+      }).join('');
       for (let i = recs.length; i < 12; i++) h2 += `<tr>${Array(10).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
       $('f2-tbody').innerHTML = h2; T('f2-empty', recs.length ? '' : `Aucun relevé pour le ${fr}.`);
 
@@ -2083,9 +2305,9 @@ async function printPotLabels() {
       T('f4-date', fr); T('f4-year', year); T('f4-serre', serre);
       const acc = data.acclimatation || [];
       T('f4-lot-num', acc.length ? acc[0].lot_numero : '1'); T('f4-heure', acc.length ? fmtH(acc[0].heure) : '--h--'); T('f4-agent', acc.length ? acc[0].intervenant : '--');
-      let h4 = acc.map(a => `<tr class="text-center"><td class="${cell} font-bold bg-slate-100">${dash(a.num_plante)}</td><td class="${cell} font-semibold">${dash(a.taille_cm)}</td>
-        <td class="${cell}">${dash(a.nb_feuilles)}</td><td class="${cell}">${dash(a.couleur_feuilles)}</td><td class="${cell}">${dash(a.aspect_tige)}</td><td class="${cell} font-semibold">${dash(a.vigueur)}</td>
-        <td class="${cell} bg-emerald-50">${dash(a.temp_substrat)}</td><td class="${cell} bg-emerald-50">${dash(a.hum_substrat)}</td><td class="${cell} bg-emerald-50">${dash(a.ph_substrat)}</td>
+      let h4 = acc.map(a => `<tr class="text-center"><td class="${cell} font-bold bg-slate-100">${dash(a.num_plante)}</td><td class="${cell} font-semibold">${val(a.taille_cm)}</td>
+        <td class="${cell}">${val(a.nb_feuilles)}</td><td class="${cell}">${val(a.couleur_feuilles)}</td><td class="${cell}">${val(a.aspect_tige)}</td><td class="${cell} font-semibold">${val(a.vigueur)}</td>
+        <td class="${cell} bg-emerald-50">${val(a.temp_substrat)}</td><td class="${cell} bg-emerald-50">${val(a.hum_substrat)}</td><td class="${cell} bg-emerald-50">${val(a.ph_substrat)}</td>
         <td class="${cell}">${dash(a.maladie_foliaire)}</td><td class="${cell}">${dash(a.ravageurs)}</td><td class="${cell}">${dash(a.pourriture_racines)}</td><td class="${cell}">${dash(a.maladie_fongique)}</td></tr>`).join('');
       for (let i = acc.length; i < 10; i++) h4 += `<tr><td class="${cell} text-center font-bold bg-slate-100">${i + 1}</td>${Array(12).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
       $('f4-tbody').innerHTML = h4; T('f4-empty', acc.length ? '' : `Aucun test pour le ${fr}.`);
@@ -2102,6 +2324,14 @@ async function printPotLabels() {
     let s = pdfSafe(v).trim();
     if (s === '' || s === 'undefined') return '-';
     if (/GMT[+-]|\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b|^\d{1,2}:\d{2}:/.test(s)) s = normDateHeureFR(s) || s;
+    return s;
+  };
+  /* Dans un PDF, une date là où l'on attend un nombre (pH, humidité, taille)
+     est toujours une erreur : on imprime « - ». */
+  const pdfVal = (v) => {
+    const s = pdfSafe(v).trim();
+    if (s === '' || s === 'undefined') return '-';
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(s) || /^\d{4}-\d{2}-\d{2}/.test(s) || /GMT|\b(Mon|Tue|Wed|Thu|Fri|Sat|Sun)\b/.test(s)) return '-';
     return s;
   };
   const logoFormat = () => { const m = (LOGO.data || '').match(/^data:image\/(\w+)/); return m ? m[1].toUpperCase().replace('JPG', 'JPEG') : 'PNG'; };
@@ -2152,7 +2382,7 @@ async function printPotLabels() {
       doc.setTextColor(...DARK); doc.setFont('helvetica', 'bold'); doc.setFontSize(9.5); doc.text('Conditions climatiques intérieures :', M + 4, 36);
       doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(30, 41, 59);
       doc.text('BRUMISATEUR AMBIANT : Durée : h24 / Fréquence : 7/7', M + 4, 42);
-      const d = p.eclairageDebut ? fmtH(p.eclairageDebut) : '.......', fi = p.eclairageFin ? fmtH(p.eclairageFin) : '.......';
+      const d = heureSeule(p.eclairageDebut) || '.......', fi = heureSeule(p.eclairageFin) || '.......';
       doc.text('ÉCLAIRAGE ARTIFICIEL AMBIANT (nuit) : Programmé de ' + d + ' à ' + fi + ' / Fréquence : 7/7', M + 4, 47.5);
 
       const agent = p.hasBilan ? pdfSafe(p.intervenant) : 'Aucun bilan saisi';
@@ -2209,19 +2439,23 @@ async function printPotLabels() {
     } else if (which === 'clim') {
       const recs = rep.data.climats || [];
       const body = recs.map(c => [
-        pdfDash(normHeure(c.heure)), pdfDash(c.temp) + (c.temp && c.temp !== '-' ? '°C' : ''),
-        pdfDash(c.hygro) + (c.hygro && c.hygro !== '-' ? '%' : ''), pdfDash(c.lumens),
-        pdfDash(c.humTerreau), pdfDash(c.ph), pdfDash(c.eclairage), pdfDash(c.arrosage), pdfDash(c.remarque), pdfSafe(c.intervenant)
+        pdfDash(normDateHeureFR(c.dateHeure)) || pdfDash(normHeure(c.heure)),
+        pdfVal(c.temp) === '-' ? '-' : pdfVal(c.temp) + '°C',
+        pdfVal(c.hygro) === '-' ? '-' : pdfVal(c.hygro) + '%', pdfVal(c.lumens),
+        pdfVal(c.humTerreau), pdfVal(c.ph), pdfVal(c.eclairage), pdfVal(c.arrosage), pdfVal(c.remarque), pdfSafe(c.intervenant)
       ]);
       while (body.length < 8) body.push(['', '', '', '', '', '', '', '', '', '']);
       doc.autoTable(baseTable({
         startY: 30, styles: Object.assign({ fontSize: 7.5, cellPadding: 2, valign: 'middle', halign: 'center', minCellHeight: 6 }, grid),
         columnStyles: {
-          0: { cellWidth: 14, fontStyle: 'bold' }, 1: { cellWidth: 18 }, 2: { cellWidth: 22 }, 3: { cellWidth: 16 },
-          4: { cellWidth: 18 }, 5: { cellWidth: 12 }, 6: { cellWidth: 20 },
-          7: { cellWidth: 55, halign: 'left' }, 8: { cellWidth: 52, halign: 'left' }, 9: { cellWidth: 46 }
+          /* sommaire : 0 date/heure (19 mm) + valeurs courtes ; le reste de la
+             largeur utile va aux deux colonnes de texte libre. Total = 279 mm,
+             la largeur exacte d'une page A4 paysage. */
+          0: { cellWidth: 19, fontStyle: 'bold' }, 1: { cellWidth: 15 }, 2: { cellWidth: 16 },
+          3: { cellWidth: 14 }, 4: { cellWidth: 15 }, 5: { cellWidth: 11 }, 6: { cellWidth: 17 },
+          7: { cellWidth: 66, halign: 'left' }, 8: { cellWidth: 66, halign: 'left' }, 9: { cellWidth: 40 }
         },
-        head: [['Heure', 'Température', 'Humidité (min 75%)', 'Lumens', 'Hum. terreau', 'pH', 'Éclairage jour', 'Arrosage tuyau / pulvérisateur', 'Remarques', 'Intervenant']],
+        head: [['Date / heure', 'Temp.', 'Humid. air', 'Lumens', 'Hum. terreau', 'pH', 'Éclairage', 'Arrosage / pulvérisateur', 'Remarques', 'Intervenant']],
         body
       }));
 
@@ -2231,9 +2465,9 @@ async function printPotLabels() {
       doc.setFontSize(9); doc.setFont('helvetica', 'bold');
       doc.text(`Test effectué sur le lot numéro : ${lotVal} / 12  |  Intervenant : ${acc.length ? pdfSafe(acc[0].intervenant) : '-'}`, M, 30);
       const body = acc.map(a => [
-        pdfDash(a.num_plante), pdfDash(a.taille_cm), pdfDash(a.nb_feuilles), pdfSafe(a.couleur_feuilles),
-        pdfSafe(a.aspect_tige), pdfSafe(a.vigueur), pdfDash(a.temp_substrat), pdfDash(a.hum_substrat),
-        pdfDash(a.ph_substrat), pdfDash(a.maladie_foliaire), pdfDash(a.ravageurs),
+        pdfDash(a.num_plante), pdfVal(a.taille_cm), pdfVal(a.nb_feuilles), pdfSafe(a.couleur_feuilles),
+        pdfSafe(a.aspect_tige), pdfSafe(a.vigueur), pdfVal(a.temp_substrat), pdfVal(a.hum_substrat),
+        pdfVal(a.ph_substrat), pdfVal(a.maladie_foliaire), pdfVal(a.ravageurs),
         pdfDash(a.pourriture_racines), pdfDash(a.maladie_fongique)
       ]);
       while (body.length < 10) body.push([body.length + 1, '', '', '', '', '', '', '', '', '', '', '', '']);
@@ -2369,6 +2603,7 @@ async function printPotLabels() {
     });
     if (id === 'clim') $('c-heure').value = localHHmm();
     if (id === 'anom') await loadSurvList();
+    if (id === 'acclim') { try { restaurerAcclim(); } catch (e) {} }
     if (id === 'plants') {
       /* rafraîchissements en parallèle, et sans bloquer l'affichage */
       updateKpi($('global-serre').value).catch(() => {});
@@ -2385,5 +2620,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c607f88aa216d9',t:'MTc5NDk5NTAwOQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c607f88aa216d9',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5d662aebc606c9c',t:'MTc5NTE2NjQ5Nw=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5d662aebc606c9c',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
