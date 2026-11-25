@@ -860,7 +860,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
   <div id="toast" class="hidden fixed left-1/2 -translate-x-1/2 bottom-6 z-[120] max-w-[92vw] px-4 py-3 rounded-xl shadow-lg text-base font-bold text-white"></div>
 
   <script>
-  const APP_VERSION = '3.7';     // ← doit correspondre au Code.gs déployé
+  const APP_VERSION = '3.8';     // ← doit correspondre au Code.gs déployé
   const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxzxKJOSQxtaL7Pc5qyCA1tytnFjImffwT__8oeN-quJZgTU1D-Eamy1mqUVl7nU0dPmA/exec";
   const LOGO_CANDIDATES = ['logo.png', 'icon-192.png'];
   let LOGO = { src: null, data: null };
@@ -1926,7 +1926,7 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
         <li class="py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
           <div>
             <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
-              <span class="bg-amber-200 text-amber-950 px-2 py-0.5 rounded font-black font-mono">Qté : ${esc(it.quantite)} plant(s)</span>
+              <span class="bg-amber-200 text-amber-950 px-2 py-0.5 rounded font-black font-mono">Qté : ${esc(it.quantite)} plant(s)${it.quantiteInitiale && it.quantiteInitiale !== it.quantite ? ` <span class="font-normal">(sur ${esc(it.quantiteInitiale)} au départ)</span>` : ''}</span>
               ${it.godet !== '-' ? `<span class="text-xs font-bold text-slate-700 font-mono">Pot/Repère : ${esc(it.godet)}</span>` : ''}
               <span class="text-xs text-slate-500">Depuis le ${esc(it.date)} à ${esc(it.heure)}</span>
             </div>
@@ -2459,6 +2459,25 @@ async function printPotLabels() {
   /* ---------- REMPLISSAGE DES 4 FICHES ----------
      Extrait de loadDailySheet pour pouvoir être appelé aussi par l'impression
      du dossier complet d'un lot. */
+  /* « Pertes réelles » d'une ligne de la Fiche 3 — v3.8
+     On imprime la quantité RÉELLEMENT sortie ce jour-là (Journal_Sorties),
+     jamais la quantité du relevé : un relevé de 44 plants qui perd 4 plants
+     ne doit pas afficher « 44 (Mort) ». */
+  function perteHTML(a) {
+    const q = (a.perteQte !== undefined && a.perteQte !== null) ? a.perteQte : (a.perte ? a.quantite : 0);
+    if (q > 0) return `<span class="text-red-700">${q} (Mort)</span>`;
+    const sv = (a.quantiteSortieJour !== undefined && a.quantiteSortieJour !== null) ? a.quantiteSortieJour : 0;
+    if (String(a.statut_sortie) === 'Sauvé') return `<span class="text-emerald-700">${sv > 0 ? sv + ' ' : ''}(Sauvé)</span>`;
+    return '-';
+  }
+  function pdfPerte(a) {
+    const q = (a.perteQte !== undefined && a.perteQte !== null) ? a.perteQte : (a.perte ? a.quantite : 0);
+    if (q > 0) return `${q} (Mort)`;
+    const sv = (a.quantiteSortieJour !== undefined && a.quantiteSortieJour !== null) ? a.quantiteSortieJour : 0;
+    if (String(a.statut_sortie) === 'Sauvé') return `${sv > 0 ? sv + ' ' : ''}(Sauvé)`;
+    return '-';
+  }
+
   function appliquerRapport(data, iso, serre, fr) {
       if (!data) return;
       const kpi = data.kpi || {}, year = iso.slice(0, 4), cell = 'td';
@@ -2511,12 +2530,12 @@ async function printPotLabels() {
       let h3 = anoms.map(a => `<tr class="text-center">
         <td class="${cell} font-mono">${dash(normDateFR(a.date_entree))}<br><b>${dash(normHeure(a.heure_entree))}</b></td><td class="${cell}">${dash(a.intervenant_entree)}</td>
         <td class="${cell} font-bold bg-amber-50">${dash(a.godet_num)}</td>
-        <td class="${cell} font-black font-mono text-center">${dash(a.quantite)}</td>
+        <td class="${cell} font-black font-mono text-center">${dash(a.quantiteOrigine !== undefined && a.quantiteOrigine !== null && a.quantiteOrigine !== '' ? a.quantiteOrigine : a.quantite)}${a.lienPerdu ? '<br><span class="text-[9px] font-normal text-red-700">relevé d\'origine supprimé</span>' : ''}</td>
         <td class="${cell}">${dash(a.maladie_foliaire)}</td><td class="${cell}">${dash(a.ravageurs)}</td>
         <td class="${cell}">${dash(a.pourriture_racines)}</td><td class="${cell}">${dash(a.stress_hydrique)}</td>
         <td class="${cell} text-left">${dash(a.autres_constats)}</td><td class="${cell} text-left">${dash(a.mesures_sanitaires)}</td>
         <td class="${cell} font-bold ${a.statut_sortie === 'Mort' ? 'text-red-700' : a.statut_sortie === 'Sauvé' ? 'text-emerald-800' : ''}">${dash(a.statut_sortie)}<br><span class="font-mono font-normal">${dash(normDateHeureFR(a.date_sortie))}</span></td>
-        <td class="${cell} font-black bg-amber-50">${a.perte ? `<span class="text-red-700">${a.quantite} (Mort)</span>` : (a.statut_sortie === 'Sauvé' ? `<span class="text-emerald-700">${a.quantite} (Sauvé)</span>` : '-')}</td></tr>`).join('');
+        <td class="${cell} font-black bg-amber-50">${perteHTML(a)}</td></tr>`).join('');
       for (let i = anoms.length; i < 6; i++) h3 += `<tr>${Array(12).fill(`<td class="${cell}">&nbsp;</td>`).join('')}</tr>`;
       $('f3-tbody').innerHTML = h3; T('f3-empty', anoms.length ? '' : `Aucune anomalie pour le ${fr}.`);
 
@@ -2638,11 +2657,12 @@ async function printPotLabels() {
       const anoms = rep.data.anomalies || [];
       const body = anoms.map(a => [
         pdfDash(normDateFR(a.date_entree)) + '\n' + pdfDash(normHeure(a.heure_entree)),
-        pdfSafe(a.intervenant_entree), pdfDash(a.godet_num), pdfDash(a.quantite),
+        pdfSafe(a.intervenant_entree), pdfDash(a.godet_num),
+        pdfDash(a.quantiteOrigine !== undefined && a.quantiteOrigine !== null && a.quantiteOrigine !== '' ? a.quantiteOrigine : a.quantite),
         pdfDash(a.maladie_foliaire), pdfDash(a.ravageurs), pdfDash(a.pourriture_racines),
         pdfDash(a.stress_hydrique), pdfSafe(a.autres_constats), pdfSafe(a.mesures_sanitaires),
         pdfDash(a.statut_sortie) + (a.date_sortie && a.date_sortie !== '-' ? '\n' + pdfDash(normDateHeureFR(a.date_sortie)) : ''),
-        a.perte ? `${a.quantite} (Mort)` : (a.statut_sortie === 'Sauvé' ? `${a.quantite} (Sauvé)` : '-')
+        pdfPerte(a)
       ]);
       while (body.length < 6) body.push(['', '', '', '', '', '', '', '', '', '', '', '']);
 
@@ -2885,5 +2905,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5d691e6a82c738a',t:'MTc5NTE2ODQzMQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5d691e6a82c738a',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5ff86bbed1d0d06',t:'MTc5NTU5Nzg4OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5ff86bbed1d0d06',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
