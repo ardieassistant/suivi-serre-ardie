@@ -1157,6 +1157,16 @@ body.print-pots #qr-print, body.print-pots #qr-print * {
       if (vEl) {
         vEl.textContent = 'app ' + APP_VERSION;
         getJSON({ action: 'diag' }, 20000).then(d => {
+          /* contrôle de cohérence des relevés : combien de lignes sont justes ?
+             (lecture seule, aucune écriture dans la feuille) */
+          getJSON({ action: 'verifAnomalies' }, 25000).then(c => {
+            if (!c || c.lignesFautives === undefined) return;
+            if (c.lignesFautives > 0) {
+              vEl.textContent += ' · ' + c.lignesFautives + ' relevé(s) à vérifier';
+              vEl.className = 'text-[10px] font-mono text-amber-200';
+              vEl.title = c.aCorrigerDansLaFeuille.map(x => `ligne ${x.ligne} : ${x.quantiteActuelle} → ${x.quantiteAttendue}`).join('\n');
+            }
+          }).catch(() => {});
           const v = (d && d.diag && d.diag.version) || '?';
           vEl.textContent = 'app ' + APP_VERSION + ' · serveur ' + v;
           vEl.className = 'text-[10px] font-mono ' + (v === APP_VERSION.split('.')[0] + '.x' || v === '3.6' ? 'text-emerald-300' : 'text-amber-300 font-bold');
@@ -2530,7 +2540,7 @@ async function printPotLabels() {
       let h3 = anoms.map(a => `<tr class="text-center">
         <td class="${cell} font-mono">${dash(normDateFR(a.date_entree))}<br><b>${dash(normHeure(a.heure_entree))}</b></td><td class="${cell}">${dash(a.intervenant_entree)}</td>
         <td class="${cell} font-bold bg-amber-50">${dash(a.godet_num)}</td>
-        <td class="${cell} font-black font-mono text-center">${dash(a.quantiteOrigine !== undefined && a.quantiteOrigine !== null && a.quantiteOrigine !== '' ? a.quantiteOrigine : a.quantite)}${a.lienPerdu ? '<br><span class="text-[9px] font-normal text-red-700">relevé d\'origine supprimé</span>' : ''}</td>
+        <td class="${cell} font-black font-mono text-center">${dash(a.quantiteOrigine !== undefined && a.quantiteOrigine !== null && a.quantiteOrigine !== '' ? a.quantiteOrigine : a.quantite)}</td>
         <td class="${cell}">${dash(a.maladie_foliaire)}</td><td class="${cell}">${dash(a.ravageurs)}</td>
         <td class="${cell}">${dash(a.pourriture_racines)}</td><td class="${cell}">${dash(a.stress_hydrique)}</td>
         <td class="${cell} text-left">${dash(a.autres_constats)}</td><td class="${cell} text-left">${dash(a.mesures_sanitaires)}</td>
@@ -2905,5 +2915,5 @@ async function printPotLabels() {
     icons();
   }
   </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5ff86bbed1d0d06',t:'MTc5NTU5Nzg4OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5ff86bbed1d0d06',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5ffa6240f2daa15',t:'MTc5NTU5OTE3Ng=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5ffa6240f2daa15',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
