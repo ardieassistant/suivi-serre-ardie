@@ -21,6 +21,7 @@
         <h1 class="text-lg md:text-xl font-bold leading-tight">Passeport de traçabilité</h1>
         <p class="text-sm text-emerald-200">Vitroplants de Fruits à Pain (FAP)</p>
         <p class="text-xs text-emerald-300 mt-0.5">Association Réunionnaise pour le Développement de l'Insertion et de l'Emploi</p>
+        <p class="text-[10px] text-emerald-400 mt-0.5">Document de traçabilité destiné aux partenaires — sans données personnelles</p>
       </div>
     </header>
 
@@ -98,7 +99,6 @@
                 <th class="text-left p-1.5 border">Godet</th>
                 <th class="text-right p-1.5 border">Qté</th>
                 <th class="text-right p-1.5 border">Reste sous surveillance</th>
-                <th class="text-left p-1.5 border">Intervenant</th>
               </tr>
             </thead>
             <tbody id="suivi-mouvements"></tbody>
@@ -112,9 +112,9 @@
             <table class="w-full text-[11px] border-collapse">
               <thead>
                 <tr class="bg-slate-100 text-slate-700">
-                  <th class="text-left p-1.5 border">Relevé</th>
-                  <th class="text-left p-1.5 border">Date</th>
-                  <th class="text-right p-1.5 border">Plantés</th>
+                  <th class="text-left p-1.5 border">Relevé du</th>
+                  <th class="text-left p-1.5 border">Godet</th>
+                  <th class="text-right p-1.5 border">Plants concernés</th>
                   <th class="text-right p-1.5 border">Morts</th>
                   <th class="text-right p-1.5 border">Sauvés</th>
                   <th class="text-right p-1.5 border">Encore sous surveillance</th>
@@ -153,6 +153,64 @@
     const $ = (id) => document.getElementById(id);
     const setText = (id, v) => { const el = $(id); if (el) el.textContent = (v === undefined || v === null || v === '') ? '--' : v; };
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    /* ---------- DATES : jamais de forme anglaise dans le passeport ----------
+       Google Sheets peut renvoyer « Tue Nov 17 2026 00:00:00 GMT+0400 »
+       (et « Sat Dec 30 1899 10:36:00 » pour une heure seule). */
+    const MOIS_FR = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+    const MOIS_ABBR = { jan:0, feb:1, mar:2, apr:3, may:4, jun:5, jul:6, aug:7, sep:8, oct:9, nov:10, dec:11 };
+    const JOURS_FR = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'];
+
+    function normHeure(v) {
+      if (v === undefined || v === null) return '';
+      const s = String(v).trim();
+      if (s === '' || s === '-') return '';
+      let m = s.match(/\b(\d{1,2}):(\d{2}):(\d{2})\b/);
+      if (m) return String(m[1]).padStart(2, '0') + ':' + m[2];
+      m = s.match(/^(\d{1,2}):(\d{2})$/);
+      if (m) return String(m[1]).padStart(2, '0') + ':' + m[2];
+      m = s.match(/^(\d{1,2})h(\d{2})$/);
+      if (m) return String(m[1]).padStart(2, '0') + ':' + m[2];
+      return s;
+    }
+
+    function normDateFR(v) {
+      if (v === undefined || v === null) return '';
+      const s = String(v).trim();
+      if (s === '' || s === '-') return '';
+      let m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+      m = s.match(/(\d{2})\/(\d{2})\/(\d{4})/);
+      if (m) return m[0];
+      m = s.match(/^[A-Za-z]{3}\s+([A-Za-z]{3})\s+(\d{1,2})\s+(\d{4})/);
+      if (m) {
+        const mo = MOIS_ABBR[m[1].toLowerCase()];
+        if (mo !== undefined) return `${String(m[2]).padStart(2, '0')}/${String(mo + 1).padStart(2, '0')}/${m[3]}`;
+      }
+      return s;
+    }
+
+    function normDateHeureFR(v) {
+      const d = normDateFR(v), h = normHeure(v);
+      if (!d) return h || '';
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(d) && /^\d{2}:\d{2}$/.test(h) && h !== '00:00') return d + ' ' + h;
+      return d;
+    }
+
+    /* « mercredi 18 novembre 2026 » */
+    function libelleJour(iso) {
+      const m = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return normDateFR(iso);
+      const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+      return `${JOURS_FR[d.getDay()]} ${Number(m[3])} ${MOIS_FR[Number(m[2]) - 1]} ${m[1]}`;
+    }
+
+    /* Filtre les noms de personnes : le passeport est un document destiné à l'extérieur */
+    const sansNoms = (s) => String(s || '')
+      .replace(/\s*[—-]\s*(M\.|Mme|Mlle)\s+[A-ZÉÈÀÂÎÔÛ][^—,;]*/g, '')
+      .replace(/\b(M\.|Mme|Mlle)\s+[A-ZÉÈÀÂÎÔÛ][A-Za-zÉÈÀÂÊËÎÏÔÖÛÜéèàâêëîïôöûü'’ -]*/g, '')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
 
     $('logo').addEventListener('error', () => { $('logo').classList.add('hidden'); $('logo-fallback').classList.remove('hidden'); });
 
@@ -210,6 +268,15 @@
       }
     }
 
+    /* Libellé d'un relevé — v3.8 : la date et l'heure, jamais un numéro de ligne.
+       (« ANOMALIE-9 » était en réalité la 9ᵉ ligne de l'onglet, pas la 9ᵉ anomalie.) */
+    function libelleReleve(r) {
+      const d = normDateFR(r.date);
+      const h = normHeure(r.heure);
+      if (!d || d === '-') return r.action || 'relevé';
+      return d + ((h && h !== '00:00') ? ' ' + String(h).replace(':', 'h') : '');
+    }
+
     function render(data) {
       const lot = data.lot, kpi = data.kpi || {}, stats = data.stats || {};
       $('loading-box').classList.add('hidden');
@@ -217,7 +284,7 @@
 
       setText('val-id', lot.id);
       setText('val-serre', lot.serre);
-      setText('val-debut', lot.debut);
+      setText('val-debut', normDateFR(lot.debut));
       setText('val-initial', (lot.initial ?? kpi.initial ?? '--') + ' plants');
 
       const closed = String(lot.statut).toUpperCase() === 'CLOS';
@@ -225,7 +292,7 @@
       badge.textContent = closed ? 'CLÔTURÉ' : 'EN COURS';
       badge.className = 'px-2.5 py-1 rounded-full text-xs font-black ' + (closed ? 'bg-slate-200 text-slate-800' : 'bg-emerald-100 text-emerald-900');
       setText('lbl-fin', closed ? 'Date de clôture' : 'Statut');
-      setText('val-fin', closed ? lot.fin : 'Lot en production');
+      setText('val-fin', closed ? normDateFR(lot.fin) : 'Lot en production');
 
       setText('kpi-sains', kpi.sains);
       setText('kpi-surv', kpi.surveillance);
@@ -267,6 +334,7 @@
 
       events.forEach(e => {
         const t = TYPES[e.type] || { icon: '•', cls: 'bg-slate-50 border-slate-300' };
+        e = Object.assign({}, e, { date: normDateFR(e.date), heure: normHeure(e.heure), label: sansNoms(e.label) });
         if (e.date !== lastDate) {
           html += `<li class="pt-2 text-[11px] font-black uppercase tracking-wide text-slate-500">${esc(e.date)}</li>`;
           lastDate = e.date;
@@ -296,13 +364,12 @@
         const mort = String(m.type).toUpperCase() === 'MORT';
         const cls = mort ? 'bg-red-50 text-red-950' : 'bg-emerald-50 text-emerald-950';
         return `<tr class="border ${cls}">
-          <td class="p-1.5 border">${esc(m.date)}</td>
-          <td class="p-1.5 border font-mono">${esc(m.heure || '--')}</td>
+          <td class="p-1.5 border">${esc(normDateFR(m.date))}</td>
+          <td class="p-1.5 border font-mono">${esc(normHeure(m.heure) || '--')}</td>
           <td class="p-1.5 border font-bold">${mort ? '🔴 Mort' : '🟢 Sauvé'}</td>
           <td class="p-1.5 border">${esc(m.godet || '-')}</td>
           <td class="p-1.5 border text-right font-black">${esc(m.quantite)}</td>
           <td class="p-1.5 border text-right">${m.restant > 0 ? esc(m.restant) : 'clôturé'}</td>
-          <td class="p-1.5 border">${esc(m.intervenant || '-')}</td>
         </tr>`;
       }).join('');
       $('suivi-vide').classList.toggle('hidden', mouvements.length > 0);
@@ -312,10 +379,15 @@
         $('suivi-releves').innerHTML = listReleves.map(r => {
           const st = String(r.statut || '').toLowerCase();
           const col = st === 'mort' ? 'text-red-800 font-black' : (st === 'en cours' ? 'text-amber-800 font-bold' : 'text-emerald-800 font-bold');
+          /* incohérence signalée plutôt que masquée (v3.8) */
+          const ecart = Number(r.quantiteOrigine) - Number(r.morts) - Number(r.sauves) - Number(r.reste);
+          const alerte = (ecart !== 0)
+            ? `<div class="text-[9px] font-normal text-slate-500">${ecart > 0 ? ecart + ' plant(s) non justifié(s)' : 'incohérence de ' + Math.abs(ecart) + ' plant(s)'}</div>`
+            : '';
           return `<tr class="border">
-            <td class="p-1.5 border font-mono">${esc(r.id)}</td>
-            <td class="p-1.5 border">${esc(r.date || '-')}</td>
-            <td class="p-1.5 border text-right">${esc(r.quantiteOrigine)}</td>
+            <td class="p-1.5 border font-bold whitespace-nowrap">${esc(libelleReleve(r))}</td>
+            <td class="p-1.5 border">${esc(r.godet || '-')}</td>
+            <td class="p-1.5 border text-right">${esc(r.quantiteOrigine)}${alerte}</td>
             <td class="p-1.5 border text-right text-red-800">${esc(r.morts)}</td>
             <td class="p-1.5 border text-right text-emerald-800">${esc(r.sauves)}</td>
             <td class="p-1.5 border text-right font-black">${esc(r.reste)}</td>
@@ -324,12 +396,15 @@
         }).join('');
       }
 
-      setText('generated', 'Données consultées le ' + new Date().toLocaleDateString('fr-FR') + ' à ' + new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+      const now = new Date();
+      const nowFR = String(now.getDate()).padStart(2, '0') + '/' + String(now.getMonth() + 1).padStart(2, '0') + '/' + now.getFullYear()
+                  + ' à ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      setText('generated', 'Données consultées le ' + nowFR + ' · passeport v3.8');
     }
 
     $('btn-retry').addEventListener('click', load);
     window.addEventListener('hashchange', load);
     window.addEventListener('DOMContentLoaded', load);
   </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5c59d9629b085c8',t:'MTc5NDk5MDY1MQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5c59d9629b085c8',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a5ff75238b1d33e5',t:'MTc5NTU5NzE2OQ=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a5ff75238b1d33e5',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
